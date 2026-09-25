@@ -141,9 +141,32 @@ def out_path(sid):
     return d
 
 
+def lookdev_overrides(sc):
+    """Fast-iteration switches for CPU lookdev (never set for finals):
+    SB_NOVOL=1 strips volume shaders (world + objects); SB_SAMPLES=n overrides Cycles samples."""
+    if os.environ.get("SB_NOVOL") == "1":
+        mats = list(bpy.data.materials) + ([sc.world] if sc.world else [])
+        for m in mats:
+            if not m or not m.use_nodes:
+                continue
+            for n in m.node_tree.nodes:
+                if n.type in ('OUTPUT_MATERIAL', 'OUTPUT_WORLD'):
+                    for l in list(n.inputs['Volume'].links):
+                        m.node_tree.links.remove(l)
+        for o in bpy.data.objects:
+            if o.type == 'MESH' and o.data.materials and all(
+                    m and m.use_nodes and not any(n.type in ('BSDF_PRINCIPLED', 'EMISSION', 'BSDF_DIFFUSE', 'BSDF_TRANSPARENT', 'MIX_SHADER',
+                                                             'BSDF_GLOSSY', 'BSDF_METALLIC', 'BSDF_TRANSLUCENT', 'HOLDOUT', 'BSDF_REFRACTION', 'BSDF_GLASS')
+                                                  for n in m.node_tree.nodes) for m in o.data.materials):
+                o.hide_render = True          # pure volume containers
+    if os.environ.get("SB_SAMPLES") and sc.render.engine == 'CYCLES':
+        sc.cycles.samples = int(os.environ["SB_SAMPLES"])
+
+
 def render_shot(sid, start=None, end=None, still=None):
     """Render the frame range of shot `sid` to renders/<sid>/NNNN.png (global frame numbers)."""
     sc = bpy.context.scene
+    lookdev_overrides(sc)
     _, s0, s1, _ = TL.shot(sid)
     s0 = s0 if start is None else start
     s1 = s1 if end is None else end
@@ -965,18 +988,77 @@ def brushed_metal(name, color=(0.75, 0.75, 0.76), rough=0.28, aniso=0.6, scale=4
     return m
 
 
-def painted(name, color, rough=0.35, coat=0.3, grime=0.0, scale=3.0, speck=0.0):
+def wear_masks(nb, co, edge_px=0.012, scale=3.0):
+    """Edge and cavity masks that work in EEVEE and Cycles (AO node, local only).
+    Returns (edge 0..1 on convex edges, cavity 0..1 in creases/corners), both broken up by noise."""
+    ao_in = nb.new('ShaderNodeAmbientOcclusion', samples=8, inside=True, only_local=True)
+    ao_in.inputs['Distance'].default_value = edge_px
+    ao_out = nb.new('ShaderNodeAmbientOcclusion', samples=8, only_local=True)
+    ao_out.inputs['Distance'].default_value = edge_px * 8
+    brk = nb.noise(co, scale=scale * 14, detail=10, rough=0.72)
+    edge = nb.maprange(nb.math('ADD', nb.math('SUBTRACT', 1.0, ao_in.outputs['AO']),
+                               nb.math('MULTIPLY', brk.outputs['Fac'], 0.55)), 0.62, 0.8)
+    cav = nb.maprange(nb.math('ADD', nb.math('SUBTRACT', 1.0, ao_out.outputs['AO']),
+                              nb.math('MULTIPLY', brk.outputs['Fac'], 0.3)), 0.25, 0.7)
+    return edge, cav
+
+
+def painted(name, color, rough=0.35, coat=0.3, grime=0.0, scale=3.0, speck=0.0, wear=None, streaks=None,
+            under=(0.33, 0.33, 0.34)):
+    """Industrial / product paint: macro value variation, orange-peel micro-normal, rain/grime streaks, cavity dirt and
+    chipped convex edges revealing bare metal (wear defaults to follow `grime`). Works in EEVEE and Cycles."""
     m = mat(name, color, rough=rough, coat=coat, coat_rough=0.08)
     nb = NB(m)
     co = nb.coord('Object')
     n = nb.noise(co, scale=scale, detail=6, rough=0.6)
-    nb.set('Roughness', nb.maprange(n.outputs['Fac'], 0.35, 0.65, rough * 0.8, rough * 1.3))
+    wear = grime * 0.8 if wear is None else wear
+    streaks = grime if streaks is None else streaks
+    base = (*color, 1)
+    # large, soft paint-batch/sun-fade variation (+-6 %)
+    mv = nb.maprange(nb.noise(co, scale=scale * 0.35, detail=3, rough=0.5).outputs['Fac'], 0.3, 0.7)
+    base = nb.mix(mv, (color[0] * 0.94, color[1] * 0.94, color[2] * 0.95, 1), (color[0] * 1.05, color[1] * 1.05, color[2] * 1.04, 1))
+    rgh = nb.maprange(n.outputs['Fac'], 0.35, 0.65, rough * 0.8, rough * 1.3)
+    dirty = (color[0] * 0.5, color[1] * 0.48, color[2] * 0.45, 1)
     if grime > 0:
         g = nb.noise(co, scale=scale * 4, detail=8, rough=0.7)
         gm = nb.maprange(g.outputs['Fac'], 0.5, 0.75, 0, grime)
-        nb.set('Base Color', nb.mix(gm, (*color, 1), (color[0] * 0.55, color[1] * 0.53, color[2] * 0.5, 1)))
-    nb.set('Normal', nb.bump(nb.noise(co, scale=120, detail=3).outputs['Fac'], strength=0.03, distance=0.0005))
+        base = nb.mix(gm, base, dirty)
+    if streaks > 0:
+        # vertical run-off streaks (object Z), thin and irregular
+        st = nb.noise(nb.mapping(co, scale=(scale * 9, scale * 9, scale * 0.6)), scale=4.0, detail=6, rough=0.6)
+        sm = nb.maprange(st.outputs['Fac'], 0.56, 0.72, 0, 0.45 * streaks)
+        base = nb.mix(sm, base, dirty)
+        rgh = nb.math('ADD', rgh, nb.math('MULTIPLY', sm, 0.25))
+    if wear > 0 or grime > 0:
+        edge, cav = wear_masks(nb, co, scale=scale)
+        base = nb.mix(nb.math('MULTIPLY', cav, min(1.0, 0.35 + grime * 0.6)), base, dirty)
+        if wear > 0:
+            chip = nb.math('MULTIPLY', edge, min(1.0, wear * 1.4))
+            base = nb.mix(chip, base, (*under, 1))
+            nb.set('Metallic', nb.math('MULTIPLY', chip, 0.9))
+            rgh = nb.mix(chip, rgh, rough * 0.9, dtype='FLOAT')
+    nb.set('Base Color', base)
+    nb.set('Roughness', rgh)
+    op = nb.noise(co, scale=120, detail=3).outputs['Fac']
+    nb.set('Normal', nb.bump(op, strength=0.03, distance=0.0005))
     return m
+
+
+def auto_bevel(objs, frac=0.035, max_w=0.012, min_w=0.0006, segments=2, angle=35):
+    """Soft machined edges on hard-surface meshes (bevel modifier, angle limited, harden normals) so edges catch
+    light instead of reading as CG boxes. Width scales with each object's smallest dimension."""
+    for o in objs:
+        if o.type != 'MESH' or any(md.type == 'BEVEL' for md in o.modifiers) or len(o.data.polygons) > 200000:
+            continue
+        dims = sorted(o.dimensions)
+        w = max(min_w, min(max_w, frac * (dims[0] if dims[0] > 1e-4 else dims[1])))
+        md = o.modifiers.new("AutoBevel", 'BEVEL')
+        md.width = w
+        md.segments = segments
+        md.limit_method = 'ANGLE'
+        md.angle_limit = math.radians(angle)
+        md.harden_normals = False
+        md.use_clamp_overlap = True
 
 
 def glass(name, color=(1, 1, 1), rough=0.0, ior=1.5, thin=False):

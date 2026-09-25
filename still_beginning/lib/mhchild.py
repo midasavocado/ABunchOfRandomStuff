@@ -95,7 +95,9 @@ def pose_bone(rig, name, rot=None, quat=None):
 def fix_eyes(parts, tex="brownlight_eye.png"):
     """Swap the iris texture to the warm light-brown (amber-hazel) iris; wet, glossy cornea."""
     import os
-    d = os.path.expanduser("~/Library/Application Support/Blender/5.2/extensions/.user/user_default/mpfb/data/eyes/materials")
+    d = os.path.join(bpy.utils.user_resource('EXTENSIONS'), ".user", "user_default", "mpfb", "data", "eyes", "materials")
+    if not os.path.isdir(d):
+        d = os.path.expanduser("~/Library/Application Support/Blender/5.2/extensions/.user/user_default/mpfb/data/eyes/materials")
     img = bpy.data.images.load(os.path.join(d, tex), check_existing=True)
     for o in parts:
         if "high-poly" not in o.name:

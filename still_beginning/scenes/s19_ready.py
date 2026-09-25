@@ -49,8 +49,11 @@ else:  # s19c
     FX.prelaunch_vapor(RK, FA, FB, vents=False, skin=False, chill=True, amount=0.8)
     Z = LP.ROCKET_Z0
     pin = V((0.0, -rocket.LUG_PIN, Z + 0.56))
-    cam = sb.camera("Cam", loc=(1.6, -5.6, Z + 0.2), target=pin, lens=55, fstop=2.2, clip=(0.05, 5000))
-    cam_move(cam, (1.75, -5.75, Z + 0.15), (1.5, -5.35, Z + 0.22), pin + V((0.1, -0.2, -0.05)), pin + V((0.05, -0.15, 0.0)))
+    lockp = V((0.55, -3.81, Z - 0.2))            # lock-bolt housing (clamp +Y side = world +X)
+    # low 3/4 from outside the pad edge, looking back across the jaw: frosted aft skirt curving away on the right,
+    # the neighbouring clamp, deck floods and the tower lattice soft behind; slow push toward the lock bolt
+    cam = sb.camera("Cam", loc=(1.45, -5.9, Z - 0.3), target=lockp, lens=40, fstop=2.2, clip=(0.05, 5000))
+    cam_move(cam, (1.55, -6.05, Z - 0.34), (1.38, -5.78, Z - 0.26), lockp + V((-0.12, 0.2, 0.25)), lockp + V((-0.1, 0.2, 0.3)))
     FX.volume_range(sc, cam, pin, near=0.1, far=120.0)
 
 sb.frames(F0, F1)

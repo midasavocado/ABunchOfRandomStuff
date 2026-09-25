@@ -733,13 +733,13 @@ def _lug(name, az, M, parent):
             sb.prim("cyl", name + "Rivet", loc=(2.535, s * 0.36, 0.25 + i * 0.27), rot=(0, math.pi / 2, 0), vertices=8,
                     radius=0.022, depth=0.02, mat=M["steel"], parent=g)
     # pin: shaft + shoulders + nuts (axis along Y)
-    sb.prim("cyl", name + "Pin", loc=(LUG_PIN, 0, 0.56), rot=(math.pi / 2, 0, 0), vertices=32, radius=0.10,
-            depth=0.56, mat=M["steel"], parent=g)
+    sb.prim("cyl", name + "Pin", loc=(LUG_PIN, 0, 0.56), rot=(math.pi / 2, 0, 0), vertices=48, radius=0.10,
+            depth=0.96, mat=M["steel"], parent=g)       # long enough for the pad clamp's fork tines (|y| 0.30-0.40)
     for s in (-1, 1):
         sb.prim("cyl", name + "Collar", loc=(LUG_PIN, s * 0.155, 0.56), rot=(math.pi / 2, 0, 0), vertices=32, radius=0.13,
                 depth=0.04, mat=M["steel"], parent=g)
-        sb.prim("cyl", name + "Nut", loc=(LUG_PIN, s * 0.3, 0.56), rot=(math.pi / 2, 0, 0), vertices=6, radius=0.085,
-                depth=0.06, mat=M["steel"], parent=g)
+        sb.prim("cyl", name + "Nut", loc=(LUG_PIN, s * 0.475, 0.56), rot=(math.pi / 2, 0, 0), vertices=6, radius=0.085,
+                depth=0.05, mat=M["steel"], parent=g)
     return g
 
 

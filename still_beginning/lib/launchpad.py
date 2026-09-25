@@ -668,60 +668,13 @@ def launch_mount(M, parent=None):
 
 
 def clamp(name, az, M, parent=None):
-    """Pad-side hold-down clamp under vehicle lug at azimuth az (deg). Returns dict(jaw=<empty>, open=<deg>)
-    Animate jaw.rotation_euler.y from 0 (closed, bearing on the lug pin) to +open (released, swung outward)."""
+    """Pad-side hold-down clamp under vehicle lug at azimuth az (deg) - hero build in lib/holddown.py.
+    Returns dict(jaw=<empty>, open=<deg>, lock=<empty>, ...). Animate jaw.rotation_euler.y from 0 (closed, bearing on
+    the lug pin) to +open (released, swung outward); lock.location.y from 0 (engaged) to +LOCK_TRAVEL (withdrawn)."""
+    import holddown
     g = sb.empty(name, loc=(0, 0, 0), parent=parent)
     g.rotation_euler = (0, 0, math.radians(az))
-    rs = rocket.LUG_R
-    zt = ROCKET_Z0
-    B = Beams(hash(name) & 0xfff)
-    # pedestal: welded box column with web stiffeners, base plate bolted to deck, bearing cap
-    B.add((rs, 0, TABLE_Z), (rs, 0, zt - 0.35), 0.78, 0.7, up=V((0, 1, 0)))
-    B.add((rs + 0.2, 0, TABLE_Z), (rs + 0.2, 0, TABLE_Z + 0.12), 1.2, 1.3, up=V((0, 1, 0)))
-    for s in (-1, 1):
-        B.add((rs + 0.42, s * 0.3, TABLE_Z + 0.1), (rs + 0.42, s * 0.3, zt - 1.2), 0.08, 0.3, up=V((0, 1, 0)))
-        B.add((rs, s * 0.4, TABLE_Z + 0.1), (rs, s * 0.4, zt - 1.6), 0.5, 0.06, up=V((0, 1, 0)))
-    B.add((rs - 0.05, 0, zt - 0.35), (rs - 0.05, 0, zt - 0.05), 0.95, 0.8, up=V((0, 1, 0)))
-    ped = B.build(name + "Ped", M["clamp"], g)
-    Bo = Beams(3)
-    for k in range(8):
-        a = 2 * math.pi * k / 8
-        p = V((rs + 0.2 + 0.52 * math.cos(a), 0.56 * math.sin(a), TABLE_Z + 0.12))
-        Bo.tube(p, p + V((0, 0, 0.07)), 0.045, 6)
-        Bo.tube(p + V((0, 0, 0.07)), p + V((0, 0, 0.14)), 0.022, 6)
-    Bo.build(name + "Bolts", M["steel_dark"], g)
-    piv = V((rs + 0.75, 0, zt - 0.95))
-    for s in (-1, 1):
-        rocket.box(name + "Hinge", piv + V((0, s * 0.33, 0)), (0.36, 0.1, 0.5), M["clamp"], parent=g, bev=0.02)
-    sb.prim("cyl", name + "HPin", loc=piv, rot=(math.pi / 2, 0, 0), vertices=24, radius=0.08, depth=0.86, mat=M["steel_bright"], parent=g)
-    jaw = sb.empty(name + "Jaw", loc=piv, parent=g)
-    J = Beams(4)
-    pin = V((rocket.LUG_PIN, 0, zt + 0.56)) - piv
-    for s in (-1, 1):
-        y = s * 0.2
-        pts = [V((0, y, 0)), V((0.05, y, 0.7)), V((0.02, y, 1.35)), pin + V((0.2, y, 0.28)), pin + V((-0.02, y, 0.26))]
-        for a, b in zip(pts, pts[1:]):
-            J.add(a, b, 0.12, 0.3, up=V((1, 0, 0)))
-    J.add(pin + V((0.12, -0.26, 0.27)), pin + V((0.12, 0.26, 0.27)), 0.34, 0.2)
-    J.add(V((0.02, -0.26, 1.2)), V((0.02, 0.26, 1.2)), 0.22, 0.3)
-    J.build(name + "JawBody", M["clamp_jaw"], jaw)
-    sb.prim("cyl", name + "Saddle", loc=pin + V((0, 0, 0.14)), rot=(math.pi / 2, 0, 0), vertices=32, radius=0.14,
-            depth=0.46, mat=M["steel_bright"], parent=jaw)
-    act_base = V((rs + 0.55, 0, TABLE_Z + 0.5))
-    act_tip_local = V((0.35, 0, 0.9))
-    # pneumatic lock bolt: housing on the hinge bracket, bolt engages the jaw side plate. Animate lock.location.y
-    # from 0 (engaged) to +LOCK_TRAVEL (withdrawn) - the last mechanical 'click' before T-0.
-    hp = piv + V((0.06, 0.55, 0.75))
-    rocket.box(name + "LockHousing", hp + V((0, 0.12, 0)), (0.22, 0.3, 0.22), M["clamp"], parent=g, bev=0.015)
-    sb.prim("cyl", name + "LockAir", loc=hp + V((0, 0.34, 0.0)), rot=(math.pi / 2, 0, 0), vertices=16, radius=0.04,
-            depth=0.16, mat=M["steel_bright"], parent=g)
-    rocket.pipe(name + "LockHose", [hp + V((0, 0.42, 0)), hp + V((0.1, 0.55, -0.3)), hp + V((0.2, 0.45, -1.2)),
-                                     V((rs + 0.6, 0.45, TABLE_Z + 0.2))], 0.02, M["hose"], parent=g)
-    lock = sb.empty(name + "Lock", loc=hp, parent=g)
-    sb.prim("cyl", name + "LockBolt", loc=(0, -0.08, 0), rot=(math.pi / 2, 0, 0), vertices=24, radius=0.05, depth=0.34,
-            mat=M["steel_bright"], parent=lock)
-    return dict(root=g, jaw=jaw, pivot=piv, act_base=act_base, act_tip_local=act_tip_local, cyl_parent=g, open=55.0,
-                lock=lock)
+    return holddown.build(name, M, g, rocket.LUG_R, TABLE_Z, ROCKET_Z0, rocket.LUG_PIN)
 
 
 LOCK_TRAVEL = 0.16
@@ -751,19 +704,9 @@ def deck_lights(M, parent=None, energy=4500.0):
 
 
 def clamp_actuator_update(cl, M, name):
-    """Hydraulic release cylinder from pedestal to jaw; a Damped Track keeps it aimed at the jaw lug."""
-    g = cl["root"]
-    base = cl["act_base"]
-    tip = cl["pivot"] + cl["act_tip_local"]
-    body_e = sb.empty(name + "CylE", loc=base, parent=g)
-    tgt = sb.empty(name + "CylT", loc=cl["act_tip_local"], parent=cl["jaw"])
-    L0 = (tip - base).length
-    sb.prim("cyl", name + "Cyl", loc=(0, 0, L0 * 0.3), vertices=24, radius=0.1, depth=L0 * 0.6, mat=M["clamp"], parent=body_e)
-    rodm = sb.prim("cyl", name + "Rod", loc=(0, 0, L0 * 0.75), vertices=16, radius=0.045, depth=L0 * 0.55, mat=M["steel_bright"], parent=body_e)
-    c = body_e.constraints.new('DAMPED_TRACK')
-    c.target = tgt
-    c.track_axis = 'TRACK_Z'
-    return body_e, rodm, tgt
+    """Tie-rod hydraulic release cylinder from the base clevis to the jaw ear (lib/holddown.py)."""
+    import holddown
+    return holddown.actuator(cl, name)
 
 
 def tail_masts(M, parent=None):
