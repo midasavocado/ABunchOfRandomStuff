@@ -14,19 +14,21 @@ sid = (sb.argv() or ["s25"])[0]
 _, F0, F1, _ = TL.shot(sid)
 sc = sb.reset()
 sb.setup_render(os.environ.get("SB_ENGINE", "CYCLES"), cycles_samples=128, samples=48, mblur=True, shutter=0.5,
-                look="AgX - Medium High Contrast", exposure=float(os.environ.get("SB_EXPO", "0.0")))
+                look="AgX - Medium High Contrast", exposure=float(os.environ.get("SB_EXPO", "1.2")))
 rs = random.Random(25)
-space.starfield(strength=1.0)
-SUN = sb.sun_dir(-38.0, 200.0)                  # sun from below/behind the shield (mirror stays in shade)
-sun = sb.sun(-38.0, 200.0, energy=6.0, color=(1.0, 0.97, 0.92), angle=0.53)
+space.starfield(strength=6.0, density=0.7)
+# deployment attitude: the sun grazes across the mirror face from the left (the gold segments and their amber
+# rings catch it); a dim cool fill from the opposite side stands in for scattered light off the sunshield
+sun = sb.sun(14.0, 245.0, energy=5.0, color=(1.0, 0.96, 0.9), angle=0.53)
+sb.light('AREA', "ShieldBounce", loc=(6, 8, -3), target=(0, 0, 0.5), energy=900.0, color=(0.95, 0.8, 0.75), size=10.0)
 
-gold = sb.mat("MirrorGold", (1.0, 0.72, 0.30), metal=1.0, rough=0.03)
+gold = sb.mat("MirrorGold", (1.0, 0.72, 0.30), metal=1.0, rough=0.16)
 nb = sb.NB(gold)
 co = nb.coord('Object')
-nb.set('Roughness', nb.maprange(nb.noise(co, scale=60, detail=4).outputs['Fac'], 0.3, 0.7, 0.02, 0.06))
+nb.set('Roughness', nb.maprange(nb.noise(co, scale=60, detail=4).outputs['Fac'], 0.3, 0.7, 0.13, 0.2))
 backing = sb.painted("MirrorBack", (0.06, 0.065, 0.07), rough=0.4, wear=0.1)
 struts = sb.brushed_metal("Strut", (0.1, 0.1, 0.11), rough=0.35)
-kapton = sb.mat("Shield", (0.78, 0.62, 0.58), metal=0.9, rough=0.25, thin_film=420.0)
+kapton = sb.mat("Shield", (0.86, 0.80, 0.86), metal=1.0, rough=0.18, thin_film=520.0)
 nb2 = sb.NB(kapton)
 c2 = nb2.coord('Object')
 cr = nb2.noise(c2, scale=0.8, detail=10, rough=0.7)
@@ -133,9 +135,9 @@ for k, a in enumerate((0, 120, 240)):
     rocket.rod("Boom", (0, 0, -1.2), (6.0 * math.cos(math.radians(a)), 3.4 * math.sin(math.radians(a)), -2.3), 0.04, graph, parent=root, verts=8)
 root.rotation_euler = (math.radians(12), math.radians(-8), 0)
 # ---- camera: glide across the mirror face, tilting to find the latching wing, stars reflected in the gold
-P0, P1 = V((-9.0, -12.0, 9.5)), V((4.0, -13.0, 8.0))
+P0, P1 = V((-6.5, -8.5, 6.8)), V((3.0, -9.5, 5.8))
 T0, T1 = V((0.5, 0.0, 0.5)), V((2.5, 0.2, 0.3))
-cam = sb.camera("Cam", loc=P0, target=T0, lens=35, fstop=8.0, clip=(0.1, 1e6))
+cam = sb.camera("Cam", loc=P0, target=T0, lens=30, fstop=8.0, clip=(0.1, 1e6))
 sb.cam_bake(cam, F0, F1, lambda t: P0.lerp(P1, sb.smoother(t)), lambda t: T0.lerp(T1, sb.smoother(t)),
             focus=lambda t: (P0.lerp(P1, sb.smoother(t)) - T0.lerp(T1, sb.smoother(t))).length)
 sb.frames(F0, F1)

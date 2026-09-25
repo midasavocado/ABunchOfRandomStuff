@@ -28,7 +28,7 @@ def sun_elev(f):
     return -(dip + 0.9) + 0.065 * (f - RISE_F) + 0.9
 
 
-E = earth.build(alt_km=ALT, sun_dir=tuple(sb.sun_dir(sun_elev(F0), SUN_AZ)), clouds=0.45, lights=1.0, samples=16,
+E = earth.build(alt_km=ALT, sun_dir=tuple(sb.sun_dir(sun_elev(F0), SUN_AZ)), clouds=0.45, lights=3.0, samples=16,
                 nadir=(20.0, 10.0, 0.0), detail=0.9)
 lamp = E.sun_lamp(strength=0.0)
 for f in range(F0 - 2, F1 + 3):
@@ -87,29 +87,43 @@ for f in range(F0 - 2, F1 + 3):
     suit.pose(S, frame=f, torso=(8, 0, 0), l_hip=(70, 8, 0), r_hip=(75, 10, 0), l_knee=70, r_knee=78,
               l_shoulder=(20, 12, 0), r_shoulder=(35 + 3 * math.sin(f * 0.04), 18, 0), l_elbow=30, r_elbow=55,
               r_wrist=(10, 0, 0))
-# ---- camera: from behind/side of the astronaut over the truss, slow push in; ends on the visor
+# ---- camera: a slow 180-degree arc around the astronaut - from behind (their silhouette against the gathering
+# arc) around to the front, ending close on the gold visor where the sunrise arc curves across it
+bpy.context.scene.frame_set(F1 - 1)
 bpy.context.view_layer.update()
-helmet = None
-for n, o in S["parts"].items():
-    if "visor" in n.lower() or "Visor" in o.name:
-        helmet = o
-        break
-hp = (helmet.matrix_world.translation if helmet else astro.location + V((0, 0, 1.7)))
-P = [V((3.2, -4.5, 2.6)), V((2.0, -2.2, 1.6)), hp + V((0.55, 0.9, 0.08))]
-Tg = [V((0.0, 60.0, -4.0)), V((0.2, 20.0, -2.0)), hp + V((0.0, 0.0, 0.0))]
+vis = S["parts"].get("AstroVisor")
+dg = bpy.context.evaluated_depsgraph_get()
+ev = vis.evaluated_get(dg)
+pts = [ev.matrix_world @ v.co for v in ev.data.vertices]
+C = sum(pts, V((0, 0, 0))) / len(pts)
+HZ = V((0.0, 400.0, -45.0))                        # a point on the horizon ahead (+Y, below local horizontal)
 
 
 def cp(t):
-    return sb.catmull(P, sb.smoother(t) * 0.8 + 0.2 * t)
+    k = sb.smoother(t)
+    th = math.radians(sb.lerp(215.0, 20.0, k))       # angle around the vertical axis (0 = +Y = in front)
+    r = sb.lerp(4.2, 0.85, k ** 1.3)
+    h = sb.lerp(0.9, 0.42, k)
+    return C + V((math.sin(th) * r, math.cos(th) * r, h))
 
 
 def ct(t):
-    return sb.catmull(Tg, sb.smoother(t) * 0.8 + 0.2 * t)
+    early = C + V((0.0, 12.0, -3.6))                 # beyond the astronaut, pitched down to the horizon (dip ~20 deg)
+    k = sb.smoother(sb.remap(t, 0.45, 0.97))
+    return early.lerp(C, k)
 
 
-cam = sb.camera("Cam", loc=P[0], target=Tg[0], lens=30, fstop=4.0, clip=(0.02, 20000.0))
-sb.cam_bake(cam, F0, F1, cp, ct, lens=lambda t: sb.lerp(30.0, 50.0, sb.smoother(t)),
-            focus=lambda t: max(0.5, min(40.0, (cp(t) - hp).length)))
+cam = sb.camera("Cam", loc=cp(0), target=ct(0), lens=28, fstop=4.0, clip=(0.02, 20000.0))
+sb.cam_bake(cam, F0, F1, cp, ct, lens=lambda t: sb.lerp(28.0, 55.0, sb.smoother(t)),
+            focus=lambda t: max(0.4, (cp(t) - C).length))
+# auto-exposure ride: the camera is wide open in the dark (night side, city lights, airglow), then settles as the
+# sun breaks the limb (like a real camera adjusting) - the sunrise still blooms, it does not flash white
+vs = bpy.context.scene.view_settings
+base_exp = vs.exposure
+for f in range(F0 - 2, F1 + 3):
+    k = sb.smoother((f - (RISE_F - 20)) / 40.0)
+    vs.exposure = base_exp + sb.lerp(2.6, 0.0, k)
+    vs.keyframe_insert("exposure", frame=f)
 E.track(cam, F0 - 2, F1 + 2)
 sb.frames(F0, F1)
 if os.environ.get("SB_SAVE"):

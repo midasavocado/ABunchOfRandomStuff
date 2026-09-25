@@ -84,6 +84,33 @@ for k, (L_, r_) in enumerate(((7.0, 2.1), (5.0, 1.6))):
         rocket.box("MLIPatch", (x0 - 0.8 - j * 1.1, 0, r_ + 0.01), (0.9, 1.4, 0.02), mli, bev=0.01)
     for j in range(3):
         rocket.rod("Handrail", (x0 - 1 - j * 2.0, -0.6, r_ + 0.1), (x0 - 2 - j * 2.0, -0.6, r_ + 0.1), 0.02, amber, verts=8)
+# ---- equipment along the spine: ORU boxes in white MLI / gold foil, handrails, lights, cable bundles
+rs2 = random.Random(7)
+mli_white = sb.fabric("MLIWhite", (0.86, 0.86, 0.84), weave=180, sheen=0.3, fuzz=0.2)
+for i in range(1, NB_ - 1):
+    x = i * BAY + BAY / 2
+    for face in range(4):
+        if rs2.random() < 0.55:
+            continue
+        sz = V((rs2.uniform(0.6, 1.4), rs2.uniform(0.5, 0.9), rs2.uniform(0.3, 0.6)))
+        if face == 0:
+            c = V((x, 0, W / 2 + sz.z / 2 + 0.05)); dims = (sz.x, sz.y, sz.z)
+        elif face == 1:
+            c = V((x, 0, -W / 2 - sz.z / 2 - 0.05)); dims = (sz.x, sz.y, sz.z)
+        elif face == 2:
+            c = V((x, W / 2 + sz.z / 2 + 0.05, 0)); dims = (sz.x, sz.z, sz.y)
+        else:
+            c = V((x, -W / 2 - sz.z / 2 - 0.05, 0)); dims = (sz.x, sz.z, sz.y)
+        rocket.box("ORU", c, dims, rs2.choice([mli_white, mli_white, mli, graph]), bev=0.03)
+    rocket.rod("Handrail", (x - 0.8, -W / 2 - 0.12, W / 2 + 0.12), (x + 0.8, -W / 2 - 0.12, W / 2 + 0.12), 0.018, amber, verts=8)
+    if i % 3 == 0:
+        lt = sb.prim("cyl", "WorkLight", loc=(x, -W / 2 - 0.15, W / 2 - 0.1), vertices=16, radius=0.07, depth=0.12, mat=graph)
+for k in range(3):
+    sb.tube_along("CableRun%d" % k, [(0.2, W / 2 + 0.07, -0.3 + k * 0.08), (X_END - 0.2, W / 2 + 0.07, -0.3 + k * 0.08)], radius=0.02,
+                  mat=sb.mat("CableBlk", (0.03, 0.03, 0.03), rough=0.5))
+# a radiator wing close to the working end (in view, behind the astronaut)
+for j in range(4):
+    rocket.box("RadPanel", (X_END - 7.0, W / 2 + 1.6 + j * 2.1, -1.0), (3.0, 2.0, 0.04), radiator, bev=0.008, rot=(math.radians(-25), 0, 0))
 # ---- the new bay arriving (carried by the arm), final position = next bay at X_END..X_END+BAY
 Bn = LP.Beams(23)
 cn = [V((0, -W / 2, -W / 2)), V((0, W / 2, -W / 2)), V((0, W / 2, W / 2)), V((0, -W / 2, W / 2))]
@@ -125,9 +152,14 @@ for f in range(F0 - 2, F1 + 3):
 # ---- the astronaut on a foot restraint at the spine end, hands on the incoming bay
 S = suit.build("Astro", visor="gold", gloves=("relaxed", "relaxed"), dust=0.0, dirt=0.2)
 astro = S["root"]
-astro.location = (X_END - 0.3, -W / 2 - 0.2, W / 2 + 0.05)
-astro.rotation_euler = (0, 0, math.radians(-110))
-rocket.box("FootRestraint", (X_END - 0.3, -W / 2 - 0.2, W / 2 + 0.02), (0.6, 0.4, 0.06), graph, bev=0.01)
+# work platform cantilevered off the spine's side face near the end; the astronaut faces the arriving bay (+X)
+PLAT = V((X_END - 1.2, -W / 2 - 1.1, -0.3))
+rocket.box("Platform", PLAT, (1.2, 0.9, 0.06), graph, bev=0.01)
+for k in (-1, 1):
+    rocket.rod("PlatStrut", PLAT + V((0.5 * k, 0.4, 0)), V((X_END - 1.2 + 0.5 * k, -W / 2, -W / 2 + 0.2)), 0.03, alu, verts=8)
+rocket.box("FootRestraint", PLAT + V((0.1, 0.0, 0.05)), (0.5, 0.35, 0.05), amber, bev=0.01)
+astro.location = PLAT + V((0.1, 0.0, 0.06))
+astro.rotation_euler = (0, 0, math.radians(-70))
 for f in range(F0 - 2, F1 + 3):
     k = sb.smoother((f - F0) / (F1 - F0))
     suit.pose(S, frame=f, torso=(12 + 6 * math.sin(f * 0.05), 0, -10), l_shoulder=(70 + 10 * k, 20, 0), r_shoulder=(60 + 15 * k, 25, 0),

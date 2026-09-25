@@ -13,7 +13,7 @@ sid = (sb.argv() or ["s27"])[0]
 _, F0, F1, _ = TL.shot(sid)
 sc = sb.reset()
 sb.setup_render("CYCLES", cycles_samples=64, mblur=(os.environ.get("SB_MB", "1") == "1"), shutter=0.5,
-                look="AgX - Medium High Contrast", exposure=float(os.environ.get("SB_EXPO", "0.15")))
+                look="AgX - Medium High Contrast", exposure=float(os.environ.get("SB_EXPO", "-0.25")))
 sc.cycles.max_bounces = 12
 sc.cycles.transmission_bounces = 12
 
