@@ -314,6 +314,9 @@ def build(alt_km=400.0, center_km=None, sun_dir=(0.0, 1.0, 0.2), rot=None, nadir
     nt.links.new(bg.outputs[0], out.inputs[0])
     E.bg = bg
     print("[earth] world nodes:", len(nt.nodes))
+    import os as _os
+    if _os.environ.get("SB_EARTH_PROXY") == "1":
+        _proxy(E, nt, out, clouds)
 
     # ---------------------------------------------------------------- methods
     def cam_km(loc_m):
@@ -606,3 +609,56 @@ def horizon_dir(cam_km_vec, azim_deg=0.0, above_deg=0.0):
     hdir = (north * math.cos(a) + east * math.sin(a) * -1.0).normalized()
     el = -dip + math.radians(above_deg)
     return (hdir * math.cos(el) + up * math.sin(el)).normalized()
+
+
+
+def _proxy(E, nt, out, clouds=0.5):
+    """LOOKDEV ONLY (SB_EARTH_PROXY=1): Cycles cannot compile the analytic world (SVM stack), so for framing checks
+    on CPU we disconnect it and put a real-scale sphere + limb-glow shell in the scene instead. Same centre, radius,
+    scale and sun, so horizon position/curvature, terminator and composition match the real render."""
+    for l in list(out.inputs[0].links):
+        nt.links.remove(l)
+    bg2 = nt.nodes.new('ShaderNodeBackground')
+    bg2.inputs['Color'].default_value = (0.0, 0.0, 0.0, 1)
+    nt.links.new(bg2.outputs[0], out.inputs[0])
+    c = V(E.center_km) * 1000.0
+    Rm = R * 1000.0
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=512, ring_count=256, radius=Rm, location=c)
+    g = bpy.context.active_object
+    g.name = "EarthProxy"
+    for p in g.data.polygons:
+        p.use_smooth = True
+    m = sb.mat("EarthProxyMat", (0.02, 0.05, 0.12), rough=0.35, spec=0.6)
+    nb = sb.NB(m)
+    co = nb.coord('Object')
+    land = nb.maprange(nb.noise(co, scale=2.2e-6 * 1.0, detail=8, rough=0.6).outputs['Fac'], 0.55, 0.57)
+    lc = nb.mix(nb.maprange(nb.noise(co, scale=1e-5, detail=6).outputs['Fac'], 0.3, 0.7), (0.08, 0.12, 0.04, 1), (0.30, 0.24, 0.14, 1))
+    base = nb.mix(land, (0.012, 0.035, 0.09, 1), lc)
+    cl = nb.maprange(nb.noise(co, scale=6e-6, detail=10, rough=0.62).outputs['Fac'], 0.62 - 0.25 * clouds, 0.72 - 0.25 * clouds)
+    base = nb.mix(cl, base, (0.85, 0.86, 0.88, 1))
+    nb.set('Base Color', base)
+    nb.set('Roughness', nb.mix(land, 0.25, 0.9, dtype='FLOAT'))
+    g.data.materials.append(m)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=512, ring_count=256, radius=Rm + 60000.0, location=c)
+    a = bpy.context.active_object
+    a.name = "AtmoProxy"
+    for p in a.data.polygons:
+        p.use_smooth = True
+    am = bpy.data.materials.new("AtmoProxyMat")
+    am.use_nodes = True
+    ant = am.node_tree
+    ant.nodes.clear()
+    lw = ant.nodes.new('ShaderNodeLayerWeight'); lw.inputs['Blend'].default_value = 0.2
+    pw = ant.nodes.new('ShaderNodeMath'); pw.operation = 'POWER'; pw.inputs[1].default_value = 3.0
+    ant.links.new(lw.outputs['Facing'], pw.inputs[0])
+    em = ant.nodes.new('ShaderNodeEmission'); em.inputs[0].default_value = (0.35, 0.6, 1.0, 1)
+    mul = ant.nodes.new('ShaderNodeMath'); mul.operation = 'MULTIPLY'; mul.inputs[1].default_value = 3.0
+    ant.links.new(pw.outputs[0], mul.inputs[0]); ant.links.new(mul.outputs[0], em.inputs[1])
+    tr = ant.nodes.new('ShaderNodeBsdfTransparent')
+    ad = ant.nodes.new('ShaderNodeAddShader')
+    ant.links.new(em.outputs[0], ad.inputs[0]); ant.links.new(tr.outputs[0], ad.inputs[1])
+    o = ant.nodes.new('ShaderNodeOutputMaterial')
+    ant.links.new(ad.outputs[0], o.inputs[0])
+    a.data.materials.append(am)
+    a.visible_shadow = False
+    E.proxy = (g, a)

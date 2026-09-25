@@ -280,3 +280,40 @@ def look_at(rig, target, bones=(("neck02", 0.35), ("head", 0.65)), eyes=True, it
         x = np.clip(x, -limit, limit)
     apply(x)
     return x
+
+
+def walk(rig, f0, f1, start, heading_deg, speed=1.3, stride=1.45, phase=0.0, arm=14.0, fps=24.0):
+    """Procedural walk cycle keyed on the MPFB default rig: root travels along `heading` at `speed` (m/s) while the
+    legs cycle with a stride matched to that speed (hip flex/extend, knee flexion peaking mid-swing, ankle roll),
+    opposite arm swing, pelvis bob/rock. Good at a distance (no foot IK)."""
+    h = math.radians(heading_deg)
+    d = V((math.cos(h), math.sin(h), 0.0))
+    rig.rotation_euler = (0, 0, h + math.pi / 2)        # MPFB faces -Y; heading 0 = +X
+    z0 = V(start).z
+    for f in range(f0, f1 + 1):
+        t = (f - f0) / fps
+        dist = speed * t
+        ph = 2 * math.pi * dist / stride + phase
+        rig.location = V(start) + d * dist + V((0, 0, 0.018 * math.cos(2 * ph)))
+        rig.keyframe_insert("location", frame=f)
+        for side, off in (("L", 0.0), ("R", math.pi)):
+            p = ph + off
+            hip = 21.0 * math.sin(p)
+            knee = 6.0 + 52.0 * max(0.0, math.cos(p)) ** 1.6 + 8.0 * max(0.0, -math.sin(p)) * 0.5
+            ank = -8.0 * math.sin(p) + 10.0 * max(0.0, math.cos(p)) ** 2
+            pose(rig, {"upperleg01." + side: (-hip, 0, 0), "lowerleg01." + side: (knee, 0, 0), "foot." + side: (-ank, 0, 0)})
+            sg = 1.0 if side == "L" else -1.0
+            pose(rig, {"upperarm01." + side: (arm * math.sin(p + math.pi), 0, -32.0 * sg),
+                       "lowerarm01." + side: (10.0 + 8.0 * max(0.0, math.sin(p)), 0, 0)})
+            for b in ("upperleg01", "lowerleg01", "foot", "upperarm01", "lowerarm01"):
+                pb = rig.pose.bones.get(b + "." + side)
+                if pb:
+                    pb.keyframe_insert("rotation_euler", frame=f)
+        pose(rig, {"pelvis.L": (0, 0, 0), "spine01": (0, 3.0 * math.sin(ph), 0)})
+        rig.pose.bones["spine01"].keyframe_insert("rotation_euler", frame=f)
+
+
+def arms_down(rig, drop=32.0, elbow=10.0):
+    """Relaxed standing arms from MPFB's A-pose rest."""
+    for side, sg in (("L", 1.0), ("R", -1.0)):
+        pose(rig, {"upperarm01." + side: (4.0, 0, -drop * sg), "lowerarm01." + side: (elbow, 0, 0)})

@@ -161,6 +161,10 @@ def lookdev_overrides(sc):
                 o.hide_render = True          # pure volume containers
     if os.environ.get("SB_SAMPLES") and sc.render.engine == 'CYCLES':
         sc.cycles.samples = int(os.environ["SB_SAMPLES"])
+    if os.environ.get("SB_TAA") and sc.render.engine != 'CYCLES':
+        sc.eevee.taa_render_samples = int(os.environ["SB_TAA"])
+    if os.environ.get("SB_PCT"):
+        sc.render.resolution_percentage = int(os.environ["SB_PCT"])
 
 
 def render_shot(sid, start=None, end=None, still=None):

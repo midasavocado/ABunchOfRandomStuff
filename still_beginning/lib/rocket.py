@@ -546,6 +546,7 @@ def vac_ext_mat(name, glow=0.0):
     nb.set('Normal', nb.bump(hoop, strength=0.3, distance=0.003))
     if glow > 0:
         g = nb.math('MULTIPLY', nb.math('SUBTRACT', 1.0, u), glow)
+        g.node.name = "Glow"                       # animate Glow.inputs[1] for the heat-up (s21)
         nb.set('Emission Color', (1.0, 0.33, 0.06))
         nb.set('Emission Strength', g)
     return m
