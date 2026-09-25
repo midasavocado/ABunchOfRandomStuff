@@ -1,5 +1,5 @@
 """STILL BEGINNING score - DSP helpers (numpy + ctypes wrappers around libdsp.dylib)."""
-import ctypes, os
+import ctypes, os, sys
 import numpy as np
 from scipy import signal
 
@@ -10,7 +10,7 @@ BAR = 4 * BEAT          # 90000
 TOTAL = 64 * BAR        # 5,760,000
 
 _here = os.path.dirname(os.path.abspath(__file__))
-_lib = ctypes.CDLL(os.path.join(_here, "libdsp.dylib"))
+_lib = ctypes.CDLL(os.path.join(_here, "libdsp.dylib" if sys.platform == "darwin" else "libdsp.so"))
 _fp = ctypes.POINTER(ctypes.c_float)
 _f, _i, _d = ctypes.c_float, ctypes.c_int, ctypes.c_double
 

@@ -67,11 +67,23 @@ def setup_render(engine="EEVEE", samples=None, mblur=True, shutter=0.5,
     if engine == "CYCLES":
         r.engine = 'CYCLES'
         p = bpy.context.preferences.addons['cycles'].preferences
-        p.compute_device_type = 'METAL'
-        p.get_devices()
-        for d in p.devices:
-            d.use = (d.type == 'METAL')
-        sc.cycles.device = 'GPU'
+        # Metal GPU on the Mac; fall back to CPU (e.g. cloud Linux boxes) when no GPU exists.
+        gpu = False
+        for kind in ('METAL', 'OPTIX', 'CUDA', 'HIP', 'ONEAPI'):
+            try:
+                p.compute_device_type = kind
+            except TypeError:
+                continue
+            p.get_devices()
+            devs = [d for d in p.devices if d.type == kind]
+            if devs:
+                for d in p.devices:
+                    d.use = (d.type == kind)
+                gpu = True
+                break
+        if not gpu:
+            p.compute_device_type = 'NONE'
+        sc.cycles.device = 'GPU' if gpu else 'CPU'
         sc.cycles.samples = cycles_samples if RES == "final" else max(16, cycles_samples // 4)
         sc.cycles.use_denoising = True
         sc.cycles.denoiser = 'OPENIMAGEDENOISE'
