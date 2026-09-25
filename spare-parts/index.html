@@ -1,0 +1,1248 @@
+<title>Spare Parts</title>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Architects+Daughter&family=IBM+Plex+Mono:wght@400;500&family=Saira+Stencil+One&display=swap">
+<style>
+  :root {
+    color-scheme: dark;
+    --ink: #0b2440;
+    --paper: #143a63;
+    --line: #e4eefb;
+    --dim: #8fb2d8;
+    --faint: rgba(228, 238, 251, 0.14);
+    --acc: #ff9f43;
+    --hot: #ffd166;
+    --display: "Saira Stencil One", Impact, "Arial Narrow", sans-serif;
+    --hand: "Architects Daughter", "Comic Sans MS", "Segoe Print", cursive;
+    --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  }
+  html { background: var(--ink); }
+  body {
+    margin: 0;
+    background-color: var(--ink);
+    background-image:
+      linear-gradient(var(--faint) 1px, transparent 1px),
+      linear-gradient(90deg, var(--faint) 1px, transparent 1px);
+    background-size: 120px 120px;
+    background-position: -1px -1px;
+    color: var(--line);
+    font: 15px/1.6 var(--mono);
+  }
+  .wrap {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding-inline: 16px;
+    padding-block: 40px 72px;
+    display: grid;
+    gap: 44px;
+  }
+  header { display: grid; gap: 10px; }
+  .eyebrow {
+    display: flex; flex-wrap: wrap; gap: 8px 24px;
+    font-size: 12px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim);
+  }
+  h1 {
+    margin: 0;
+    font: 400 clamp(64px, 13vw, 136px)/0.9 var(--display);
+    color: var(--acc);
+    letter-spacing: 0.01em;
+    text-wrap: balance;
+  }
+  .tagline { margin: 0; font: 22px/1.4 var(--hand); max-width: 34ch; text-wrap: balance; }
+
+  .player { display: grid; gap: 14px; }
+  .screen {
+    position: relative;
+    aspect-ratio: 16 / 9;
+    max-width: 100%;
+    background: var(--paper);
+    outline: 2px solid var(--line);
+    outline-offset: 6px;
+  }
+  .screen canvas { display: block; width: 100%; height: 100%; }
+  .bigplay {
+    position: absolute; right: 3%; bottom: 5%;
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 26px 14px 22px;
+    font: 400 clamp(20px, 3.4vw, 34px)/1 var(--display);
+    letter-spacing: 0.04em;
+    color: var(--ink); background: var(--acc);
+    border: 0; border-radius: 4px; cursor: pointer;
+    box-shadow: 0 0 0 4px var(--ink), 0 0 0 6px var(--acc);
+  }
+  .bigplay svg { width: 0.9em; height: 0.9em; fill: currentColor; }
+  .bigplay:hover { background: var(--hot); }
+  .bigplay:focus-visible, .ctl:focus-visible { outline: 3px solid var(--hot); outline-offset: 3px; }
+
+  .controls { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 16px; margin-top: 10px; }
+  .ctl {
+    font: 500 13px/1 var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--line); background: transparent;
+    border: 1.5px solid var(--line); border-radius: 3px;
+    padding: 10px 14px; cursor: pointer;
+  }
+  .ctl:hover { color: var(--ink); background: var(--line); }
+  .ctl:disabled { opacity: 0.4; cursor: default; background: transparent; color: var(--line); }
+  .progress { flex: 1 1 160px; height: 6px; background: var(--faint); position: relative; }
+  .progress span { position: absolute; inset: 0 auto 0 0; width: 0; background: var(--acc); }
+  .tc { font-variant-numeric: tabular-nums; color: var(--dim); font-size: 13px; }
+  .note { margin: 0; color: var(--dim); font-size: 13px; max-width: 70ch; }
+
+  h2 {
+    margin: 0 0 16px;
+    font: 400 34px/1 var(--display);
+    letter-spacing: 0.03em;
+  }
+  h2 small { font: 12px var(--mono); letter-spacing: 0.14em; color: var(--dim); margin-left: 12px; text-transform: uppercase; }
+
+  .sheet { display: grid; gap: 0; border-top: 1px solid var(--faint); }
+  .row {
+    display: grid;
+    grid-template-columns: 76px 110px 1fr;
+    gap: 16px;
+    align-items: baseline;
+    padding: 10px 8px;
+    border-bottom: 1px solid var(--faint);
+    transition: background 0.2s;
+  }
+  .row .bars { font-size: 12px; color: var(--dim); font-variant-numeric: tabular-nums; }
+  .row .chords { font-size: 14px; color: var(--acc); font-weight: 500; }
+  .row .words { font: 21px/1.35 var(--hand); }
+  .row.section .words { font: 12px var(--mono); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+  .row.on { background: rgba(255, 159, 67, 0.14); }
+  .row.on .words { color: var(--hot); }
+
+  .cast { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 16px; }
+  .card { border: 1.5px solid var(--faint); padding: 16px; display: grid; gap: 6px; align-content: start; }
+  .card .name { font: 400 26px/1 var(--display); color: var(--acc); letter-spacing: 0.03em; }
+  .card .role { font-size: 11px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+  .card p { margin: 4px 0 0; font: 18px/1.4 var(--hand); }
+
+  footer { display: flex; flex-wrap: wrap; gap: 8px 28px; font-size: 12px; color: var(--dim); letter-spacing: 0.06em; border-top: 1px solid var(--faint); padding-top: 16px; }
+
+  @media (max-width: 560px) {
+    .row { grid-template-columns: 1fr; gap: 2px; }
+    .row .bars, .row .chords { display: inline; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .row { transition: none; }
+  }
+</style>
+
+<main class="wrap">
+  <header>
+    <div class="eyebrow"><span>Main title theme</span><span>Dwg. SP-001</span><span>G major · 160 BPM · 0:40</span></div>
+    <h1>Spare Parts</h1>
+    <p class="tagline">Four inventors, one garage, and the entire history of stuff that was supposed to work.</p>
+  </header>
+
+  <section class="player" aria-label="Opening titles">
+    <div class="screen">
+      <canvas id="tv" width="1280" height="720" aria-label="Animated blueprint opening titles for Spare Parts"></canvas>
+      <button class="bigplay" id="bigplay" type="button"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M1 0l9 5-9 5z"/></svg><span id="bigplay-label">Roll the opening</span></button>
+    </div>
+    <div class="controls">
+      <button class="ctl" id="play" type="button">Play</button>
+      <button class="ctl" id="restart" type="button">Restart</button>
+      <div class="progress" aria-hidden="true"><span id="bar"></span></div>
+      <span class="tc" id="tc">0:00 / 0:40</span>
+    </div>
+    <p class="note">Sound on. Every note is synthesized live in your browser: a plucked-string guitar, bass, drums, and a formant-filter “singer” that carries the melody. The words are on screen and below.</p>
+  </section>
+
+  <section aria-labelledby="sheet-h">
+    <h2 id="sheet-h">Lead sheet <small>27 bars</small></h2>
+    <div class="sheet" id="sheet"></div>
+  </section>
+
+  <section aria-labelledby="cast-h">
+    <h2 id="cast-h">Starring</h2>
+    <div class="cast">
+      <div class="card"><span class="name">Desmond</span><span class="role">The engineer</span><p>Can fix any machine he didn’t build himself.</p></div>
+      <div class="card"><span class="name">Priya</span><span class="role">The physicist</span><p>Has read every manual ever printed. Has followed none of them.</p></div>
+      <div class="card"><span class="name">Otto</span><span class="role">The inventor</span><p>Holds eleven patents. Three of them are for things that work.</p></div>
+      <div class="card"><span class="name">June</span><span class="role">The kid</span><p>Fifteen. Owns the garage, the lease, and the only fire extinguisher.</p></div>
+    </div>
+  </section>
+
+  <footer>
+    <span>Spare Parts · main title</span>
+    <span>Key of G · 4/4 · 160 BPM</span>
+    <span>Web Audio + Canvas, no samples</span>
+  </footer>
+</main>
+
+<script>
+(() => {
+  'use strict';
+
+  /* ---------------------------------------------------------------- timing */
+  const BPM = 160, BEAT = 60 / BPM, BAR = BEAT * 4, E8 = BEAT / 2;
+  const END = 26 * BAR + 1.0;          // 40 s
+  const POSTER = 24 * BAR + 3.2;       // settled title card
+  const TAU = Math.PI * 2;
+
+  const CHORDS = ['G','D', 'G','C','G','D','Em','C','Am','D', 'G','C','G','D','Em','C','Am','D', 'C','D','Em','A','C','D', 'G','G','G'];
+
+  // [syllable, midi, eighths]. "-" joins to the next syllable, "~" joins and keeps a hyphen, null = rest.
+  const LINES = [
+    { bar: 2,  s: [['In',67],['the',67],['be-',71],['gin-',71],['ning',71],['some-',74],['bod-',72],['y',71],['whacked',72],['two',72],['rocks',76],['to-',76],['geth-',74],['er,',72],['CLACK!',76,2]] },
+    { bar: 4,  s: [['Out',74],['popped',74],['a',74],['spark,',76],['it',74],['caught',71],['a',71],['twig,',67],['and',66],['mam-',69],['moth',69],['steaks',72],['for',71],['snacks!',69,3]] },
+    { bar: 6,  s: [['Some-',71],['one',71],['rolled',71],['a',71],['log',74],['down-',71],['hill',67],['and',67],['hol-',72],['lered,',72],['“Hey,',76,2],['a',74],['wheel!”',72,3]] },
+    { bar: 8,  s: [['Lev-',72],['ers,',72],['pul-',69],['leys,',69],['wa-',72],['ter-',72],['mills,',76],['and',74],['swords',74],['of',72],['shin-',69],['ing',72],['steel!',74,4]] },
+    { bar: 10, s: [['Clock-',67],['work',67],['gears',71],['went',71],['tick-~',74],['a-~',72],['tock,',71],['the',71],['print-',72],['ing',72],['press',76],['went',74],['round,',72,4]] },
+    { bar: 12, s: [['The',74,.5],['steam',74,.5],['train',74],['huffed',76],['and',74],['puffed',71],['a-',71],['long',67,2],['with',66,.5],['a',66,.5],['ca~',69],['choo~',72],['choo',71],['sound!',69,4]] },
+    { bar: 14, s: [['Light-',71],['bulbs,',71],['wires,',74,2],['tel-',71],['e-',71],['phones,',67,2],['the',72],['ra-',72],['di-',72],['o’s',72],['first',76],['hum,',74,3]] },
+    { bar: 16, s: [['Tran-',72],['sis-',72],['tors,',72],['chips,',76,2],['and',74],['rock-',72],['et',72],['ships—',74],['look',74],['how',76],['far',78],['we’ve',79],['come!',81,3]] },
+    { bar: 18, s: [['Ev-',79],['ery',79],['bolt',79],['and',76],['blue-',79],['print',79],['that',76],['the',74],['a-',74],['ges',74],['left',78],['be-',76],['hind',74,4]] },
+    { bar: 20, s: [['Is',79],['piled',79],['up',79],['in',76],['a',79],['ga-',79],['rage',76],['with',74],['four',73],['bril-',76],['liant,',76],['bro-',79],['ken',78],['minds!',76,3]] },
+    { bar: 22, s: [['It',72],['all',74],['fits',76],['to-',79],['geth-',79],['er…',76,2],[null,0,3],['(sort',66],['of!)',62,2],[null,0,3]] },
+    { bar: 24, s: [['SPARE',79,2],['PARTS!',79,5]], harm: [[74,74],[71,71],[67,67]], shout: true },
+  ];
+
+  // Absolute timing + display text for each syllable
+  LINES.forEach(line => {
+    let cum = 0;
+    line.toks = [];
+    line.s.forEach(([raw, midi, d = 1]) => {
+      if (raw !== null) {
+        let text = raw, join = false;
+        if (raw.endsWith('-~')) { text = raw.slice(0, -2) + '-'; join = true; }
+        else if (raw.endsWith('~')) { text = raw.slice(0, -1) + '-'; join = true; }
+        else if (raw.endsWith('-')) { text = raw.slice(0, -1); join = true; }
+        line.toks.push({ raw, text, join, midi, t: line.bar * BAR + cum * E8, d: d * E8 });
+      }
+      cum += d;
+    });
+    line.text = line.toks.map(t => t.text + (t.join ? '' : ' ')).join('').trim();
+  });
+
+  /* ----------------------------------------------------------------- audio */
+  const SR = 44100;
+  const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
+  const VOICING = { G:[43,47,50,55,59,67], C:[48,52,55,60,64], D:[50,57,62,66], Em:[40,47,52,55,59,64], Am:[45,52,57,60,64], A:[45,52,57,61,64] };
+  const ROOT = { G:43, A:45, Am:45, C:36, D:38, Em:40 };
+
+  function seeded(seed) { let s = seed % 2147483647; if (s <= 0) s += 2147483646; return () => (s = s * 16807 % 2147483647) / 2147483647; }
+
+  const KS = {};
+  function ksBuf(m) {           // Karplus–Strong plucked string
+    if (KS[m]) return KS[m];
+    const len = Math.floor(SR * 3.2), b = new AudioBuffer({ length: len, sampleRate: SR, numberOfChannels: 1 });
+    const d = b.getChannelData(0), N = Math.round(SR / mtof(m)), r = seeded(m * 7919 + 13);
+    for (let i = 0; i < N; i++) d[i] = r() * 2 - 1;
+    for (let i = 1; i < N; i++) d[i] = 0.55 * d[i] + 0.45 * d[i - 1];
+    for (let i = N; i < len; i++) d[i] = 0.4988 * (d[i - N] + (i - N - 1 >= 0 ? d[i - N - 1] : 0));
+    return (KS[m] = b);
+  }
+  let NOISE = null;
+  function noiseBuf() {
+    if (NOISE) return NOISE;
+    const b = new AudioBuffer({ length: SR * 2, sampleRate: SR, numberOfChannels: 1 }), d = b.getChannelData(0), r = seeded(99);
+    for (let i = 0; i < d.length; i++) d[i] = r() * 2 - 1;
+    return (NOISE = b);
+  }
+  let IR = null;
+  function irBuf() {
+    if (IR) return IR;
+    const len = Math.floor(SR * 1.8), b = new AudioBuffer({ length: len, sampleRate: SR, numberOfChannels: 2 });
+    for (let c = 0; c < 2; c++) { const d = b.getChannelData(c), r = seeded(7 + c * 31); for (let i = 0; i < len; i++) d[i] = (r() * 2 - 1) * Math.pow(1 - i / len, 3.2); }
+    return (IR = b);
+  }
+
+  const FORMANTS = { a:[730,1100,2450], e:[520,1800,2500], i:[300,2200,2950], I:[400,1950,2600], o:[480,850,2450], u:[340,850,2300], U:[620,1200,2400] };
+  function vowelOf(txt) {
+    const w = txt.toLowerCase().replace(/[^a-z]/g, '');
+    if (/ee|ea|ie|ey$/.test(w) || w === 'y' || w === 'the') return 'i';
+    if (/igh|i[^aeiou]e|ire/.test(w)) return 'a';
+    if (/oo|ew/.test(w)) return 'u';
+    if (/ou|ow/.test(w)) return 'a';
+    if (/ai|ay|a[^aeiou]e/.test(w)) return 'e';
+    const m = w.match(/[aeiouy]/);
+    if (!m) return 'U';
+    return { a: 'a', e: 'e', i: 'I', o: 'o', u: 'U', y: 'i' }[m[0]];
+  }
+
+  function buildSong(ctx, out, T, mute = {}) {
+    const bt = (bar, e) => T + bar * BAR + e * E8;
+    const master = ctx.createGain(); master.gain.value = 0.85;
+    const comp = ctx.createDynamicsCompressor();
+    comp.threshold.value = -16; comp.ratio.value = 3.5; comp.knee.value = 8; comp.attack.value = 0.004; comp.release.value = 0.2;
+    master.connect(comp); comp.connect(out);
+    const rev = ctx.createConvolver(); rev.buffer = irBuf();
+    const revOut = ctx.createGain(); revOut.gain.value = 0.28; rev.connect(revOut); revOut.connect(master);
+    const send = (node, amt) => { const s = ctx.createGain(); s.gain.value = amt; node.connect(s); s.connect(rev); };
+    const bus = (gain, rv, pan = 0) => {
+      const g = ctx.createGain(); g.gain.value = gain;
+      const p = ctx.createStereoPanner(); p.pan.value = pan; g.connect(p); p.connect(master);
+      if (rv) send(p, rv); return g;
+    };
+
+    /* guitar: one strum → lowpass → hard left + 16 ms later hard right */
+    const gtr = ctx.createGain(); gtr.gain.value = mute.gtr ? 0 : 0.34;
+    const glp = ctx.createBiquadFilter(); glp.type = 'lowpass'; glp.frequency.value = 5200;
+    gtr.connect(glp);
+    const gl = ctx.createStereoPanner(); gl.pan.value = -0.6;
+    const gd = ctx.createDelay(0.1); gd.delayTime.value = 0.016;
+    const gr = ctx.createStereoPanner(); gr.pan.value = 0.6;
+    glp.connect(gl); glp.connect(gd); gd.connect(gr); gl.connect(master); gr.connect(master); send(glp, 0.12);
+
+    const PAT = [[0,'D',1],[2,'D',.85],[3,'U',.6],[5,'U',.6],[6,'D',.85],[7,'U',.55]];
+    const ev = [];
+    for (let b = 0; b < 23; b++) PAT.forEach(([e, dir, v]) => ev.push({ t: bt(b, e), chord: CHORDS[b], dir, v: b === 0 ? v * 0.8 : v }));
+    ev.push({ t: bt(23, 0), chord: 'D', dir: 'D', v: 1.1 });
+    ev.push({ t: bt(23, 1.6), dir: null });
+    ev.push({ t: bt(24, 0), chord: 'G', dir: 'D', v: 1.15 });
+    ev.push({ t: bt(24, 2), chord: 'G', dir: 'D', v: 1.2 });
+    ev.push({ t: bt(26, 3), dir: null });
+    ev.forEach((e, i) => {
+      if (!e.dir) return;
+      const end = ev[i + 1] ? ev[i + 1].t : e.t + 1;
+      const notes = e.dir === 'D' ? VOICING[e.chord] : VOICING[e.chord].slice(-4).reverse();
+      notes.forEach((m, k) => {
+        const st = e.t + k * (e.dir === 'D' ? 0.009 : 0.006);
+        const src = ctx.createBufferSource(); src.buffer = ksBuf(m);
+        const g = ctx.createGain();
+        g.gain.setValueAtTime(e.v * (e.dir === 'D' ? 1 : 0.75), st);
+        g.gain.setValueAtTime(e.v * (e.dir === 'D' ? 1 : 0.75), end);
+        g.gain.exponentialRampToValueAtTime(0.0008, end + (end - e.t > 1 ? 0.8 : 0.05));
+        src.connect(g); g.connect(gtr);
+        src.start(st); src.stop(end + 0.9);
+      });
+    });
+
+    /* bass */
+    const bass = bus(mute.bass ? 0 : 0.42, 0, 0);
+    function bassNote(t, m, dur, v = 1) {
+      const o = ctx.createOscillator(); o.type = 'sawtooth'; o.frequency.value = mtof(m);
+      const sub = ctx.createOscillator(); sub.type = 'sine'; sub.frequency.value = mtof(m);
+      const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.Q.value = 2;
+      f.frequency.setValueAtTime(1500, t); f.frequency.exponentialRampToValueAtTime(380, t + Math.min(0.25, dur));
+      const g = ctx.createGain();
+      g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.55 * v, t + 0.006);
+      g.gain.setTargetAtTime(0.35 * v, t + 0.02, 0.08); g.gain.setTargetAtTime(0, t + dur, 0.03);
+      const sg = ctx.createGain(); sg.gain.value = 0.9;
+      o.connect(f); sub.connect(sg); sg.connect(g); f.connect(g); g.connect(bass);
+      o.start(t); sub.start(t); o.stop(t + dur + 0.3); sub.stop(t + dur + 0.3);
+    }
+    [38, 40, 42].forEach((m, i) => bassNote(bt(1, 4 + i), m, E8 * 0.85));
+    bassNote(bt(1, 7), 43 - 12 + 12, E8 * 0.85);
+    for (let b = 2; b <= 22; b++) {
+      const r = ROOT[CHORDS[b]], ch = b >= 18;
+      const pat = ch ? [0, 0, 7, 0, 0, 0, 7, 12] : [0, 0, 0, 0, 0, 0, 0, 12];
+      pat.forEach((iv, e) => bassNote(bt(b, e), r + iv, E8 * 0.8, e % 2 ? 0.8 : 1));
+    }
+    bassNote(bt(23, 0), 38, E8 * 1.4, 1.1);
+    bassNote(bt(24, 0), 43, E8 * 1.5, 1.1);
+    bassNote(bt(24, 2), 31, BAR * 1.6, 1.2);
+
+    /* drums */
+    const drums = bus(mute.drums ? 0 : 0.7, 0.08, 0);
+    const nb = noiseBuf();
+    function noise(t, dur, type, freq, q, gain, dest = drums, decay = dur) {
+      const s = ctx.createBufferSource(); s.buffer = nb;
+      const f = ctx.createBiquadFilter(); f.type = type; f.frequency.value = freq; f.Q.value = q;
+      const g = ctx.createGain(); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.001, t + decay);
+      s.connect(f); f.connect(g); g.connect(dest); s.start(t, Math.random() * 1.5); s.stop(t + dur + 0.05);
+    }
+    function tone(t, f0, f1, dur, gain, type = 'sine', dest = drums) {
+      const o = ctx.createOscillator(); o.type = type;
+      o.frequency.setValueAtTime(f0, t); o.frequency.exponentialRampToValueAtTime(f1, t + dur * 0.6);
+      const g = ctx.createGain(); g.gain.setValueAtTime(gain, t); g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+      o.connect(g); g.connect(dest); o.start(t); o.stop(t + dur + 0.05);
+    }
+    const kick = (t, v = 1) => { tone(t, 150, 44, 0.32, 1.0 * v); noise(t, 0.01, 'lowpass', 2000, 0.7, 0.3 * v); };
+    const snare = (t, v = 1) => { noise(t, 0.2, 'highpass', 1400, 0.7, 0.55 * v); tone(t, 220, 170, 0.1, 0.35 * v, 'triangle'); };
+    const hat = (t, open = false, v = 1) => noise(t, open ? 0.3 : 0.05, 'highpass', 7500, 0.8, (open ? 0.2 : 0.16) * v);
+    const clap = t => { [0, 0.012, 0.024].forEach(d => noise(t + d, 0.03, 'bandpass', 1500, 1.4, 0.35)); noise(t + 0.036, 0.16, 'bandpass', 1500, 1.4, 0.3); };
+    const crash = (t, v = 1) => noise(t, 1.8, 'highpass', 5200, 0.6, 0.28 * v);
+    const tom = (t, f, v = 1) => tone(t, f, f * 0.62, 0.28, 0.8 * v);
+
+    for (let e = 0; e < 8; e++) hat(bt(0, e), false, 0.45);
+    kick(bt(1, 0)); [0, 1, 2, 3].forEach(e => hat(bt(1, e), false, 0.6));
+    [4, 5, 6, 6.5, 7, 7.5].forEach((e, i) => snare(bt(1, e), 0.45 + i * 0.11));
+    for (let b = 2; b <= 22; b++) {
+      const ch = b >= 18;
+      (ch ? [0, 2, 4, 6] : [0, 3, 4]).forEach(e => kick(bt(b, e)));
+      [2, 6].forEach(e => { snare(bt(b, e)); if (ch) clap(bt(b, e)); });
+      for (let e = 0; e < 8; e++) hat(bt(b, e), (ch && e % 2 === 1) || (b >= 10 && e === 7), e % 2 ? 0.75 : 1);
+      if (b === 2 || b === 10 || b === 18) crash(bt(b, 0));
+    }
+    tom(bt(9, 6), 190); tom(bt(9, 7), 140);
+    [6, 6.5, 7, 7.5].forEach((e, i) => snare(bt(17, e), 0.6 + i * 0.15));
+    kick(bt(23, 0), 1.1); crash(bt(23, 0), 0.8);
+    [[6, 210], [6.5, 170], [7, 140], [7.5, 110]].forEach(([e, f]) => { tom(bt(23, e), f); snare(bt(23, e), 0.35); });
+    kick(bt(24, 0), 1.2); crash(bt(24, 0), 1.1);
+    kick(bt(24, 2), 1.2); snare(bt(24, 2), 1.1); crash(bt(24, 2), 1.2);
+
+    /* sound effects */
+    const fx = bus(mute.fx ? 0 : 0.5, 0.2, 0);
+    noise(bt(3, 6), 0.06, 'bandpass', 1800, 3, 1.2, fx); tone(bt(3, 6), 950, 700, 0.09, 0.8, 'square', fx);          // CLACK
+    [2093, 3136, 4186].forEach((f, i) => tone(bt(14, 0) + 0.04, f, f, 0.9, 0.18 / (i + 1), 'sine', fx));              // lightbulb ding
+    [[587, 0], [740, 0.02]].forEach(([f, d]) => tone(bt(12, 6) + d, f, f * 1.01, 0.5, 0.12, 'triangle', fx));          // whistle
+    noise(bt(17, 0), 1.5, 'bandpass', 600, 1.2, 0.25, fx, 1.5);                                                         // rocket
+    tone(bt(23, 5), 180, 420, 0.45, 0.4, 'sine', fx);                                                                   // boing
+    kick(bt(25, 5.1), 0.9);                                                                                             // stamp
+
+    /* voice: sawtooth pair → three formant bandpasses, one chain per sung line */
+    const vbus = bus(mute.voice ? 0 : 1.35, 0.3, 0);
+    function consonant(t, txt) {
+      const w = txt.toLowerCase().replace(/[^a-z]/g, '');
+      if (/^(s|sh|ch|f|z|x|c[^a-z]?$)/.test(w) || /^(sh|ch|sp|st)/.test(w)) noise(t - 0.02, 0.06, 'highpass', 4200, 0.8, 0.22, vbus, 0.06);
+      else if (/^[tkpcbdg]/.test(w)) noise(t, 0.02, 'bandpass', 2600, 1.2, 0.3, vbus, 0.02);
+    }
+    function sing(line, pitchOf, gainMul, pan, withConsonants) {
+      const toks = line.toks;
+      const first = Math.max(0, T + toks[0].t - 0.05);
+      const last = T + toks[toks.length - 1].t + toks[toks.length - 1].d;
+      const oscs = [0, 7, -6].map(det => { const o = ctx.createOscillator(); o.type = 'sawtooth'; o.detune.value = det; return o; });
+      const src = ctx.createGain(); src.gain.value = 0.35;
+      oscs.forEach(o => o.connect(src));
+      const lfo = ctx.createOscillator(); lfo.frequency.value = 5.4;
+      const lfoG = ctx.createGain(); lfoG.gain.value = 14; lfo.connect(lfoG); oscs.forEach(o => lfoG.connect(o.detune));
+      const env = ctx.createGain(); env.gain.setValueAtTime(0, first);
+      const p = ctx.createStereoPanner(); p.pan.value = pan; env.connect(p); p.connect(vbus);
+      const fs = [0, 1, 2].map(i => {
+        const f = ctx.createBiquadFilter(); f.type = 'bandpass'; f.Q.value = [5, 9, 12][i];
+        const g = ctx.createGain(); g.gain.value = [1.6, 1.1, 0.55][i];
+        src.connect(f); f.connect(g); g.connect(env); return f;
+      });
+      const body = ctx.createBiquadFilter(); body.type = 'lowpass'; body.frequency.value = 700;
+      const bg = ctx.createGain(); bg.gain.value = 0.35; src.connect(body); body.connect(bg); bg.connect(env);
+      const peak = 0.9 * gainMul;
+      let prevF = null, prevEnd = -1;
+      toks.forEach((tk, i) => {
+        const st = T + tk.t, du = tk.d, f = mtof(pitchOf(i));
+        oscs.forEach(o => {
+          if (prevF && Math.abs(prevEnd - st) < 0.001) { o.frequency.setValueAtTime(prevF, st); o.frequency.exponentialRampToValueAtTime(f, st + 0.04); }
+          else o.frequency.setValueAtTime(f, st);
+        });
+        const v = FORMANTS[vowelOf(tk.raw)];
+        fs.forEach((flt, k) => { if (i === 0) flt.frequency.setValueAtTime(v[k], first); flt.frequency.setTargetAtTime(v[k], st, 0.018); });
+        env.gain.setTargetAtTime(peak, st + 0.004, 0.012);
+        const next = toks[i + 1];
+        const joined = next && Math.abs((T + next.t) - (st + du)) < 0.001;
+        env.gain.setTargetAtTime(joined ? peak * 0.3 : 0, st + du - 0.03, joined ? 0.012 : 0.03);
+        if (withConsonants) consonant(st, tk.raw);
+        prevF = f; prevEnd = st + du;
+      });
+      oscs.forEach(o => { o.start(first); o.stop(last + 0.5); });
+      lfo.start(first); lfo.stop(last + 0.5);
+    }
+    LINES.forEach(line => {
+      sing(line, i => line.toks[i].midi, line.shout ? 1.1 : 1, 0, true);
+      if (line.harm) line.harm.forEach((h, k) => sing(line, i => h[i], 0.55, [-0.5, 0.5, 0][k], false));
+    });
+    // gang "ooh" behind the last chorus
+    for (let b = 18; b <= 21; b++) {
+      VOICING[CHORDS[b]].slice(-3).forEach((m, k) => {
+        const t = bt(b, 0), o = ctx.createOscillator(); o.type = 'triangle'; o.frequency.value = mtof(m < 60 ? m + 12 : m);
+        const f = ctx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = 1100;
+        const g = ctx.createGain(); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(0.07, t + 0.15); g.gain.setTargetAtTime(0, t + BAR - 0.12, 0.05);
+        const pn = ctx.createStereoPanner(); pn.pan.value = [-0.45, 0, 0.45][k];
+        o.connect(f); f.connect(g); g.connect(pn); pn.connect(vbus); o.start(t); o.stop(t + BAR + 0.3);
+      });
+    }
+  }
+
+  function wavBase64(buf) {
+    const ch = buf.numberOfChannels, len = buf.length, data = new DataView(new ArrayBuffer(44 + len * ch * 2));
+    const w = (o, s) => { for (let i = 0; i < s.length; i++) data.setUint8(o + i, s.charCodeAt(i)); };
+    w(0, 'RIFF'); data.setUint32(4, 36 + len * ch * 2, true); w(8, 'WAVE'); w(12, 'fmt ');
+    data.setUint32(16, 16, true); data.setUint16(20, 1, true); data.setUint16(22, ch, true);
+    data.setUint32(24, buf.sampleRate, true); data.setUint32(28, buf.sampleRate * ch * 2, true);
+    data.setUint16(32, ch * 2, true); data.setUint16(34, 16, true); w(36, 'data'); data.setUint32(40, len * ch * 2, true);
+    const chans = []; for (let c = 0; c < ch; c++) chans.push(buf.getChannelData(c));
+    let o = 44; for (let i = 0; i < len; i++) for (let c = 0; c < ch; c++) { const v = Math.max(-1, Math.min(1, chans[c][i])); data.setInt16(o, v < 0 ? v * 0x8000 : v * 0x7fff, true); o += 2; }
+    const bytes = new Uint8Array(data.buffer); let bin = '';
+    for (let i = 0; i < bytes.length; i += 0x8000) bin += String.fromCharCode.apply(null, bytes.subarray(i, i + 0x8000));
+    return btoa(bin);
+  }
+
+  /* ---------------------------------------------------------------- video */
+  const cv = document.getElementById('tv'), g = cv.getContext('2d');
+  const W = 1280, H = 720;
+  const COL = { paper: '#143a63', line: '#e4eefb', dim: '#8fb2d8', acc: '#ff9f43', hot: '#ffd166', band: 'rgba(7, 26, 46, 0.88)' };
+  const FONTS = { hand: '"Architects Daughter", "Comic Sans MS", cursive', stencil: '"Saira Stencil One", Impact, sans-serif', mono: '"IBM Plex Mono", ui-monospace, monospace' };
+  const REDUCED = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (!g.roundRect) g.roundRect = function (x, y, w, h) { this.rect(x, y, w, h); };
+
+  const clamp = (x, a = 0, b = 1) => Math.max(a, Math.min(b, x));
+  const eo = x => 1 - Math.pow(1 - clamp(x), 3);
+  const ei = x => Math.pow(clamp(x), 2);
+  const eob = x => { x = clamp(x); const c1 = 1.70158, c3 = c1 + 1; return 1 + c3 * Math.pow(x - 1, 3) + c1 * Math.pow(x - 1, 2); };
+  const rnd = i => { const x = Math.sin(i * 127.1 + 311.7) * 43758.5453; return x - Math.floor(x); };
+
+  function S(w = 4, c = COL.line) { g.lineWidth = w; g.strokeStyle = c; }
+  function ln(a, b, c, d) { g.beginPath(); g.moveTo(a, b); g.lineTo(c, d); g.stroke(); }
+  function pl(pts, close) { g.beginPath(); pts.forEach((p, i) => i ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1])); if (close) g.closePath(); g.stroke(); }
+  function ci(x, y, r) { g.beginPath(); g.arc(x, y, r, 0, TAU); g.stroke(); }
+  function cf(x, y, r, c) { g.save(); g.fillStyle = c; g.beginPath(); g.arc(x, y, r, 0, TAU); g.fill(); g.restore(); }
+  function fs_() { g.save(); g.fillStyle = COL.paper; g.fill(); g.restore(); g.stroke(); }
+  function txt(t, x, y, size, font = 'hand', col = COL.line, align = 'center') {
+    g.save(); g.font = `${size}px ${FONTS[font]}`; g.fillStyle = col; g.textAlign = align; g.textBaseline = 'middle'; g.fillText(t, x, y); g.restore();
+  }
+  function star(x, y, r, c) {
+    g.save(); g.fillStyle = c; g.beginPath();
+    for (let i = 0; i < 8; i++) { const a = i * TAU / 8 - Math.PI / 2, rr = i % 2 ? r * 0.28 : r; g.lineTo(x + Math.cos(a) * rr, y + Math.sin(a) * rr); }
+    g.closePath(); g.fill(); g.restore();
+  }
+  function dimLine(x1, y1, x2, y2, label) {
+    g.save(); S(1.5, COL.dim);
+    ln(x1, y1, x2, y2);
+    const a = Math.atan2(y2 - y1, x2 - x1);
+    const head = (x, y, ang) => { ln(x, y, x - 12 * Math.cos(ang - 0.4), y - 12 * Math.sin(ang - 0.4)); ln(x, y, x - 12 * Math.cos(ang + 0.4), y - 12 * Math.sin(ang + 0.4)); };
+    head(x1, y1, a + Math.PI); head(x2, y2, a);
+    g.translate((x1 + x2) / 2, (y1 + y2) / 2); g.rotate(Math.abs(a) > Math.PI / 2 ? a + Math.PI : a);
+    const w = (() => { g.font = `15px ${FONTS.mono}`; return g.measureText(label).width + 14; })();
+    g.fillStyle = COL.paper; g.fillRect(-w / 2, -10, w, 20);
+    txt(label, 0, 0, 15, 'mono', COL.dim);
+    g.restore();
+  }
+  function gear(x, y, r, n, rot, th = r * 0.2, hole = r * 0.3) {
+    g.beginPath();
+    for (let i = 0; i < n; i++) {
+      const w = TAU / n, a = rot + i * w;
+      [[0, r], [0.12, r + th], [0.38, r + th], [0.5, r], [0.75, r]].forEach(([f, rr], j) => {
+        const ang = a + f * w, px = x + Math.cos(ang) * rr, py = y + Math.sin(ang) * rr;
+        (i || j) ? g.lineTo(px, py) : g.moveTo(px, py);
+      });
+    }
+    g.closePath(); fs_();
+    ci(x, y, r * 0.72); ci(x, y, hole);
+    for (let k = 0; k < 4; k++) { const a = rot + k * TAU / 4; ln(x + Math.cos(a) * hole, y + Math.sin(a) * hole, x + Math.cos(a) * r * 0.72, y + Math.sin(a) * r * 0.72); }
+  }
+  const meshPhase = (al, n1, n2) => al + Math.PI - 0.75 * TAU / n2 + (n1 / n2) * (al - 0.25 * TAU / n1);
+  function rock(x, y, r, rot, seed) {
+    g.save(); g.translate(x, y); g.rotate(rot); g.beginPath();
+    for (let i = 0; i < 10; i++) { const a = i * TAU / 10, rr = r * (0.82 + 0.28 * rnd(seed * 17 + i)); const px = Math.cos(a) * rr, py = Math.sin(a) * rr * 0.86; i ? g.lineTo(px, py) : g.moveTo(px, py); }
+    g.closePath(); fs_();
+    const lw = g.lineWidth; g.lineWidth = Math.max(1.5, lw * 0.55);
+    ln(-r * 0.4, -r * 0.2, -r * 0.08, r * 0.12); ln(r * 0.2, -r * 0.4, r * 0.42, -r * 0.16);
+    g.lineWidth = lw; g.restore();
+  }
+  function flame(x, y, h, w, t) {
+    const sway = Math.sin(t * 11) * w * 0.15;
+    const path = (hh, ww) => { g.beginPath(); g.moveTo(x, y); g.bezierCurveTo(x - ww, y - hh * 0.25, x - ww * 0.45 + sway, y - hh * 0.7, x + sway * 1.5, y - hh); g.bezierCurveTo(x + ww * 0.45 + sway, y - hh * 0.7, x + ww, y - hh * 0.25, x, y); g.closePath(); };
+    g.save(); path(h, w); g.fillStyle = COL.acc; g.fill(); g.stroke();
+    path(h * 0.55, w * 0.5); g.fillStyle = COL.hot; g.fill(); g.restore();
+  }
+  function cloud(x, y, r) {
+    const cs = [[-0.55, 0.1, 0.55], [0, -0.25, 0.7], [0.55, 0.05, 0.55], [0.05, 0.3, 0.5]];
+    cs.forEach(([dx, dy, rr]) => ci(x + dx * r, y + dy * r, rr * r));
+    g.save(); g.fillStyle = COL.paper;
+    cs.forEach(([dx, dy, rr]) => { g.beginPath(); g.arc(x + dx * r, y + dy * r, Math.max(0, rr * r - g.lineWidth * 0.5 - 0.5), 0, TAU); g.fill(); });
+    g.restore();
+  }
+  function hex(x, y, r) { g.beginPath(); for (let i = 0; i < 6; i++) { const a = i * TAU / 6; g.lineTo(x + Math.cos(a) * r, y + Math.sin(a) * r); } g.closePath(); }
+  function tube(build, outer, inner) {
+    const p = new Path2D(); build(p);
+    g.save(); g.lineCap = 'round'; g.lineJoin = 'round';
+    g.lineWidth = outer; g.strokeStyle = COL.line; g.stroke(p);
+    g.lineWidth = inner; g.strokeStyle = COL.paper; g.stroke(p); g.restore();
+  }
+  const bez = (a, b, c, d, u) => { const v = 1 - u; return [0, 1].map(k => v * v * v * a[k] + 3 * v * v * u * b[k] + 3 * v * u * u * c[k] + u * u * u * d[k]); };
+  const quad = (a, b, c, u) => [0, 1].map(k => (1 - u) * (1 - u) * a[k] + 2 * (1 - u) * u * b[k] + u * u * c[k]);
+  const quadD = (a, b, c, u) => [0, 1].map(k => 2 * (1 - u) * (b[k] - a[k]) + 2 * u * (c[k] - b[k]));
+  function along(pts, u) {
+    const seg = []; let tot = 0;
+    for (let i = 1; i < pts.length; i++) { const l = Math.hypot(pts[i][0] - pts[i - 1][0], pts[i][1] - pts[i - 1][1]); seg.push(l); tot += l; }
+    let d = u * tot;
+    for (let i = 0; i < seg.length; i++) { if (d <= seg[i]) { const f = d / seg[i]; return [pts[i][0] + (pts[i + 1][0] - pts[i][0]) * f, pts[i][1] + (pts[i + 1][1] - pts[i][1]) * f]; } d -= seg[i]; }
+    return pts[pts.length - 1];
+  }
+
+  /* ---- props */
+  function stick(x, y, sc, armL, armR) {
+    g.save(); g.translate(x, y); g.scale(sc, sc); S(4 / sc);
+    ln(0, -80, -24, 0); ln(0, -80, 24, 0); ln(0, -80, 0, -150);
+    ln(0, -138, armL[0], -138 + armL[1]); ln(0, -138, armR[0], -138 + armR[1]);
+    g.beginPath(); g.arc(0, -178, 26, 0, TAU); fs_();
+    cf(-9, -182, 3, COL.line); cf(9, -182, 3, COL.line);
+    g.beginPath(); g.arc(0, -172, 11, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke();
+    g.restore();
+  }
+  function caveman(x, y, bob) {
+    S(4);
+    ln(x - 18, y - 95, x - 34, y); ln(x + 18, y - 95, x + 34, y);
+    g.beginPath(); g.moveTo(x - 30, y - 190); g.lineTo(x + 30, y - 190); g.lineTo(x + 42, y - 95);
+    for (let k = 1; k <= 6; k++) g.lineTo(x + 42 - 14 * k, k % 2 ? y - 83 : y - 95);
+    g.closePath(); fs_();
+    ln(x - 26, y - 180, x - 62, y - 118);
+    ln(x + 26, y - 180, x + 72, y - 236 - bob);
+    rock(x + 84, y - 258 - bob, 26, 0.3, 5);
+    g.beginPath(); for (let k = 0; k <= 10; k++) { const a = Math.PI + 0.15 + k * (Math.PI - 0.3) / 10, rr = k % 2 ? 50 : 36; g.lineTo(x + Math.cos(a) * rr, y - 228 + Math.sin(a) * rr); } g.stroke();
+    g.beginPath(); g.arc(x, y - 228, 36, 0, TAU); fs_();
+    S(6); ln(x - 20, y - 240, x + 20, y - 240);
+    cf(x - 11, y - 227, 4, COL.line); cf(x + 11, y - 227, 4, COL.line);
+    S(3); ln(x - 10, y - 208, x + 10, y - 208);
+  }
+  function mammoth(x, y, t) {
+    g.save(); g.translate(x, y);
+    const sw = Math.sin(t * TAU * 1.3) * 12;
+    S(4);
+    [[-70, sw], [90, -sw], [-30, -sw], [130, sw]].forEach(([lx, o]) => { g.beginPath(); g.rect(lx - 20 + o * 0.3, 40, 40, 150); fs_(); });
+    g.beginPath(); g.ellipse(30, -5, 170, 115, 0, 0, TAU); fs_();
+    S(2.5); for (let i = 0; i < 8; i++) { const a = -2.7 + i * 0.3, bx = 30 + Math.cos(a) * 170, by = -5 + Math.sin(a) * 115; ln(bx, by, bx + Math.cos(a) * 18, by + Math.sin(a) * 18 - 4); }
+    S(4); g.beginPath(); g.arc(-130, -50, 78, 0, TAU); fs_();
+    g.beginPath(); g.ellipse(-92, -38, 34, 50, 0.2, 0, TAU); fs_();
+    tube(p => { p.moveTo(-188, -20); p.bezierCurveTo(-240, 40, -232, 140, -200 + Math.sin(t * 6) * 8, 168); p.quadraticCurveTo(-186, 186, -172, 166); }, 36, 28);
+    S(5); g.beginPath(); g.moveTo(-168, 18); g.quadraticCurveTo(-250, 92, -284, 20); g.stroke();
+    cf(-160, -70, 5, COL.line);
+    g.restore();
+  }
+  function wheel(cx, cy, R, rot) {
+    g.beginPath(); g.arc(cx, cy, R, 0, TAU); fs_(); ci(cx, cy, R * 0.8);
+    for (let i = 0; i < 6; i++) { const a = rot + i * TAU / 6; ln(cx + Math.cos(a) * R * 0.84, cy + Math.sin(a) * R * 0.84, cx + Math.cos(a) * R * 0.96, cy + Math.sin(a) * R * 0.96); }
+    for (let i = 0; i < 3; i++) { const a = rot + i * TAU / 3 + 0.5; ln(cx + Math.cos(a) * R * 0.26, cy + Math.sin(a) * R * 0.26, cx + Math.cos(a + 0.12) * R * 0.58, cy + Math.sin(a + 0.12) * R * 0.58); }
+    g.beginPath(); g.arc(cx, cy, R * 0.2, 0, TAU); fs_(); ci(cx, cy, R * 0.07);
+  }
+  function bubble(x, y, w, h, tx) {
+    g.beginPath(); g.roundRect(x, y, w, h, 26); fs_();
+    const by = y + h;
+    g.save(); g.fillStyle = COL.paper; g.beginPath(); g.moveTo(tx - 16, by - 3); g.lineTo(tx - 44, by + 48); g.lineTo(tx + 16, by - 3); g.closePath(); g.fill(); g.restore();
+    g.beginPath(); g.moveTo(tx - 16, by); g.lineTo(tx - 44, by + 48); g.lineTo(tx + 16, by); g.stroke();
+  }
+  function bulb(x, y, sc, on) {
+    g.save(); g.translate(x, y); g.scale(sc, sc); g.lineWidth = 4 / sc;
+    const R = 120;
+    if (on) { const gr = g.createRadialGradient(0, 0, 20, 0, 0, 290); gr.addColorStop(0, 'rgba(255, 209, 102, .5)'); gr.addColorStop(1, 'rgba(255, 209, 102, 0)'); g.save(); g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 290, 0, TAU); g.fill(); g.restore(); }
+    g.beginPath(); g.arc(0, 0, R, Math.PI * 0.75, Math.PI * 0.25);
+    g.bezierCurveTo(R * 0.62, R * 1.05, R * 0.4, R * 1.15, R * 0.4, R * 1.3); g.lineTo(-R * 0.4, R * 1.3);
+    g.bezierCurveTo(-R * 0.4, R * 1.15, -R * 0.62, R * 1.05, -R * 0.707, R * 0.707); g.closePath();
+    g.save(); g.fillStyle = on ? '#8a7a4a' : COL.paper; g.fill(); if (on) { g.fillStyle = 'rgba(255, 209, 102, .55)'; g.fill(); } g.restore(); g.stroke();
+    g.save(); g.lineWidth = 3 / sc; if (on) g.strokeStyle = COL.hot;
+    ln(-20, R * 1.3, -14, 20); ln(20, R * 1.3, 14, 20);
+    g.beginPath(); g.moveTo(-14, 20); for (let i = 1; i <= 6; i++) g.lineTo(-14 + i * 28 / 6, i % 2 ? 4 : 20); g.stroke(); g.restore();
+    g.beginPath(); g.rect(-R * 0.42, R * 1.3, R * 0.84, R * 0.55); fs_();
+    for (let i = 1; i < 4; i++) ln(-R * 0.42, R * 1.3 + i * R * 0.137 + 4, R * 0.42, R * 1.3 + i * R * 0.137 - 4);
+    g.beginPath(); g.moveTo(-R * 0.2, R * 1.85); g.lineTo(R * 0.2, R * 1.85); g.lineTo(R * 0.08, R * 2.0); g.lineTo(-R * 0.08, R * 2.0); g.closePath(); fs_();
+    if (on) { g.save(); g.strokeStyle = COL.hot; g.lineWidth = 5 / sc; for (let i = 0; i < 9; i++) { const a = -Math.PI * 0.95 + i * Math.PI * 0.9 / 8; ln(Math.cos(a) * (R + 26), Math.sin(a) * (R + 26), Math.cos(a) * (R + 62), Math.sin(a) * (R + 62)); } g.restore(); }
+    g.restore();
+  }
+  function phone(x, ring, s) {
+    const jx = ring ? Math.sin(s * 90) * 4 : 0;
+    g.save(); g.translate(x + jx, 0); S(4);
+    g.beginPath(); g.ellipse(0, 478, 72, 18, 0, 0, TAU); fs_();
+    g.beginPath(); g.rect(-12, 240, 24, 232); fs_();
+    g.beginPath(); g.moveTo(-14, 240); g.lineTo(-40, 198); g.lineTo(40, 198); g.lineTo(14, 240); g.closePath(); fs_();
+    g.beginPath(); g.ellipse(0, 196, 40, 12, 0, 0, TAU); fs_();
+    ln(12, 282, 70, 262);
+    g.save(); g.translate(72, 262); g.rotate(ring ? Math.sin(s * 60) * 0.15 : 0.05);
+    g.beginPath(); g.rect(-11, 6, 22, 90); fs_(); g.beginPath(); g.ellipse(0, 100, 22, 9, 0, 0, TAU); fs_(); g.restore();
+    S(2.5); g.beginPath(); g.moveTo(72, 362); g.bezierCurveTo(116, 420, 84, 470, 44, 470); g.stroke();
+    g.restore();
+    if (ring) {
+      S(3, COL.acc);
+      for (let k = 0; k < 3; k++) { g.beginPath(); g.arc(x, 230, 80 + k * 22, -Math.PI * 0.35, -Math.PI * 0.1); g.stroke(); g.beginPath(); g.arc(x, 230, 80 + k * 22, Math.PI * 1.1, Math.PI * 1.35); g.stroke(); }
+      txt('RRRING!', x + 160, 150, 42, 'hand', COL.acc);
+    }
+  }
+  function rocket(x, y, sc, ang, s) {
+    g.save(); g.translate(x, y); g.rotate(ang); g.scale(sc, sc); g.lineWidth = 4 / sc;
+    const fl = 70 + Math.sin(s * 40) * 14;
+    g.save(); g.beginPath(); g.moveTo(-22, 70); g.quadraticCurveTo(0, 70 + fl * 1.4, 22, 70); g.closePath(); g.fillStyle = COL.acc; g.fill();
+    g.beginPath(); g.moveTo(-11, 70); g.quadraticCurveTo(0, 70 + fl * 0.8, 11, 70); g.closePath(); g.fillStyle = COL.hot; g.fill(); g.restore();
+    g.beginPath(); g.moveTo(-30, 10); g.lineTo(-64, 80); g.lineTo(-26, 62); g.closePath(); fs_();
+    g.beginPath(); g.moveTo(30, 10); g.lineTo(64, 80); g.lineTo(26, 62); g.closePath(); fs_();
+    g.beginPath(); g.moveTo(0, -120); g.bezierCurveTo(40, -80, 36, 20, 28, 70); g.lineTo(-28, 70); g.bezierCurveTo(-36, 20, -40, -80, 0, -120); g.closePath(); fs_();
+    ln(-31, -46, 31, -46);
+    g.beginPath(); g.arc(0, -10, 14, 0, TAU); fs_();
+    g.restore();
+  }
+  function hardware(type, x, y, sz, rot) {
+    g.save(); g.translate(x, y); g.rotate(rot); S(3.5);
+    if (type === 0) { hex(0, 0, sz); fs_(); ci(0, 0, sz * 0.45); }
+    else if (type === 1) {
+      g.beginPath(); g.rect(-sz * 0.3, -sz * 0.8, sz * 0.6, sz * 1.9); fs_();
+      for (let i = 0; i < 5; i++) ln(-sz * 0.3, -sz * 0.4 + i * sz * 0.3, sz * 0.3, -sz * 0.3 + i * sz * 0.3);
+      g.beginPath(); g.rect(-sz * 0.65, -sz * 1.25, sz * 1.3, sz * 0.5); fs_();
+    } else if (type === 2) { g.beginPath(); g.arc(0, 0, sz, 0, TAU); fs_(); ci(0, 0, sz * 0.45); }
+    else {
+      g.beginPath(); g.moveTo(-sz * 0.3, -sz * 0.5); g.lineTo(0, sz * 1.3); g.lineTo(sz * 0.3, -sz * 0.5); g.closePath(); fs_();
+      g.beginPath(); g.arc(0, -sz * 0.5, sz * 0.6, Math.PI, 0); g.closePath(); fs_(); ln(0, -sz * 1.05, 0, -sz * 0.6);
+    }
+    g.restore();
+  }
+  function icon(k, hl) {
+    const c = hl ? COL.acc : COL.line; S(3.5, c);
+    if (k === 'rock') rock(0, 10, 42, 0.3, 11);
+    if (k === 'wheel') { g.beginPath(); g.arc(0, 0, 48, 0, TAU); fs_(); ci(0, 0, 36); g.beginPath(); g.arc(0, 0, 10, 0, TAU); fs_(); }
+    if (k === 'press') { g.beginPath(); g.rect(-38, -50, 76, 100); fs_(); S(5, c); ln(-26, -32, 26, -32); S(2.5, c); for (let i = 1; i < 6; i++) ln(-26, -26 + i * 13, i % 3 === 2 ? 8 : 26, -26 + i * 13); }
+    if (k === 'train') { g.beginPath(); g.rect(-50, -18, 84, 40); fs_(); g.beginPath(); g.rect(-50, -48, 32, 30); fs_(); g.beginPath(); g.rect(16, -40, 12, 22); fs_(); [[-30, 30], [14, 30]].forEach(([wx, wy]) => { g.beginPath(); g.arc(wx, wy, 13, 0, TAU); fs_(); }); }
+    if (k === 'bulb') bulb(0, -16, 0.3, hl);
+    if (k === 'rocket') rocket(0, 0, 0.42, 0.5, 0);
+    if (k === 'garage') { g.beginPath(); g.moveTo(-52, 50); g.lineTo(-52, -10); g.lineTo(0, -52); g.lineTo(52, -10); g.lineTo(52, 50); g.closePath(); fs_(); g.beginPath(); g.rect(-32, 2, 64, 48); g.stroke(); for (let i = 1; i < 4; i++) ln(-32, 2 + i * 12, 32, 2 + i * 12); }
+  }
+
+  /* ---- the four leads, drawn feet-at-origin */
+  function face(y, r) { cf(-r * 0.32, y, 3.8, COL.line); cf(r * 0.32, y, 3.8, COL.line); g.beginPath(); g.arc(0, y + 8, r * 0.36, 0.15 * Math.PI, 0.85 * Math.PI); g.stroke(); }
+  function desmond() {
+    S(4);
+    ln(-20, -120, -24, 0); ln(20, -120, 24, 0); ln(-24, 0, -44, 0); ln(24, 0, 44, 0);
+    g.beginPath(); g.moveTo(-40, -290); g.lineTo(40, -290); g.lineTo(58, -115); g.lineTo(-58, -115); g.closePath(); fs_();
+    ln(-16, -290, 0, -236); ln(16, -290, 0, -236);
+    S(3); g.beginPath(); g.rect(16, -232, 26, 30); g.stroke();
+    S(3, COL.acc); ln(22, -232, 22, -248); ln(33, -232, 35, -246);
+    S(4); ln(-40, -282, -66, -176); ln(40, -282, 86, -236); ln(86, -236, 104, -294);
+    S(6); ln(106, -290, 112, -338); S(4); g.beginPath(); g.arc(114, -354, 16, 0.75 * Math.PI, 2.25 * Math.PI); g.stroke();
+    S(4); for (let i = 0; i < 5; i++) ln(-24 + i * 12, -360, -28 + i * 13, -378);
+    g.beginPath(); g.arc(0, -330, 34, 0, TAU); fs_();
+    S(3); g.save(); g.fillStyle = 'rgba(255, 159, 67, .35)'; [-13, 13].forEach(dx => { g.beginPath(); g.arc(dx, -352, 11, 0, TAU); g.fill(); g.stroke(); }); g.restore();
+    ln(-34, -350, -24, -352); ln(24, -352, 34, -350);
+    face(-326, 34);
+  }
+  function priya() {
+    S(4);
+    ln(-18, -110, -20, 0); ln(18, -110, 20, 0); ln(-20, 0, -38, 0); ln(20, 0, 38, 0);
+    g.beginPath(); g.moveTo(-36, -244); g.lineTo(36, -244); g.lineTo(44, -110); g.lineTo(-44, -110); g.closePath(); fs_();
+    S(2.5); ln(-43, -124, 43, -124);
+    S(4); ln(36, -236, 64, -160);
+    ln(-36, -236, -54, -176); ln(-54, -176, -18, -180);
+    g.beginPath(); g.rect(-34, -218, 54, 66); fs_(); S(2); for (let i = 0; i < 4; i++) ln(-26, -196 + i * 11, 10, -196 + i * 11); S(4, COL.acc); ln(-16, -220, 6, -220);
+    S(3.5); for (let k = 0; k <= 8; k++) { const a = Math.PI + k * Math.PI / 8; g.beginPath(); g.arc(Math.cos(a) * 36, -278 + Math.sin(a) * 36, 12, 0, TAU); fs_(); }
+    g.beginPath(); g.arc(-36, -262, 12, 0, TAU); fs_(); g.beginPath(); g.arc(36, -262, 12, 0, TAU); fs_();
+    S(4); g.beginPath(); g.arc(0, -278, 34, 0, TAU); fs_();
+    g.save(); g.fillStyle = 'rgba(255, 209, 102, .28)'; g.beginPath(); g.moveTo(10, -304); g.lineTo(150, -360); g.lineTo(150, -250); g.closePath(); g.fill(); g.restore();
+    S(3); ln(-31, -298, 31, -298); g.beginPath(); g.rect(-10, -308, 20, 16); fs_();
+    S(4, COL.acc); ln(30, -300, 44, -268);
+    S(4); face(-274, 34);
+  }
+  function otto() {
+    S(4);
+    ln(-22, -60, -24, 0); ln(22, -60, 24, 0); ln(-24, 0, -42, 0); ln(24, 0, 42, 0);
+    ln(-52, -150, -80, -92); ln(52, -150, 84, -100);
+    S(5, COL.acc); ln(86, -104, 108, -140); S(4); g.beginPath(); g.rect(80, -104, 12, 20); fs_();
+    g.beginPath(); g.ellipse(0, -118, 58, 72, 0, 0, TAU); fs_();
+    S(3); ln(-26, -184, -18, -56); ln(26, -184, 18, -56); cf(-19, -70, 4, COL.line); cf(19, -70, 4, COL.line);
+    S(4); g.beginPath(); g.arc(0, -222, 40, 0, TAU); fs_();
+    ln(-40, -236, -54, -246); ln(-41, -224, -56, -226); ln(40, -236, 54, -246); ln(41, -224, 56, -226);
+    g.beginPath(); g.moveTo(-38, -212); g.quadraticCurveTo(-48, -150, 0, -138); g.quadraticCurveTo(48, -150, 38, -212);
+    g.quadraticCurveTo(20, -196, 0, -198); g.quadraticCurveTo(-20, -196, -38, -212); g.closePath(); fs_();
+    S(2); for (let i = 0; i < 4; i++) { g.beginPath(); g.arc(-18 + i * 12, -170 + (i % 2) * 8, 5, 0, Math.PI); g.stroke(); }
+    S(3); ci(-15, -230, 12); ci(15, -230, 12); ln(-3, -230, 3, -230);
+    cf(-15, -230, 3.5, COL.line); cf(15, -230, 3.5, COL.line);
+  }
+  function june(s) {
+    S(4);
+    ln(-16, -110, -18, 0); ln(16, -110, 18, 0); ln(-18, 0, -34, 0); ln(18, 0, 34, 0);
+    g.beginPath(); g.moveTo(-34, -236); g.lineTo(34, -236); g.lineTo(38, -110); g.lineTo(-38, -110); g.closePath(); fs_();
+    S(3); g.beginPath(); g.rect(-22, -206, 44, 50); g.stroke(); ln(-22, -206, -28, -236); ln(22, -206, 28, -236); g.beginPath(); g.rect(-10, -196, 20, 16); g.stroke();
+    S(4); ln(-34, -228, -64, -268); g.beginPath(); g.arc(-66, -280, 10, 0, TAU); fs_(); ln(-66, -290, -66, -302);
+    ln(34, -228, 72, -186); g.beginPath(); g.rect(66, -196, 36, 16); fs_();
+    flame(116, -188, 34, 9, s);
+    tube(p => { p.moveTo(24, -290); p.quadraticCurveTo(66, -300, 62, -238); }, 22, 14);
+    g.beginPath(); g.arc(0, -270, 32, 0, TAU); fs_();
+    g.beginPath(); g.rect(-36, -334, 72, 34); fs_(); S(5, COL.acc); ln(-24, -318, 24, -318);
+    S(4); face(-268, 32);
+  }
+
+  /* ---- the contraption in bars 23–24 */
+  function machine(prog, o) {
+    const jit = o.shake ? o.shake : 0;
+    const sx = jit ? (rnd(Math.floor(o.t * 40)) - 0.5) * jit : 0, sy = jit ? (rnd(Math.floor(o.t * 40) + 9) - 0.5) * jit : 0;
+    g.save(); g.translate(sx, sy);
+    const P = (i, dx, dy, fn) => { const q = prog(i); if (q <= 0) return; g.save(); g.translate((1 - q) * dx, (1 - q) * dy); fn(); g.restore(); };
+    P(0, 0, 320, () => { S(4); g.beginPath(); g.rect(420, 470, 440, 32); fs_(); [462, 818].forEach(x => { g.beginPath(); g.arc(x, 516, 15, 0, TAU); fs_(); }); });
+    P(6, -500, -400, () => {
+      S(3.5); const top = 470 - 150 * o.spring; g.beginPath(); g.moveTo(460, 470);
+      for (let k = 1; k <= 10; k++) g.lineTo(460 + (k % 2 ? 16 : -16), 470 - (470 - top) * k / 10);
+      g.lineTo(460, top); g.stroke(); S(4); g.beginPath(); g.arc(460, top - 16, 16, 0, TAU); fs_();
+    });
+    P(1, -700, -100, () => { S(4); gear(540 + (o.wobble ? Math.sin(o.t * 30) * 6 : 0), 398, 64, 12, o.spin, 14, 16); });
+    P(3, 0, -500, () => { tube(p => { p.moveTo(600, 396); p.lineTo(600, 262); p.lineTo(700, 262); }, 24, 16); });
+    P(2, 700, 0, () => { S(4); g.beginPath(); g.arc(760, 424, 44, 0, TAU); fs_(); for (let k = 0; k < 3; k++) { const a = -o.spin * 1.4 + k * TAU / 3; ln(760, 424, 760 + Math.cos(a) * 40, 424 + Math.sin(a) * 40); } g.beginPath(); g.arc(760, 424, 9, 0, TAU); fs_(); });
+    P(5, 600, -200, () => { S(4); g.beginPath(); g.rect(820, 300, 34, 170); fs_(); g.beginPath(); g.moveTo(808, 300); g.lineTo(866, 300); g.lineTo(882, 266); g.lineTo(792, 266); g.closePath(); fs_(); });
+    P(4, 500, -400, () => { S(4); bulb(720, 190, 0.32, o.bulbOn); });
+    g.restore();
+  }
+
+  /* ---- scenes, one per bar: (p = 0..1 through the bar, s = song time, lt = seconds into the bar) */
+  const FIG = ['FIG. 0 — A CIRCLE (PROMISING)', 'FIG. 0A — THE CIRCLE GETS TEETH', 'FIG. 1 — SOMEBODY, c. 10,000 BC', 'FIG. 2 — ROCK-ON-ROCK INTERFACE',
+    'FIG. 3 — FIRE, VERSION 1.0', 'FIG. 4 — FIRST RECORDED SNACK', 'FIG. 5 — LOG, ROLLING (UNPLANNED)', 'FIG. 6 — THE WHEEL, c. 3500 BC',
+    'FIG. 7 — LET THE WATER DO IT', 'FIG. 8 — SHINY AND POINTY', 'FIG. 9 — ESCAPEMENT, TICK-A-TOCK', 'FIG. 10 — ROTARY PRESS, 1843',
+    'FIG. 11 — STEAM LOCOMOTIVE', 'FIG. 12 — ACOUSTIC OUTPUT', 'FIG. 13 — BULB + TELEPHONE, 1879', 'FIG. 14 — RADIO (HUMMING)',
+    'FIG. 15 — SILICON, VERY SMALL', 'FIG. 16 — EARTH TO MOON, 1969', 'FIG. 17 — MISC. HARDWARE', 'FIG. 18 — EVERYTHING SO FAR',
+    'FIG. 19 — ONE (1) GARAGE', 'FIG. 20 — PERSONNEL', 'FIG. 21 — FINAL ASSEMBLY', 'FIG. 21B — REVISED ASSEMBLY'];
+
+  const SC = [];
+  SC[0] = (p, s, lt) => {
+    const cx = 640, cy = 320, R = 150, a = eo(p / 0.85) * TAU, ang = -Math.PI / 2 + a;
+    S(1.5, COL.dim); ln(cx - 24, cy, cx + 24, cy); ln(cx, cy - 24, cx, cy + 24);
+    S(5); g.beginPath(); g.arc(cx, cy, R, -Math.PI / 2, ang); g.stroke();
+    const px = cx + R * Math.cos(ang), py = cy + R * Math.sin(ang), hx = (cx + px) / 2, hy = Math.min(cy, py) - 110;
+    S(4); ln(cx, cy, hx, hy); ln(hx, hy, px, py); ln(hx, hy, hx, hy - 40);
+    S(3); g.beginPath(); g.arc(hx, hy, 10, 0, TAU); fs_(); cf(px, py, 6, COL.acc);
+    const b = Math.min(3, Math.floor(p * 4)), bf = p * 4 - b;
+    g.save(); g.globalAlpha = 1 - bf * 0.7; txt(String(b + 1), cx, cy + 6, 110 + 50 * (1 - eo(bf / 0.35)), 'stencil', COL.acc); g.restore();
+    if (p > 0.4) dimLine(cx - R, cy + R + 38, cx + R, cy + R + 38, 'Ø 300');
+  };
+  SC[1] = (p, s) => {
+    const th = eo(p / 0.45) * 30, sc = 1 + ei((p - 0.55) / 0.45) * 0.7;
+    g.save(); g.translate(640, 320); g.scale(sc, sc); S(5 / sc); gear(0, 0, 150, 14, p * 2.4, th, 38); g.restore();
+    [[-310, -120, 52, 8], [310, -110, 42, 7], [270, 150, 60, 9]].forEach(([dx, dy, r, n], i) => {
+      const q = eob((p - 0.25 - i * 0.2) / 0.12); if (q <= 0) return;
+      g.save(); g.translate(640 + dx, 320 + dy); g.scale(q, q); S(4); gear(0, 0, r, n, -p * 4 + i, r * 0.22, r * 0.3); g.restore();
+    });
+  };
+  SC[2] = (p, s) => {
+    S(5); g.beginPath(); g.moveTo(110, 560); g.bezierCurveTo(130, 90, 1150, 90, 1170, 560); g.stroke();
+    S(2, COL.dim); [[210, 330, 250, 318], [290, 220, 330, 212], [980, 210, 1020, 222], [1060, 330, 1088, 346], [180, 460, 212, 452]].forEach(l => ln(...l));
+    S(5); ln(60, 560, 1220, 560);
+    S(2.5, COL.dim);
+    for (let gi = 0; gi < 3; gi++) { const x0 = 820 + gi * 70; const n = gi < 2 ? 5 : 2; for (let k = 0; k < Math.min(4, n); k++) ln(x0 + k * 11, 250, x0 + k * 11, 300); if (n === 5) ln(x0 - 6, 290, x0 + 40, 258); }
+    txt('DAYS WITHOUT FIRE', 818, 326, 14, 'mono', COL.dim, 'left');
+    caveman(560, 560, Math.abs(Math.sin(p * Math.PI * 4)) * 26);
+  };
+  SC[3] = (p, s) => {
+    const ti = 0.75, k = ei(p / ti), q = clamp((p - ti) / 0.25);
+    const lx = p < ti ? 160 + 385 * k : 545 - eo(q) * 40, rx = p < ti ? 1120 - 385 * k : 735 + eo(q) * 40;
+    if (p < ti) { S(2.5, COL.dim); for (let i = 0; i < 3; i++) { const y = 290 + i * 40; ln(lx - 110, y, lx - 170 - k * 120, y); ln(rx + 110, y, rx + 170 + k * 120, y); } }
+    else {
+      const e = eo(q / 0.6); S(5, COL.acc);
+      for (let i = 0; i < 14; i++) { const a = i * TAU / 14 + 0.2; ln(640 + Math.cos(a) * (70 + e * 60), 330 + Math.sin(a) * (70 + e * 60), 640 + Math.cos(a) * (90 + e * 190), 330 + Math.sin(a) * (90 + e * 190)); }
+    }
+    S(4); rock(lx, 330, 95, p * 3, 3); rock(rx, 330, 95, -p * 3, 8);
+    if (p >= ti) { g.save(); g.translate(640, 150); g.rotate(-0.08); const sc = 1 + 0.6 * (1 - eo(q / 0.35)); g.scale(sc, sc); txt('CLACK!', 0, 0, 120, 'stencil', COL.acc); g.restore(); }
+  };
+  SC[4] = (p, s, lt) => {
+    S(3); for (let i = -3; i <= 3; i++) rock(640 + i * 48, 552, 20, i, 20 + i);
+    S(6); ln(540, 545, 740, 470); ln(540, 470, 740, 545); S(4); ln(560, 548, 720, 548);
+    if (lt < 1.0) for (let i = 0; i < 18; i++) {
+      const a = -Math.PI / 2 + (rnd(i) - 0.5) * 2.4, v = 220 + rnd(i + 30) * 300, t = lt - rnd(i + 60) * 0.15; if (t < 0) continue;
+      g.save(); g.globalAlpha = clamp(1 - t / 0.7); star(640 + Math.cos(a) * v * t, 500 + Math.sin(a) * v * t + 700 * t * t, 9, COL.hot); g.restore();
+    }
+    const h = eo((p - 0.18) / 0.55) * 240;
+    if (h > 4) { S(4); flame(640, 520, h, 95, s); }
+    if (h > 150) { txt('≈ 600 °C', 850, 330, 20, 'mono', COL.dim, 'left'); S(1.5, COL.dim); ln(700, 360, 842, 336); }
+  };
+  SC[5] = (p, s) => {
+    mammoth(900 - p * 60, 300, s);
+    S(4); flame(300, 548, 120, 50, s);
+    S(4); ln(200, 552, 200, 400); ln(400, 552, 400, 400); ln(184, 384, 200, 400); ln(216, 384, 200, 400); ln(384, 384, 400, 400); ln(416, 384, 400, 400);
+    ln(150, 400, 460, 400);
+    g.beginPath(); g.ellipse(288, 400, 60, 40, 0.15, 0, TAU); fs_(); S(2.5); g.beginPath(); g.ellipse(282, 400, 30, 18, 0.15, 0, TAU); g.stroke();
+    S(4); g.beginPath(); g.arc(360, 386, 11, 0, TAU); fs_(); g.beginPath(); g.arc(362, 412, 11, 0, TAU); fs_();
+    S(2.5, COL.dim); for (let i = 0; i < 3; i++) { g.beginPath(); for (let y = 350; y > 250; y -= 6) { const x = 250 + i * 34 + Math.sin(y * 0.08 + s * 6 + i) * 8; y === 350 ? g.moveTo(x, y) : g.lineTo(x, y); } g.stroke(); }
+    if (p > 0.55) { const q = eob((p - 0.55) / 0.1); g.save(); g.translate(760 - p * 60, 150); g.scale(q, q); txt('!', 0, 0, 110, 'stencil', COL.acc); g.restore(); }
+  };
+  SC[6] = (p, s) => {
+    const A = Math.atan2(380, 1040), ys = x => 180 + (x - 120) * 380 / 1040;
+    S(5); ln(40, 180, 120, 180); ln(120, 180, 1160, 560); ln(1160, 560, 1240, 560);
+    S(2, COL.dim); for (let x = 150; x < 1160; x += 34) ln(x, ys(x) + 6, x - 22, ys(x) + 28);
+    g.beginPath(); g.arc(1160, 560, 110, Math.PI, Math.PI + A); g.stroke(); txt('20°', 1010, 538, 20, 'mono', COL.dim);
+    const R = 68, u = 0.06 + 0.86 * ei(p), bx = 120 + 1040 * u, by = ys(bx), cx = bx + R * Math.sin(A), cy = by - R * Math.cos(A), rot = (1040 * u / Math.cos(A)) / R;
+    if (p > 0.25) { S(2.5, COL.dim); for (let i = 0; i < 3; i++) { const o = (i - 1) * 34, ox = -Math.sin(A) * o, oy = Math.cos(A) * o; ln(cx - Math.cos(A) * (R + 20) + ox, cy - Math.sin(A) * (R + 20) + oy, cx - Math.cos(A) * (R + 110 + i * 20) + ox, cy - Math.sin(A) * (R + 110 + i * 20) + oy); } }
+    S(4); g.beginPath(); g.arc(cx, cy, R, 0, TAU); fs_(); S(2.5); ci(cx, cy, R * 0.66); ci(cx, cy, R * 0.34); S(3); ln(cx, cy, cx + Math.cos(rot) * R, cy + Math.sin(rot) * R);
+    stick(70, 180, 0.8, [-30, 30], p < 0.2 ? [60, 0] : [40, -70]);
+  };
+  SC[7] = (p, s) => {
+    S(5); ln(80, 520, 1200, 520);
+    S(4); wheel(500, 360, 160, s * 2.6);
+    dimLine(340, 560, 660, 560, 'Ø 320 mm');
+    const jump = Math.abs(Math.sin(p * Math.PI * 4)) * 30;
+    stick(880, 520 - jump, 1.1, [-50, -80], [50, -80]);
+    if (p >= 0.25) { const q = eob((p - 0.25) / 0.12); g.save(); g.translate(960, 170); g.scale(q, q); S(3); bubble(-200, -55, 400, 110, -40); txt('“HEY, A WHEEL!”', 0, 0, 44, 'hand'); g.restore(); }
+  };
+  SC[8] = (p, s) => {
+    S(2.5, COL.dim);
+    for (let r = 0; r < 4; r++) { g.beginPath(); for (let x = 80; x <= 760; x += 10) { const y = 468 + r * 26 + Math.sin(x * 0.035 - s * 5 + r) * 6; x === 80 ? g.moveTo(x, y) : g.lineTo(x, y); } g.stroke(); }
+    const cx = 400, cy = 320, R = 150, rot = s * 1.4;
+    S(4);
+    for (let i = 0; i < 10; i++) { const a = rot + i * TAU / 10; g.save(); g.translate(cx + Math.cos(a) * (R + 6), cy + Math.sin(a) * (R + 6)); g.rotate(a); g.beginPath(); g.rect(-22, -9, 52, 18); fs_(); g.restore(); }
+    g.beginPath(); g.arc(cx, cy, R, 0, TAU); fs_(); ci(cx, cy, R - 20);
+    for (let i = 0; i < 5; i++) { const a = rot + i * TAU / 5; ln(cx, cy, cx + Math.cos(a) * (R - 20), cy + Math.sin(a) * (R - 20)); }
+    g.beginPath(); g.arc(cx, cy, 22, 0, TAU); fs_();
+    ln(760, 80, 1100, 80); ln(930, 80, 930, 104);
+    const prot = s * 3; g.beginPath(); g.arc(930, 140, 36, 0, TAU); fs_(); ci(930, 140, 6);
+    ln(930 + Math.cos(prot) * 28, 140 + Math.sin(prot) * 28, 930 - Math.cos(prot) * 28, 140 - Math.sin(prot) * 28);
+    const bob = Math.sin(s * BPM / 60 * Math.PI) * 40;
+    S(3); ln(894, 140, 894, 300 + bob); ln(966, 140, 966, 300 - bob);
+    S(4); g.beginPath(); g.rect(864, 300 + bob, 60, 56); fs_(); txt('10 kg', 894, 328 + bob, 15, 'mono');
+    g.beginPath(); g.rect(944, 300 - bob, 44, 40); fs_();
+    const la = Math.sin(s * BPM / 60 * Math.PI) * 0.14;
+    g.beginPath(); g.moveTo(930, 480); g.lineTo(900, 540); g.lineTo(960, 540); g.closePath(); fs_();
+    g.save(); g.translate(930, 478); g.rotate(la); S(5); ln(-170, 0, 170, 0); S(4); rock(-140, -24, 24, 0, 40); g.restore();
+    txt('F = m · g', 1110, 250, 20, 'mono', COL.dim);
+  };
+  SC[9] = (p, s) => {
+    const x0 = 380, y0 = 500, ang = Math.atan2(-340, 580), L = Math.hypot(580, 340);
+    g.save(); g.translate(x0, y0); g.rotate(ang);
+    S(4); g.beginPath(); g.moveTo(0, -26); g.lineTo(L - 90, -26); g.lineTo(L, 0); g.lineTo(L - 90, 26); g.lineTo(0, 26); g.closePath(); fs_();
+    S(2, COL.dim); ln(24, 0, L - 120, 0);
+    S(4); g.beginPath(); g.rect(-110, -14, 110, 28); fs_(); S(2); for (let i = 1; i < 6; i++) ln(-110 + i * 18, -14, -110 + i * 18 + 8, 14);
+    S(4); g.beginPath(); g.roundRect(-8, -70, 22, 140, 6); fs_(); g.beginPath(); g.arc(-128, 0, 20, 0, TAU); fs_();
+    const gx = eo(p / 0.5) * (L - 60) + 20; g.save(); g.globalAlpha = p < 0.55 ? 1 : 0.3; star(gx, -10, 22, COL.hot); g.restore();
+    if (p > 0.5) { const q = (p - 0.5) / 0.5; star(L, 0, 32 + Math.sin(q * TAU * 3) * 12, COL.hot); S(3, COL.hot); for (let i = 0; i < 8; i++) { const a = i * TAU / 8; ln(L + Math.cos(a) * 44, Math.sin(a) * 44, L + Math.cos(a) * (60 + q * 30), Math.sin(a) * (60 + q * 30)); } }
+    dimLine(0, -92, L, -92, '1,000 mm');
+    g.restore();
+  };
+  SC[10] = (p, s) => {
+    const n = Math.floor(s / E8), f = (s / E8) % 1, step = n + eo(f / 0.22);
+    const cx = 390, cy = 320, R = 175;
+    S(5); g.beginPath(); g.arc(cx, cy, R, 0, TAU); fs_(); S(2.5); ci(cx, cy, R - 14);
+    for (let i = 0; i < 60; i++) { const a = i * TAU / 60, r1 = i % 5 ? R - 26 : R - 40; S(i % 5 ? 1.5 : 3.5); ln(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1, cx + Math.cos(a) * (R - 16), cy + Math.sin(a) * (R - 16)); }
+    ['12', '3', '6', '9'].forEach((t, i) => { const a = -Math.PI / 2 + i * Math.PI / 2; txt(t, cx + Math.cos(a) * (R - 68), cy + Math.sin(a) * (R - 68) + 2, 34, 'hand'); });
+    const ha = -Math.PI / 2 + TAU * 10 / 12, ma = -Math.PI / 2 + step * TAU / 60;
+    S(7); ln(cx, cy, cx + Math.cos(ha) * 80, cy + Math.sin(ha) * 80);
+    S(4, COL.acc); ln(cx, cy, cx + Math.cos(ma) * 132, cy + Math.sin(ma) * 132); cf(cx, cy, 9, COL.acc);
+    const b = Math.floor(p * 4), bf = p * 4 - b;
+    g.save(); g.globalAlpha = 1 - bf * 0.6; txt(b % 2 ? 'tock' : 'tick', cx + R + 10, cy - R + 20 + (b % 2) * 40, 34, 'hand', COL.acc, 'left'); g.restore();
+    const n1 = 16, n2 = 9, n3 = 12, r1 = 105, r2 = r1 * n2 / n1, r3 = r1 * n3 / n1, th = 18;
+    const c1 = [860, 262], a2 = 0.6, a3 = 2.3, d2 = r1 + r2 + th, d3 = r1 + r3 + th;
+    const c2 = [c1[0] + Math.cos(a2) * d2, c1[1] + Math.sin(a2) * d2], c3 = [c1[0] + Math.cos(a3) * d3, c1[1] + Math.sin(a3) * d3];
+    const t1 = step * TAU / n1 * 0.5;
+    S(4);
+    gear(c3[0], c3[1], r3, n3, -(n1 / n3) * t1 + meshPhase(a3, n1, n3), th, 14);
+    gear(c2[0], c2[1], r2, n2, -(n1 / n2) * t1 + meshPhase(a2, n1, n2), th, 12);
+    gear(c1[0], c1[1], r1, n1, t1, th, 18);
+  };
+  SC[11] = (p, s, lt) => {
+    const R = 85, w = 4;
+    S(3); g.beginPath(); g.rect(80, 320, 1120, 30); fs_();
+    S(3); const off = (s * R * w) % 60; for (let x = 600 + off - 60; x < 1200; x += 60) { if (x < 648) continue; ln(x, 329, x + 34, 329); ln(x, 341, x + 22, 341); }
+    S(4); ln(440, 140, 440, 520); ln(680, 140, 680, 520); ln(400, 520, 720, 520); ln(420, 140, 700, 140);
+    [[560, 250], [560, 420]].forEach(([x, y], i) => {
+      const r = (i ? -1 : 1) * s * w; S(4); g.beginPath(); g.arc(x, y, R, 0, TAU); fs_(); S(2.5); ci(x, y, R - 14);
+      for (let k = 0; k < 3; k++) { const a = r + k * TAU / 3; ln(x, y, x + Math.cos(a) * (R - 14), y + Math.sin(a) * (R - 14)); }
+      S(4); g.beginPath(); g.arc(x, y, 14, 0, TAU); fs_();
+    });
+    S(4); g.beginPath(); g.arc(466, 168, 40, 0, TAU); fs_(); g.save(); g.fillStyle = 'rgba(255, 159, 67, .4)'; g.fill(); g.restore(); ci(466, 168, 12);
+    for (let i = 0; i < 4; i++) {
+      const t = (lt + i * 0.38) % 1.5, x = 1070 + t * 90, y = 300 - t * 220 - i * 6;
+      g.save(); g.translate(x, y); g.rotate(-0.3 + t * 1.4); S(3); g.beginPath(); g.rect(-45, -32, 90, 64); fs_(); S(1.5); ln(-32, -16, 28, -16); ln(-32, -2, 20, -2); ln(-32, 12, 24, 12); g.restore();
+    }
+    txt('≈ 8,000 SHEETS / HOUR', 90, 560, 17, 'mono', COL.dim, 'left');
+  };
+  function loco(x) {
+    const w = x / 48;
+    S(4);
+    g.beginPath(); g.rect(x + 150, 330, 270, 100); fs_(); g.beginPath(); g.arc(x + 420, 380, 50, -Math.PI / 2, Math.PI / 2); fs_();
+    S(2.5); [220, 300, 380].forEach(bx => ln(x + bx, 332, x + bx, 428));
+    S(4); g.beginPath(); g.arc(x + 285, 330, 24, Math.PI, 0); fs_();
+    g.beginPath(); g.moveTo(x + 372, 332); g.lineTo(x + 378, 270); g.lineTo(x + 352, 236); g.lineTo(x + 432, 236); g.lineTo(x + 406, 270); g.lineTo(x + 412, 332); g.closePath(); fs_();
+    g.beginPath(); g.rect(x + 20, 250, 150, 180); fs_(); S(6); ln(x + 6, 248, x + 184, 248); S(3); g.beginPath(); g.rect(x + 50, 280, 80, 62); g.stroke();
+    S(4); g.beginPath(); g.rect(x + 436, 300, 30, 28); fs_(); cf(x + 466, 314, 5, COL.hot);
+    ln(x + 10, 432, x + 470, 432);
+    g.beginPath(); g.moveTo(x + 440, 432); g.lineTo(x + 505, 488); g.lineTo(x + 440, 488); g.closePath(); fs_(); S(2); for (let i = 1; i < 4; i++) ln(x + 440 + i * 15, 432 + i * 13, x + 440 + i * 15, 488);
+    S(4); [[110, 48], [230, 48], [380, 32]].forEach(([wx, r]) => {
+      g.beginPath(); g.arc(x + wx, 500 - r, r, 0, TAU); fs_(); ci(x + wx, 500 - r, 8);
+      for (let k = 0; k < 4; k++) { const a = w * (48 / r) + k * TAU / 4; ln(x + wx + Math.cos(a) * 10, 500 - r + Math.sin(a) * 10, x + wx + Math.cos(a) * (r - 6), 500 - r + Math.sin(a) * (r - 6)); }
+    });
+    S(6, COL.acc); ln(x + 110 + Math.cos(w) * 26, 452 + Math.sin(w) * 26, x + 230 + Math.cos(w) * 26, 452 + Math.sin(w) * 26);
+  }
+  SC[12] = (p, s, lt) => {
+    S(4); ln(0, 500, 1280, 500); S(3, COL.dim); for (let tx = 10; tx < 1280; tx += 48) ln(tx, 504, tx, 520);
+    const X = q => -560 + q * 1560;
+    for (let k = 0; k < 8; k++) { const tk = k * E8; if (tk > lt) break; const age = lt - tk; g.save(); g.globalAlpha = clamp(1 - age / 1.1); S(3); cloud(X(tk / BAR) + 392 - age * 90, 222 - age * 150, 16 + age * 60); g.restore(); }
+    loco(X(p));
+    txt('TOP SPEED ≈ 30 mph', 1240, 560, 17, 'mono', COL.dim, 'right');
+  };
+  SC[13] = (p, s, lt) => {
+    S(2.5, COL.dim); for (let i = 0; i < 9; i++) { const y = 90 + i * 55, len = 120 + rnd(i) * 200, x = 1280 - ((s * 1400 + rnd(i + 5) * 1280) % 1700); ln(x, y, x + len, y); }
+    S(5); g.beginPath(); g.moveTo(575, 600); g.lineTo(588, 470); g.lineTo(530, 420); g.lineTo(750, 420); g.lineTo(692, 470); g.lineTo(705, 600); g.closePath(); fs_();
+    S(2.5); ln(540, 432, 740, 432); for (let i = 0; i < 5; i++) cf(600 + i * 20, 520, 3.5, COL.line);
+    [[1, 640, 300, 60, 'ca-'], [2, 380, 210, 125, 'CHOO'], [3, 900, 190, 125, 'CHOO!']].forEach(([e, tx, ty, r, label]) => {
+      const t0 = e * E8; if (lt < t0) return;
+      const q = eo((lt - t0) / 0.22), x = 640 + (tx - 640) * q, y = 410 + (ty - 410) * q, rr = r * (0.3 + 0.7 * q) * (1 + 0.03 * Math.sin(s * 9));
+      S(4); cloud(x, y, rr);
+      g.save(); g.translate(x, y + 4); const sc = rr / r; g.scale(sc, sc); txt(label, 0, 0, label.length > 3 ? 72 : 40, 'stencil', COL.acc); g.restore();
+    });
+    if (lt > 4 * E8) {
+      const q = (lt - 4 * E8) / (4 * E8); S(3);
+      for (let k = 0; k < 3; k++) { const ph = (q * 3 + k / 3) % 1, rad = 80 + ph * 220; g.save(); g.globalAlpha = 1 - ph; g.beginPath(); g.arc(640, 450, rad, Math.PI * 1.02, Math.PI * 1.3); g.stroke(); g.beginPath(); g.arc(640, 450, rad, -Math.PI * 0.3, -Math.PI * 0.02); g.stroke(); g.restore(); }
+    }
+  };
+  SC[14] = (p, s, lt) => {
+    const on = lt > 0.03 && !(lt > 0.09 && lt < 0.15);
+    const P0 = [440, 460], P1 = [520, 580], P2 = [800, 580], P3 = [900, 480];
+    S(3); g.beginPath(); g.moveTo(...P0); g.bezierCurveTo(...P1, ...P2, ...P3); g.stroke();
+    const bp = bez(P0, P1, P2, P3, (s * 1.1) % 1); cf(bp[0], bp[1], 7, COL.acc);
+    S(4); bulb(440, 220, 0.95, on);
+    phone(900, lt >= 6 * E8, s);
+  };
+  SC[15] = (p, s, lt) => {
+    const hum = lt > 5 * E8, vib = hum ? Math.sin(s * 120) * 1.5 : 0;
+    S(3);
+    for (let k = 0; k < 4; k++) { const ph = (s * 0.9 + k / 4) % 1, r = 200 + ph * 260; g.save(); g.globalAlpha = (1 - ph) * (hum ? 1 : 0.5); g.beginPath(); g.arc(640, 320, r, -0.4, 0.4); g.stroke(); g.beginPath(); g.arc(640, 320, r, Math.PI - 0.4, Math.PI + 0.4); g.stroke(); g.restore(); }
+    g.save(); g.translate(vib, 0);
+    S(5); g.beginPath(); g.moveTo(470, 510); g.lineTo(470, 300); g.bezierCurveTo(470, 110, 810, 110, 810, 300); g.lineTo(810, 510); g.closePath(); fs_();
+    S(3); g.beginPath(); g.moveTo(515, 390); g.lineTo(515, 305); g.bezierCurveTo(515, 175, 765, 175, 765, 305); g.lineTo(765, 390); g.closePath(); g.stroke();
+    g.save(); g.clip(); S(2.5); for (let x = 532; x <= 752; x += 20) ln(x, 150, x, 392); g.restore();
+    S(4); g.beginPath(); g.arc(575, 450, 30, 0, TAU); fs_(); const da = -Math.PI * 0.8 + (hum ? 0.9 : eo(p / 0.6) * 0.9); S(3, COL.acc); ln(575, 450, 575 + Math.cos(da) * 24, 450 + Math.sin(da) * 24);
+    S(4); g.beginPath(); g.arc(690, 450, 18, 0, TAU); fs_(); g.beginPath(); g.arc(745, 450, 18, 0, TAU); fs_();
+    ln(490, 510, 490, 532); ln(790, 510, 790, 532);
+    g.restore();
+    if (hum) { const q = (lt - 5 * E8) / (3 * E8), word = 'hmmmmmmm'; g.save(); g.font = `56px ${FONTS.hand}`; g.fillStyle = COL.acc; g.textAlign = 'center'; g.textBaseline = 'middle'; for (let i = 0; i < word.length; i++) { g.globalAlpha = clamp(q * 3 - i * 0.2); g.fillText(word[i], 640 - 140 + i * 40, 88 + Math.sin(s * 10 + i) * 8); } g.restore(); }
+    txt('AM 540–1600 kHz', 640, 562, 18, 'mono', COL.dim);
+  };
+  const TRACES = (() => {
+    const t = [];
+    for (let j = 0; j < 4; j++) {
+      const up = [[522, 236 + j * 24], [480 - j * 40, 236 + j * 24], [480 - j * 40, 110 + j * 30], [100, 110 + j * 30]];
+      const dn = [[522, 404 - j * 24], [480 - j * 40, 404 - j * 24], [480 - j * 40, 540 - j * 30], [100, 540 - j * 30]];
+      [up, dn].forEach(tr => { t.push(tr); t.push(tr.map(([x, y]) => [1280 - x, y])); });
+    }
+    return t;
+  })();
+  SC[16] = (p, s) => {
+    S(3); TRACES.forEach(tr => { pl(tr, false); const e = tr[tr.length - 1]; g.beginPath(); g.arc(e[0], e[1], 8, 0, TAU); fs_(); });
+    TRACES.forEach((tr, i) => { const pt = along(tr, (s * 0.7 + rnd(i)) % 1); cf(pt[0], pt[1], 6, COL.acc); });
+    S(4); for (let i = 0; i < 8; i++) { const y = 236 + i * 24; ln(522, y, 540, y); ln(740, y, 758, y); }
+    for (let i = 0; i < 7; i++) { const x = 559 + i * 27; ln(x, 192, x, 210); ln(x, 420, x, 438); }
+    g.beginPath(); g.rect(540, 210, 200, 210); fs_(); S(2.5); g.beginPath(); g.arc(640, 210, 14, 0, Math.PI); g.stroke();
+    txt('SP-8008', 640, 300, 26, 'mono'); txt('2,300 TRANSISTORS', 640, 340, 14, 'mono', COL.dim);
+  };
+  SC[17] = (p, s) => {
+    for (let i = 0; i < 45; i++) { g.save(); g.globalAlpha = 0.35 + 0.65 * Math.abs(Math.sin(s * 2 + i)); cf(rnd(i) * 1280, 40 + rnd(i + 100) * 520, 1.5 + rnd(i + 200) * 2, COL.line); g.restore(); }
+    S(4); g.beginPath(); g.arc(140, 1000, 520, 0, TAU); fs_(); S(2, COL.dim); g.beginPath(); g.arc(140, 1000, 470, -1.35, -0.95); g.stroke(); g.beginPath(); g.arc(140, 1000, 440, -1.6, -1.4); g.stroke();
+    S(4); g.beginPath(); g.arc(1060, 150, 78, 0, TAU); fs_(); S(2, COL.dim); ci(1035, 130, 16); ci(1085, 175, 11); ci(1080, 115, 8);
+    const P0 = [360, 500], P1 = [560, 120], P2 = [985, 205];
+    g.save(); S(2, COL.dim); g.setLineDash([8, 10]); g.beginPath(); g.moveTo(...P0); g.quadraticCurveTo(...P1, ...P2); g.stroke(); g.restore();
+    const u = clamp(0.05 + 0.9 * Math.pow(p, 1.3)), q = quad(P0, P1, P2, u), d = quadD(P0, P1, P2, u);
+    for (let j = 10; j >= 1; j--) { const uj = u - j * 0.028; if (uj < 0) continue; const pj = quad(P0, P1, P2, uj); g.save(); g.globalAlpha = 1 - j / 11; S(2.5, COL.dim); ci(pj[0], pj[1], 8 + j * 3.5); g.restore(); }
+    S(4); rocket(q[0], q[1], 0.8, Math.atan2(d[1], d[0]) + Math.PI / 2, s);
+    txt('EARTH → MOON: 384,400 km', 1240, 560, 17, 'mono', COL.dim, 'right');
+  };
+  SC[18] = (p, s, lt) => {
+    S(5); ln(60, 560, 1220, 560);
+    for (let i = 0; i < 30; i++) {
+      const x = 100 + rnd(i) * 1080, t = lt - rnd(i + 50) * 0.7; if (t < 0) continue;
+      const fl = 530 - rnd(i + 7) * 40, tl = Math.sqrt((fl + 60) / 1300);
+      const y = t < tl ? -60 + 1300 * t * t : fl, rot = rnd(i + 3) * 6 + Math.min(t, tl) * 7;
+      hardware(i % 4, x, y, 20 + rnd(i + 9) * 16, rot);
+    }
+  };
+  SC[19] = (p) => {
+    const off = -p * 90, ticks = [['10,000 BC', 'rock'], ['3500 BC', 'wheel'], ['1440', 'press'], ['1804', 'train'], ['1879', 'bulb'], ['1969', 'rocket'], ['NOW', 'garage']];
+    S(4); ln(40, 420, 1240, 420); ln(1240, 420, 1222, 410); ln(1240, 420, 1222, 430);
+    const cur = Math.min(6, Math.floor((p - 0.04) / 0.1));
+    ticks.forEach(([lab, ic], i) => {
+      const x = 150 + i * 165 + off; S(3); ln(x, 408, x, 432); txt(lab, x, 462, 19, 'mono', i === cur ? COL.acc : COL.dim);
+      const q = eob((p - 0.04 - i * 0.1) / 0.1); if (q <= 0) return;
+      g.save(); g.translate(x, 320); g.scale(q, q); icon(ic, i === cur); g.restore();
+    });
+  };
+  SC[20] = (p, s) => {
+    S(5); ln(120, 560, 1160, 560);
+    S(4); g.beginPath(); g.moveTo(290, 560); g.lineTo(290, 212); g.lineTo(250, 212); g.lineTo(640, 92); g.lineTo(1030, 212); g.lineTo(990, 212); g.lineTo(990, 560); g.stroke();
+    S(2, COL.dim); for (let y = 236; y < 560; y += 22) { ln(296, y, 364, y); ln(916, y, 984, y); }
+    S(3); g.beginPath(); g.rect(560, 218, 160, 36); fs_(); txt('GARAGE 14B', 640, 237, 17, 'mono');
+    g.save(); g.beginPath(); g.rect(372, 268, 536, 290); g.clip();
+    S(3); ln(388, 340, 560, 340); [[400, 300, 30, 40], [440, 310, 24, 30], [480, 296, 40, 44], [530, 312, 20, 28]].forEach(r => { g.beginPath(); g.rect(...r); fs_(); });
+    g.beginPath(); g.moveTo(540, 558); g.lineTo(580, 520); g.lineTo(640, 540); g.lineTo(690, 500); g.lineTo(740, 530); g.lineTo(780, 558); g.closePath(); fs_();
+    g.beginPath(); g.arc(460, 486, 64, 0, TAU); fs_(); for (let k = 0; k < 8; k++) { const a = k * TAU / 8 + s; ln(460, 486, 460 + Math.cos(a) * 62, 486 + Math.sin(a) * 62); } ci(460, 486, 8);
+    gear(640, 460, 44, 10, s * 0.8, 12, 12);
+    S(3); ln(810, 300, 792, 558); ln(870, 300, 888, 558); for (let k = 0; k < 7; k++) { const t = k / 6; ln(810 - 18 * t, 300 + t * 258, 870 + 18 * t, 300 + t * 258); }
+    ln(700, 268, 700, 316); S(3); bulb(700, 330, 0.16, Math.sin(s * 20) > -0.4);
+    g.restore();
+    const open = eo((p - 0.05) / 0.6), yb = 556 - open * 284;
+    if (yb > 272) { S(4); g.beginPath(); g.rect(372, 268, 536, yb - 268); fs_(); S(2); for (let y = yb - 34; y > 272; y -= 34) ln(376, y, 904, y); S(4); ln(610, yb - 14, 670, yb - 14); }
+    S(4); g.beginPath(); g.rect(370, 266, 540, 294); g.stroke();
+  };
+  SC[21] = (p, s) => {
+    [[desmond, 'DESMOND', 'THE ENGINEER'], [priya, 'PRIYA', 'THE PHYSICIST'], [otto, 'OTTO', 'THE INVENTOR'], [june, 'JUNE', 'THE KID']].forEach(([fn, name, role], i) => {
+      const x = 205 + i * 290, q = eob((p - i * 0.25) / 0.12); if (q <= 0) return;
+      g.save(); g.translate(x, 522); g.scale(q, q); fn(s); g.restore();
+      if (q > 0.5) { txt(name, x, 552, 34, 'stencil', COL.acc); txt(role, x, 582, 14, 'mono', COL.dim); }
+    });
+  };
+  SC[22] = (p, s) => {
+    machine(i => eob((p - 0.04 - i * 0.1) / 0.16), { spin: p > 0.78 ? (p - 0.78) * BAR * 6 : 0, bulbOn: p > 0.84, spring: 1, t: s });
+    if (p > 0.84) txt('TOLERANCE: ± VIBES', 640, 572, 17, 'mono', COL.dim);
+  };
+  SC[23] = (p, s, lt) => {
+    const spring = lt > 0.6 ? 1 + 0.5 * Math.sin((lt - 0.6) * 28) * Math.exp(-(lt - 0.6) * 2.5) : 1;
+    machine(() => 1, { spin: s * 3, bulbOn: p < 0.3 && Math.sin(s * 50) > 0.2, shake: p > 0.04 ? 8 : 0, wobble: true, spring, t: s });
+    if (lt > 0.15) { const t = lt - 0.15; g.save(); g.translate(560 - t * 320, 470 - t * 620 + 1300 * t * t); g.rotate(t * 14); hardware(1, 0, 0, 18, 0); g.restore(); }
+    for (let k = 0; k < 3; k++) { const t0 = 0.35 + k * 0.2; if (lt < t0) continue; const age = lt - t0; g.save(); g.globalAlpha = clamp(1 - age / 1.2); S(3); cloud(838 + age * 30, 240 - age * 110, 26 + age * 70); g.restore(); }
+    if (p >= 0.25) { const q = eob((p - 0.25) / 0.1); g.save(); g.translate(640, 120); g.rotate(-0.05); g.scale(q, q); txt('(sort of)', 0, 0, 76, 'hand', COL.acc); g.restore(); }
+  };
+  function slam(word, x, y, tt, t0, col) {
+    if (tt < t0) return;
+    const q = eo((tt - t0) / 0.13), sc = 1 + 1.8 * (1 - q);
+    g.save(); g.translate(x, y); g.scale(sc, sc); g.globalAlpha = clamp((tt - t0) / 0.06); txt(word, 0, 0, 190, 'stencil', col); g.restore();
+  }
+  function titleCard(tt, s) {
+    g.save(); g.globalAlpha = 0.45; S(3, COL.dim); gear(640, 330, 255, 22, s * 0.25, 30, 70); g.restore();
+    slam('SPARE', 640, 238, tt, 0, COL.line);
+    slam('PARTS', 640, 432, tt, 2 * E8, COL.acc);
+    if (tt >= 2 * E8) for (let i = 0; i < 14; i++) {
+      const a = i * TAU / 14 + 0.1, t = tt - 2 * E8; if (t > 1.2) break;
+      g.save(); g.globalAlpha = clamp(1 - t / 1.2); S(3); hex(640 + Math.cos(a) * t * 760, 330 + Math.sin(a) * t * 760 + 700 * t * t, 13); fs_(); g.restore();
+    }
+    if (tt > 1.1) { g.save(); g.globalAlpha = clamp((tt - 1.1) / 0.4); txt('A NEW COMEDY  ·  THURSDAYS 8/7c', 640, 572, 22, 'mono'); g.restore(); }
+    if (tt > 1.9) {
+      const q = clamp((tt - 1.9) / 0.14), sc = 1 + 1.6 * (1 - q);
+      g.save(); g.translate(250, 120); g.rotate(-0.16); g.scale(sc, sc); g.globalAlpha = q; S(4, COL.acc); g.beginPath(); g.roundRect(-150, -38, 300, 76, 8); g.stroke(); txt('PATENT PENDING', 0, 4, 36, 'stencil', COL.acc); g.restore();
+    }
+  }
+
+  /* ---- overlays */
+  function drawLyrics(s, bar) {
+    if (bar >= 24) return;
+    g.save();
+    g.fillStyle = COL.band; g.fillRect(0, 604, W, 116);
+    S(1.5, COL.dim); ln(0, 604, W, 604);
+    let ci_ = -1; for (let i = 0; i < 11; i++) if (LINES[i].bar <= bar) ci_ = i;
+    const line = ci_ >= 0 ? LINES[ci_] : LINES[0], next = ci_ >= 0 ? LINES[ci_ + 1] : LINES[1], preview = ci_ < 0;
+    let size = 40; g.font = `${size}px ${FONTS.hand}`;
+    const parts = line.toks.map(t => t.text + (t.join ? '' : ' '));
+    let total = g.measureText(parts.join('').trimEnd()).width;
+    if (total > 1180) { size = Math.floor(size * 1180 / total); g.font = `${size}px ${FONTS.hand}`; total = g.measureText(parts.join('').trimEnd()).width; }
+    let x = 640 - total / 2; const y = 654;
+    g.textBaseline = 'middle'; g.textAlign = 'left';
+    const centers = [];
+    line.toks.forEach((tk, i) => {
+      const w = g.measureText(parts[i]).width, wt = g.measureText(tk.text).width;
+      const sung = !preview && s >= tk.t, active = !preview && s >= tk.t && s < tk.t + tk.d;
+      g.globalAlpha = preview ? 0.45 : 1;
+      g.fillStyle = sung ? COL.acc : COL.line;
+      g.fillText(tk.text, x, y - (active && !REDUCED ? 4 : 0));
+      centers.push(x + wt / 2); x += w;
+    });
+    g.globalAlpha = 1;
+    if (!preview) {
+      const toks = line.toks;
+      for (let i = 0; i < toks.length; i++) {
+        const tk = toks[i];
+        if (s >= tk.t && s < tk.t + tk.d) {
+          const u = (s - tk.t) / tk.d, nx = i + 1 < toks.length && Math.abs(toks[i + 1].t - (tk.t + tk.d)) < 1e-6 ? centers[i + 1] : centers[i];
+          cf(centers[i] + (nx - centers[i]) * u, y - 36 - Math.sin(u * Math.PI) * (REDUCED ? 0 : 16), 7, COL.hot);
+        }
+      }
+    }
+    if (next && next.bar < 24) { g.font = `21px ${FONTS.hand}`; g.textAlign = 'center'; g.fillStyle = COL.dim; g.fillText(next.text, 640, 700); }
+    else if (next) { g.font = `21px ${FONTS.stencil}`; g.textAlign = 'center'; g.fillStyle = COL.dim; g.fillText('SPARE PARTS!', 640, 700); }
+    g.restore();
+  }
+  function frameInfo(bar) {
+    g.save(); S(1.5, COL.dim);
+    g.strokeRect(1004, 20, 254, 62); ln(1004, 50, 1258, 50); ln(1136, 50, 1136, 82);
+    txt('SPARE PARTS — MAIN TITLE', 1014, 36, 13, 'mono', COL.dim, 'left');
+    txt('DWG SP-001', 1014, 67, 13, 'mono', COL.dim, 'left');
+    txt(`SHEET ${String(bar + 1).padStart(2, '0')} / 27`, 1146, 67, 13, 'mono', COL.dim, 'left');
+    if (bar < 24) txt(FIG[bar], 36, 42, 17, 'mono', COL.dim, 'left');
+    g.restore();
+  }
+
+  function drawFrame(s) {
+    s = Math.max(0, s);
+    const bar = Math.min(26, Math.floor(s / BAR)), lt = s - bar * BAR, p = lt / BAR;
+    g.setTransform(1, 0, 0, 1, 0, 0); g.setLineDash([]); g.globalAlpha = 1; g.lineCap = 'round'; g.lineJoin = 'round';
+    g.fillStyle = COL.paper; g.fillRect(0, 0, W, H);
+    const off = (s * 18) % 40;
+    g.strokeStyle = 'rgba(228, 238, 251, 0.06)'; g.lineWidth = 1;
+    g.beginPath(); for (let x = -off; x < W; x += 40) { g.moveTo(x, 0); g.lineTo(x, H); } for (let y = 0; y < H; y += 40) { g.moveTo(0, y); g.lineTo(W, y); } g.stroke();
+    g.strokeStyle = 'rgba(228, 238, 251, 0.13)';
+    g.beginPath(); for (let x = -off * 5 % 200; x < W; x += 200) { g.moveTo(x, 0); g.lineTo(x, H); } for (let y = 0; y < H; y += 200) { g.moveTo(0, y); g.lineTo(W, y); } g.stroke();
+    const vg = g.createRadialGradient(640, 330, 260, 640, 360, 820); vg.addColorStop(0, 'rgba(8, 28, 50, 0)'); vg.addColorStop(1, 'rgba(8, 28, 50, 0.55)'); g.fillStyle = vg; g.fillRect(0, 0, W, H);
+
+    g.save();
+    let k = 1, sx = 0, sy = 0;
+    if (!REDUCED) {
+      const bf = (s / BEAT) % 1;
+      k = 1 + 0.012 * Math.pow(1 - bf, 4) + (bar >= 2 && bar < 24 ? 0.05 * (1 - eo(lt / 0.2)) : 0);
+      if (bar >= 24) {
+        const tt = s - 24 * BAR;
+        [0, 2 * E8, 1.9].forEach((ti, i) => { if (tt >= ti) { const d = tt - ti, a = (i === 2 ? 6 : 16) * Math.exp(-d * 9); sx += a * Math.sin(d * 70); sy += a * Math.cos(d * 63); } });
+      }
+    }
+    g.translate(640 + sx, 330 + sy); g.scale(k, k); g.translate(-640, -330);
+    if (bar < 24) {
+      if (lt < 0.55) g.setLineDash([eo(lt / 0.55) * 1600, 100000]);
+      SC[bar](p, s, lt);
+      g.setLineDash([]);
+    } else titleCard(s - 24 * BAR, s);
+    g.restore();
+
+    if (bar >= 2 && bar <= 24 && lt < 0.1) { g.fillStyle = `rgba(228, 238, 251, ${0.22 * (1 - lt / 0.1)})`; g.fillRect(0, 0, W, H); }
+    frameInfo(bar);
+    drawLyrics(s, bar);
+  }
+
+  /* ---------------------------------------------------------------- page */
+  const sheet = document.getElementById('sheet');
+  const rows = [];
+  const addRow = (bars, chords, words, cls) => {
+    const r = document.createElement('div'); r.className = 'row' + (cls ? ' ' + cls : '');
+    r.innerHTML = `<span class="bars"></span><span class="chords"></span><span class="words"></span>`;
+    r.children[0].textContent = bars; r.children[1].textContent = chords; r.children[2].textContent = words;
+    sheet.appendChild(r); return r;
+  };
+  const introRow = addRow('Bars 1–2', 'G · D', 'Intro — strummed guitar, drum pickup', 'section');
+  LINES.forEach(l => {
+    const two = l.bar < 24;
+    rows.push(addRow(two ? `Bars ${l.bar + 1}–${l.bar + 2}` : `Bar ${l.bar + 1}`, two ? `${CHORDS[l.bar]} · ${CHORDS[l.bar + 1]}` : 'G (hits)', l.text));
+  });
+  addRow('Bars 26–27', 'G', 'Chord rings out · “Patent pending” stamp', 'section');
+
+  const btnBig = document.getElementById('bigplay'), btnBigLabel = document.getElementById('bigplay-label');
+  const btnPlay = document.getElementById('play'), btnRestart = document.getElementById('restart');
+  const barEl = document.getElementById('bar'), tcEl = document.getElementById('tc');
+  const fmt = t => `${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}`;
+
+  let actx = null, T0 = 0, state = 'idle', lastRow = -2;
+  const songTime = () => actx ? actx.currentTime - T0 - (actx.outputLatency || actx.baseLatency || 0) : 0;
+
+  function setUI(s) {
+    btnBig.hidden = state === 'playing' || state === 'paused';
+    btnBigLabel.textContent = state === 'ended' ? 'Watch it again' : 'Roll the opening';
+    btnPlay.textContent = state === 'playing' ? 'Pause' : 'Play';
+    btnRestart.disabled = state === 'idle';
+    const t = clamp(s, 0, END);
+    barEl.style.width = (t / END * 100).toFixed(2) + '%';
+    tcEl.textContent = `${fmt(t)} / ${fmt(END)}`;
+    const bar = Math.floor(t / BAR);
+    let idx = -1;
+    if (state !== 'idle' && state !== 'ended') { if (bar < 2) idx = -1.5; LINES.forEach((l, i) => { if (l.bar <= bar) idx = i; }); }
+    if (idx !== lastRow) {
+      introRow.classList.toggle('on', idx === -1.5);
+      rows.forEach((r, i) => r.classList.toggle('on', i === idx));
+      lastRow = idx;
+    }
+  }
+  function loop() {
+    if (state !== 'playing') return;
+    const s = songTime();
+    drawFrame(s); setUI(s);
+    if (s > END) { state = 'ended'; try { actx.close(); } catch (e) {} actx = null; drawFrame(POSTER); setUI(END); return; }
+    requestAnimationFrame(loop);
+  }
+  async function start() {
+    if (actx) { try { await actx.close(); } catch (e) {} }
+    const AC = window.AudioContext || window.webkitAudioContext;
+    actx = new AC({ sampleRate: SR });
+    try { await actx.resume(); } catch (e) {}
+    T0 = actx.currentTime + 0.25;
+    buildSong(actx, actx.destination, T0);
+    state = 'playing'; setUI(0); loop();
+  }
+  async function toggle() {
+    if (state === 'idle' || state === 'ended') return start();
+    if (state === 'playing') { state = 'paused'; await actx.suspend(); setUI(songTime()); }
+    else if (state === 'paused') { await actx.resume(); state = 'playing'; loop(); }
+  }
+  btnBig.addEventListener('click', start);
+  btnPlay.addEventListener('click', toggle);
+  btnRestart.addEventListener('click', start);
+  cv.addEventListener('click', () => { if (state === 'playing' || state === 'paused') toggle(); });
+  document.addEventListener('keydown', e => { if (e.code === 'Space' && !/INPUT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); toggle(); } });
+
+  const ready = Promise.all([`40px ${FONTS.hand}`, `40px ${FONTS.stencil}`, `16px ${FONTS.mono}`].map(f => document.fonts.load(f).catch(() => null)))
+    .then(() => document.fonts.ready);
+  drawFrame(POSTER); setUI(0);
+  ready.then(() => { if (state === 'idle' || state === 'ended') drawFrame(POSTER); });
+
+  // Hooks for rendering the video file offline
+  window.SPARE_PARTS = {
+    END, BAR, ready, drawFrame,
+    renderWav: async (mute) => {
+      const oc = new OfflineAudioContext(2, Math.ceil(SR * END), SR);
+      buildSong(oc, oc.destination, 0, mute || {});
+      return wavBase64(await oc.startRendering());
+    },
+  };
+})();
+</script>
