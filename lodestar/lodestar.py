@@ -21,7 +21,7 @@ import time
 import wave
 
 import numpy as np
-from scipy.signal import butter, sosfilt, fftconvolve
+from scipy.signal import butter, sosfilt, fftconvolve, lfilter
 from scipy.ndimage import maximum_filter1d
 
 SR = 44100
@@ -312,12 +312,15 @@ def piano(f, dur, vel, bright=1.0, ring=None):
 FORMANTS_AH = [(760, 1.0, 110), (1150, 0.55, 130), (2800, 0.22, 200), (3500, 0.1, 250)]
 
 
-def choir(f, dur, vel, a=0.7, r=1.4, cresc=None):
+FORMANTS_OO = [(320, 1.0, 70), (870, 0.3, 100), (2240, 0.07, 160)]
+
+
+def choir(f, dur, vel, a=0.7, r=1.4, cresc=None, formants=FORMANTS_AH):
     n = int((dur + r) * SR)
     raw = saw_ensemble(f, n, dur, 6, 14.0, 0.006)
     raw += rng.normal(size=(2, n)) * 0.08  # breath
     out = np.zeros_like(raw)
-    for fc, amp, bw in FORMANTS_AH:
+    for fc, amp, bw in formants:
         out += bp(raw, fc - bw, fc + bw) * amp
     out = lp(out, 5000)
     return out * env_ar(n, dur, a, r) * dyn_curve(n, dur, vel, cresc) * 1.6
@@ -417,14 +420,60 @@ def impact(vel):
     return y * vel
 
 
+# A mechanical escapement, not a metronome: every beat is three tiny impacts
+# (unlock, impulse, drop) ringing through the small metal modes of the movement
+# and the wooden modes of the case. Tick and tock strike different parts.
+TICK_MODES = {False: [(1870, 1.0, .0035), (3130, .8, .0025), (4410, .6, .002), (6120, .45, .0015), (7980, .3, .001)],
+              True: [(1580, 1.0, .004), (2690, .8, .003), (3950, .55, .0022), (5380, .4, .0016), (7210, .25, .0011)]}
+CASE_MODES = [(410, .5, .018), (960, .35, .012), (1330, .2, .009)]
+
+
 def tick(vel, tock=False):
-    n = int(0.08 * SR)
+    n = int(0.07 * SR)
     t = tarr(n)
-    k = 0.85 if tock else 1.0
-    y = (np.sin(TWO_PI * 2500 * k * t) * np.exp(-t / 0.006)
-         + 0.6 * np.sin(TWO_PI * 4300 * k * t) * np.exp(-t / 0.004)
-         + 0.8 * rng.normal(size=n) * np.exp(-t / 0.0015))
-    return hp(y, 900) * vel * 0.4
+    y = np.zeros(n)
+    for off, a in [(0.0, 0.45), (0.0026, 1.0), (0.0085, 0.3)]:
+        i0 = max(0, int((off + rng.normal(0, 0.0002)) * SR))
+        tt = t[:n - i0]
+        click = np.zeros(n - i0)
+        for f, amp, dec in TICK_MODES[tock]:
+            f *= rng.uniform(0.985, 1.015)
+            click += amp * np.sin(TWO_PI * f * tt + rng.uniform(0, TWO_PI)) * np.exp(-tt / dec)
+        for f, amp, dec in CASE_MODES:
+            click += 0.6 * amp * np.sin(TWO_PI * f * tt) * np.exp(-tt / dec)
+        click += hp(rng.normal(size=n - i0) * np.exp(-tt / 0.0004), 2000) * 0.9
+        y[i0:] += a * click * rng.uniform(0.85, 1.0)
+    return hp(y, 250) * vel * (0.26 if tock else 0.3)
+
+
+def shepard(dur, rate, fade_in):
+    """An endlessly rising Shepard-Risset glissando."""
+    n = int(dur * SR)
+    t = tarr(n)
+    out = np.zeros((2, n))
+    for ch in range(2):
+        for k in range(7):
+            pos = (k + rate * t) % 7.0
+            f = 55.0 * 2 ** pos * (1.0 + 0.002 * ch)
+            amp = np.exp(-0.5 * ((pos - 3.3) / 1.25) ** 2)
+            ph = TWO_PI * np.cumsum(f) / SR
+            out[ch] += amp * (np.sin(ph) + 0.35 * np.sin(2 * ph) + 0.12 * np.sin(3 * ph))
+    env = np.clip(t / fade_in, 0, 1) ** 2
+    env *= np.clip((dur - t) / 0.05, 0, 1)
+    return out * env * 0.2
+
+
+def space_wind(dur, vel):
+    n = int(dur * SR)
+    t = tarr(n)
+    out = np.zeros((2, n))
+    for ch in range(2):
+        nz = rng.normal(size=n)
+        a = bp(nz, 120, 500) * (0.6 + 0.4 * np.sin(TWO_PI * 0.11 * t + ch))
+        b = bp(nz, 700, 1600) * (0.5 + 0.5 * np.sin(TWO_PI * 0.07 * t + 2 + ch)) * 0.35
+        out[ch] = a + b
+    env = np.clip(t / 2.5, 0, 1) * np.clip((dur - t) / 2.0, 0, 1)
+    return out * env * vel
 
 
 def heartbeat(vel):
@@ -436,6 +485,108 @@ def heartbeat(vel):
         s = np.sin(TWO_PI * np.cumsum(f) / SR) * np.exp(-tt / 0.11) * (t >= t0)
         return s * v
     return lp(thump(0.0, 1.0) + thump(0.3, 0.7), 400) * vel
+
+
+def lead_phrase(notes, vel=0.8, glide=0.075, bright=1.0, reso=1.8, vib=0.0045, attack=0.05,
+                drive=0.0, detune=6.0, sub_amt=0.22):
+    """The Lodestar lead: a Vangelis-style analog voice. One continuous oscillator per phrase that
+    glides between notes, with a resonant filter that blooms on every new note.
+    notes: list of (start_sec, dur_sec, midi). Returns (stereo signal, start_sec)."""
+    notes = sorted(notes)
+    t0 = notes[0][0]
+    t1 = max(s + d for s, d, m in notes) + 0.6
+    n = int((t1 - t0) * SR)
+    t = tarr(n)
+    target = np.full(n, float(notes[0][2]))
+    gate = np.zeros(n)
+    onset = np.zeros(n)
+    for s, d, m in notes:
+        i0 = int((s - t0) * SR)
+        i1 = min(n, int((s + d - t0) * SR))
+        target[i0:] = m
+        gate[i0:i1] = 1.0
+        onset[i0:] = np.exp(-t[:n - i0] / 0.22)
+    a = np.exp(-1.0 / (glide * SR))
+    pitch = lfilter([1 - a], [1, -a], target - target[0]) + target[0]
+    ga = np.exp(-1.0 / (attack * SR))
+    env = lfilter([1 - ga], [1, -ga], gate)
+    f = 440.0 * 2 ** ((pitch - 69) / 12) * (1 + vib * (1 - onset) * np.sin(TWO_PI * 5.2 * t))
+    fc = f * (1.6 + 7.0 * bright * (0.35 + 0.65 * onset)) * (0.45 + 0.55 * env)
+    out = np.zeros((2, n))
+    K = int(max(4, min(44, 15000 / f.max())))
+    for ch, det in ((0, -detune), (1, detune)):
+        for dc in (det, -det * 0.35):
+            ph = TWO_PI * np.cumsum(f * 2 ** (dc / 1200)) / SR + rng.uniform(0, TWO_PI)
+            for k in range(1, K + 1):
+                fk = k * f
+                g = 1.0 / np.sqrt(1.0 + (fk / fc) ** 4) * (1.0 + reso * np.exp(-((fk - fc) / (0.3 * fc)) ** 2))
+                out[ch] += np.sin(k * ph) * g * (fk < 16000) / k
+        phs = TWO_PI * np.cumsum(f * 0.5) / SR
+        for k in (1, 3, 5):
+            out[ch] += sub_amt * np.sin(k * phs) / k
+    out *= 0.45
+    # the Lodestar voice: every note blooms from "oo" to "ah", like a wordless singer inside the synth
+    oo = sum(bp(out, fc0 - bw, fc0 + bw) * amp for fc0, amp, bw in FORMANTS_OO)
+    ah = sum(bp(out, fc0 - bw, fc0 + bw) * amp for fc0, amp, bw in FORMANTS_AH)
+    w = np.clip(1.0 - onset * 1.25, 0.0, 1.0)
+    out = 0.4 * out + 1.5 * (oo * (1.0 - w) + ah * w)
+    if drive > 0:
+        out = np.tanh(out * (1 + drive * 3)) / (1 + drive * 0.8)
+    out = hp(out, 90)
+    return out * env * (0.85 + 0.15 * onset) * vel, t0
+
+
+def ratchet_click(vel):
+    """one click of the crown's ratchet while the watch is wound: small, dry, bright"""
+    n = int(0.03 * SR)
+    t = tarr(n)
+    y = np.zeros(n)
+    for f, a, d in [(2100, 0.4, 0.002), (3300, 1.0, 0.0015), (5200, 0.7, 0.001), (7700, 0.45, 0.0008)]:
+        y += a * np.sin(TWO_PI * f * rng.uniform(0.97, 1.03) * t + rng.uniform(0, TWO_PI)) * np.exp(-t / d)
+    y += hp(rng.normal(size=n) * np.exp(-t / 0.0005), 3000) * 0.8
+    return hp(y, 1200) * vel * 0.3
+
+
+def pluck(f, vel, decay=0.7):
+    """The clock's musical twin: a bright, glassy plucked synth."""
+    n = int(decay * 4 * SR)
+    t = tarr(n)
+    K = int(max(3, min(24, 12000 / f)))
+    y = np.zeros(n)
+    for k in range(1, K + 1):
+        y += np.sin(TWO_PI * k * f * t * (1 + 0.0004 * k * k) + rng.uniform(0, TWO_PI)) / k ** 1.3 \
+            * np.exp(-t * (1.0 + 0.9 * k) / decay)
+    y += 0.5 * np.sin(TWO_PI * f * 1.0015 * t) * np.exp(-t / decay)
+    y *= np.clip(t / 0.0015, 0, 1)
+    return y * vel * 0.4
+
+
+def tamtam(vel, length=9.0):
+    """A tam-tam: an initial bong, then a shimmering bloom where the highs swell in late."""
+    n = int(length * SR)
+    t = tarr(n)
+    y = np.zeros(n)
+    freqs = np.exp(rng.uniform(np.log(70), np.log(3500), 70))
+    for f in freqs:
+        bloom = 0.05 + 0.6 * (f / 3500) ** 0.7
+        env = (1 - np.exp(-t / bloom)) * np.exp(-t / rng.uniform(2.5, 6.0))
+        y += np.sin(TWO_PI * f * t + rng.uniform(0, TWO_PI)) * env * (f / 200) ** -0.4
+    y += (2.0 * np.sin(TWO_PI * 92 * t) * np.exp(-t / 3.0) + 1.2 * np.sin(TWO_PI * 141 * t) * np.exp(-t / 2.2)) \
+        * np.clip(t / 0.01, 0, 1)
+    y += lp(rng.normal(size=n) * np.exp(-t / 0.05), 3000) * 0.8
+    y /= np.max(np.abs(y))
+    return y * vel
+
+
+def pingpong(x, d_sec, fb=0.35, taps=6, lpf=3500):
+    d = int(d_sec * SR)
+    mono = lp((x[0] + x[1]) * 0.5, lpf)
+    y = x.copy()
+    for k in range(1, taps + 1):
+        if k * d >= x.shape[1]:
+            break
+        y[k % 2, k * d:] += mono[:-k * d] * fb ** k
+    return y
 
 
 # ----------------------------------------------------------------------------------------------
@@ -450,49 +601,60 @@ for i, c in enumerate(['Dm', 'Bb', 'F', 'C', 'Dm', 'Bb', 'Gm', 'A']):           
 for i, c in enumerate(['Dm', 'Dm', 'Bb', 'Bb', 'Gm', 'Gm', 'Eb', 'A',
                        'Dm', 'Bb', 'Eb', 'A']):                                   # IV  Storm
     CHORDS[25 + i] = c
-for i, c in enumerate(['D', 'G', 'F#m', 'A', 'D', 'Bb', 'C', 'D']):              # VI  Lodestar
+for i, c in enumerate(['D', 'Bb', 'G', 'A', 'D', 'Bb', 'C', 'D']):               # VI  Lodestar
     CHORDS[41 + i] = c
     CHORDS[49 + i] = c
-for i, c in enumerate(['D', 'G', 'F#m', 'A', 'D', 'Gm', 'D', 'D']):              # VII Homecoming
+for i, c in enumerate(['D', 'Bb', 'G', 'A', 'D', 'Gm', 'D', 'D']):               # VII Homecoming
     CHORDS[57 + i] = c
 
-# The theme. Minor version asks a question (ends unresolved on C#, the leading tone).
+# The theme. Its hook is the rising call — long, short, LONG: D ... A — D' — and its signature
+# colour is the raised fourth (E over Bb) in bar 6. The minor version asks a question
+# (it ends unresolved on C#); the major version answers it (bVI - bVII - I, melody C -> D).
 THEME_MINOR = [
-    (0, 0, 2, 'D4'), (0, 2, 2, 'A4'),
-    (1, 0, 1.5, 'G4'), (1, 1.5, 0.5, 'F4'), (1, 2, 2, 'G4'),
-    (2, 0, 2, 'A4'), (2, 2, 2, 'C5'),
-    (3, 0, 3, 'G4'), (3, 3, 0.5, 'F4'), (3, 3.5, 0.5, 'E4'),
-    (4, 0, 2, 'D4'), (4, 2, 2, 'A4'),
-    (5, 0, 1.5, 'Bb4'), (5, 1.5, 0.5, 'A4'), (5, 2, 2, 'G4'),
-    (6, 0, 1, 'G4'), (6, 1, 1, 'A4'), (6, 2, 1, 'Bb4'), (6, 3, 1, 'D5'),
-    (7, 0, 4, 'C#5'),
+    (0, 0, 1.5, 'D4'), (0, 1.5, 0.5, 'A4'), (0, 2, 2, 'D5'),
+    (1, 0, 1.5, 'C5'), (1, 1.5, 0.5, 'Bb4'), (1, 2, 2, 'A4'),
+    (2, 0, 1.5, 'F4'), (2, 1.5, 0.5, 'A4'), (2, 2, 2, 'C5'),
+    (3, 0, 2, 'E5'), (3, 2, 1, 'D5'), (3, 3, 1, 'C5'),
+    (4, 0, 1.5, 'D4'), (4, 1.5, 0.5, 'A4'), (4, 2, 2, 'D5'),
+    (5, 0, 1.5, 'F5'), (5, 1.5, 0.5, 'E5'), (5, 2, 2, 'D5'),
+    (6, 0, 1.5, 'G4'), (6, 1.5, 0.5, 'Bb4'), (6, 2, 2, 'D5'),
+    (7, 0, 3, 'C#5'), (7, 3, 1, 'A4'),
 ]
-# Major version answers it (bVI - bVII - I: the "we made it" cadence).
 THEME_MAJOR = [
-    (0, 0, 2, 'D4'), (0, 2, 2, 'A4'),
-    (1, 0, 1.5, 'G4'), (1, 1.5, 0.5, 'F#4'), (1, 2, 2, 'G4'),
-    (2, 0, 2, 'A4'), (2, 2, 2, 'C#5'),
-    (3, 0, 3, 'A4'), (3, 3, 0.5, 'F#4'), (3, 3.5, 0.5, 'E4'),
-    (4, 0, 2, 'D4'), (4, 2, 2, 'A4'),
-    (5, 0, 1.5, 'Bb4'), (5, 1.5, 0.5, 'C5'), (5, 2, 2, 'D5'),
-    (6, 0, 1, 'C5'), (6, 1, 1, 'D5'), (6, 2, 1, 'E5'), (6, 3, 1, 'G5'),
-    (7, 0, 4, 'F#5'),
+    (0, 0, 1.5, 'D4'), (0, 1.5, 0.5, 'A4'), (0, 2, 2, 'D5'),
+    (1, 0, 1.5, 'C5'), (1, 1.5, 0.5, 'Bb4'), (1, 2, 2, 'A4'),
+    (2, 0, 1.5, 'G4'), (2, 1.5, 0.5, 'B4'), (2, 2, 2, 'D5'),
+    (3, 0, 2, 'E5'), (3, 2, 1, 'D5'), (3, 3, 1, 'C#5'),
+    (4, 0, 1.5, 'D4'), (4, 1.5, 0.5, 'A4'), (4, 2, 2, 'D5'),
+    (5, 0, 1.5, 'F5'), (5, 1.5, 0.5, 'E5'), (5, 2, 2, 'D5'),
+    (6, 0, 1.5, 'E5'), (6, 1.5, 0.5, 'G5'), (6, 2, 2, 'C6'),
+    (7, 0, 4, 'A5'),
 ]
-THEME_MAJOR_FINAL = THEME_MAJOR[:-1] + [(7, 0, 4, 'D5')]
+THEME_MAJOR_FINAL = THEME_MAJOR[:-1] + [(7, 0, 4, 'D6')]
 STORM_LINE = [
-    (0, 0, 2, 'D3'), (0, 2, 2, 'A3'),
-    (1, 0, 1.5, 'Bb3'), (1, 1.5, 0.5, 'A3'), (1, 2, 2, 'G3'),
-    (2, 0, 2, 'F3'), (2, 2, 2, 'D4'),
-    (3, 0, 1.5, 'C4'), (3, 1.5, 0.5, 'Bb3'), (3, 2, 2, 'A3'),
-    (4, 0, 2, 'G3'), (4, 2, 2, 'D4'),
-    (5, 0, 1.5, 'Eb4'), (5, 1.5, 0.5, 'D4'), (5, 2, 2, 'C4'),
-    (6, 0, 1, 'Bb3'), (6, 1, 1, 'C4'), (6, 2, 1, 'Eb4'), (6, 3, 1, 'G4'),
-    (7, 0, 4, 'E4'),
-    (8, 0, 2, 'D4'), (8, 2, 2, 'A4'),
-    (9, 0, 1.5, 'Bb4'), (9, 1.5, 0.5, 'A4'), (9, 2, 2, 'F4'),
-    (10, 0, 1, 'G4'), (10, 1, 1, 'Bb4'), (10, 2, 1, 'Eb5'), (10, 3, 1, 'D5'),
+    (0, 0, 1.5, 'D3'), (0, 1.5, 0.5, 'A3'), (0, 2, 2, 'D4'),
+    (1, 0, 1.5, 'C4'), (1, 1.5, 0.5, 'Bb3'), (1, 2, 2, 'A3'),
+    (2, 0, 1.5, 'Bb2'), (2, 1.5, 0.5, 'F3'), (2, 2, 2, 'Bb3'),
+    (3, 0, 1.5, 'A3'), (3, 1.5, 0.5, 'G3'), (3, 2, 2, 'F3'),
+    (4, 0, 1.5, 'G3'), (4, 1.5, 0.5, 'D4'), (4, 2, 2, 'G4'),
+    (5, 0, 1.5, 'F4'), (5, 1.5, 0.5, 'Eb4'), (5, 2, 2, 'D4'),
+    (6, 0, 1.5, 'Eb4'), (6, 1.5, 0.5, 'G4'), (6, 2, 2, 'Bb4'),
+    (7, 0, 2, 'C#4'), (7, 2, 2, 'E4'),
+    (8, 0, 1.5, 'D4'), (8, 1.5, 0.5, 'A4'), (8, 2, 2, 'D5'),
+    (9, 0, 1.5, 'F5'), (9, 1.5, 0.5, 'E5'), (9, 2, 2, 'D5'),
+    (10, 0, 1.5, 'Eb5'), (10, 1.5, 0.5, 'D5'), (10, 2, 2, 'Bb4'),
     (11, 0, 4, 'C#5'),
 ]
+
+
+def clock_notes(ch):
+    """tick = the chord's fifth, tock = its root: the clock turned into a melody"""
+    pc, _ = chord_info(ch)
+    return above((pc + 7) % 12, 76), above(pc, 69)
+
+
+def phrase(notes_list, start_bar, shift=0, bars=None, legato=1.0):
+    return [(sec(b), sec(d) * legato, m) for b, d, m in line(notes_list, start_bar, shift, bars)]
 
 
 def line(notes, start_bar, shift=0, bars=None):
@@ -524,6 +686,35 @@ def render_score():
     TK = bus('ticks', 1.8, 0.25)
     SB = bus('sub', 0.4, 0.0)
     HB = bus('heart', 0.9, 0.1)
+    SH = bus('shepard', 0.5, 0.5)
+    AM = bus('ambience', 0.8, 0.6)
+    LD = bus('lead', 1.35, 0.45)
+    PL = bus('pluck', 0.55, 0.4)
+    GG = bus('gong', 0.7, 0.6)
+
+    def add_lead(notes, pan=0.0, **kw):
+        sig, t0 = lead_phrase(notes, **kw)
+        LD.add(t0, sig, pan=pan, jitter=0)
+
+    # the clock's twin: a pluck on every tick (tick = fifth, tock = root of the current chord)
+    def clock_pluck(t_beat, bar, k, vel):
+        tk, tc = clock_notes(CHORDS.get(bar, 'Dm'))
+        m = tk if k % 2 == 0 else tc
+        PL.add(sec(t_beat), pluck(hz(m), vel, decay=0.55 if vel < 0.3 else 0.8), pan=0.35 if k % 2 == 0 else -0.35, jitter=0)
+
+    # gongs: the opening, the storm, the climax, the landing
+    # bar 1: someone winds the watch — three turns of the crown — then time begins at bar 2
+    tw = 0.35
+    for turn in range(3):
+        for c in range(6):
+            TK.add(tw + c * 0.048 + rng.normal(0, 0.003), ratchet_click(0.5 * rng.uniform(0.8, 1.0)), pan=0.15, jitter=0)
+        n_fr = int(0.3 * SR)
+        fr = bp(rng.normal(size=n_fr), 1500, 6000) * np.sin(np.linspace(0, np.pi, n_fr)) * 0.012
+        TK.add(tw, fr, pan=0.15, jitter=0)
+        tw += 0.6
+    GG.add(sec(bt(25)), tamtam(0.55), jitter=0)
+    GG.add(sec(bt(41)), tamtam(1.0), jitter=0)
+    GG.add(sec(bt(57)), tamtam(0.5), jitter=0)
 
     def pad(bar, ch, vel, beats=4, a=0.5, r=1.0, **kw):
         for m in pad_voicing(ch):
@@ -539,7 +730,7 @@ def render_score():
                    pan=np.clip((m - 57) / 36, -0.5, 0.5))
 
     # ---------------------------------------------------------------- the clock (time itself)
-    for bar in range(1, 37):
+    for bar in range(2, 37):
         if bar <= 28:
             step = 1.0
         elif bar <= 32:
@@ -556,8 +747,10 @@ def render_score():
             v = lerp(0.25, 0.5, progress(bar, 25, 36))
         b = 0.0
         k = 0
+        pv = 0.5 if bar <= 8 else (0.3 if bar <= 16 else (0.18 if bar <= 24 else lerp(0.2, 0.32, progress(bar, 25, 36))))
         while b < 4:
-            TK.add(sec(bt(bar, b)), tick(v * rng.uniform(0.9, 1.05), tock=(k % 2 == 1)), pan=0.35, jitter=0)
+            TK.add(sec(bt(bar, b)), tick(v * rng.uniform(0.95, 1.02), tock=(k % 2 == 1)), pan=0.2, jitter=0)
+            clock_pluck(bt(bar, b), bar, k, pv * (1.0 if step == 1.0 else 0.75))
             b += step
             k += 1
     # slowed-down time while lost
@@ -566,11 +759,13 @@ def render_score():
             if bar == 40 and b == 2:
                 continue
             TK.add(sec(bt(bar, b)), tick(0.4, tock=(b == 2)), pan=0.35, jitter=0)
+            clock_pluck(bt(bar, b), 37, b // 2, 0.22)
     # homecoming: the clock ticks gently... then stops
     for bar in range(57, 63):
         for b in range(4):
             v = lerp(0.4, 0.15, progress(bar, 57, 62))
             TK.add(sec(bt(bar, b)), tick(v, tock=(b % 2 == 1)), pan=0.35, jitter=0)
+            clock_pluck(bt(bar, b), bar, b, lerp(0.4, 0.15, progress(bar, 57, 62)))
 
     # ---------------------------------------------------------------- I. HOME (1-8)
     for bar in range(1, 17):
@@ -596,8 +791,9 @@ def render_score():
         for i in range(8):
             v = 0.32 * (1.2 if i % 2 == 0 else 0.85)
             SP.add(sec(bt(bar, i * 0.5)), spic(hz(root), v), pan=-0.3)
+    add_lead(phrase(THEME_MINOR, 9, shift=12), vel=0.62, bright=0.7, glide=0.09, pan=0.1)
     for b, d, m in line(THEME_MINOR, 9):
-        BR.add(sec(b), brass(hz(m), sec(d) * 0.97, 0.7, bright=0.75, a=0.1), pan=-0.15)
+        BR.add(sec(b), brass(hz(m), sec(d) * 0.97, 0.42, bright=0.6, a=0.12), pan=-0.25)
     for bar in range(13, 17):
         DR.add(sec(bt(bar)), timpani(hz(bass_root(CHORDS[bar]) + 12), 0.35), pan=0)
 
@@ -697,6 +893,7 @@ def render_score():
             BR.add(sec(b), brass(hz(m - 12), sec(d) * 0.95, 0.9, bright=1.4), pan=-0.3)
             BR.add(sec(b), brass(hz(m), sec(d) * 0.95, 0.9, bright=1.4), pan=0.2)
             V.add(sec(b), strings(hz(m + 12), sec(d), 0.55, a=0.05, r=0.3, voices=6), pan=0.3)
+    add_lead(phrase(STORM_LINE, 25, shift=12, bars=(8, 12)), vel=0.55, bright=1.3, drive=0.55, glide=0.05, pan=-0.1)
     # the siren: violins glissando up, time running out
     S.add(sec(bt(35)), strings(hz(midi('A4')), sec(8), 0.4, a=1.0, r=0.2, glide=4.0, voices=7, cresc=(0.1, 0.6)), pan=0.5)
     S.add(sec(bt(35)), strings(hz(midi('E5')), sec(8), 0.4, a=1.0, r=0.2, glide=4.0, voices=7, cresc=(0.1, 0.5)), pan=-0.5)
@@ -706,7 +903,10 @@ def render_score():
     r = riser(sec(4), 1.0)
     IM.add(sec(bt(37)) - r.shape[1] / SR, r, jitter=0)
 
+    SH.add(sec(bt(29)), shepard(sec(bt(37) - bt(29)), 0.16, 10.0), jitter=0)
+
     # ---------------------------------------------------------------- V. LOST (37-40)
+    AM.add(sec(bt(37, 1)), space_wind(sec(bt(40, 3.5) - bt(37, 1)) + 1.5, 0.35), jitter=0)
     IM.add(sec(bt(37)), impact(1.0) * 1.1, jitter=0)
     IM.add(sec(bt(37)), crash(1.0, length=5.0), jitter=0)
     # the void: faint high strings, like distant stars
@@ -718,8 +918,8 @@ def render_score():
                 continue
             HB.add(sec(bt(bar, b)), heartbeat(0.8), jitter=0)
     # the broken memory of the theme
-    for b, beat, d, nm, v in [(38, 0, 2, 'D4', 0.45), (38, 2, 2, 'A4', 0.42),
-                              (39, 0, 1.5, 'G4', 0.38), (39, 1.5, 2.5, 'F4', 0.34)]:
+    for b, beat, d, nm, v in [(38, 0, 1.5, 'D4', 0.45), (38, 1.5, 0.5, 'A4', 0.4), (38, 2, 2, 'D5', 0.42),
+                              (39, 0, 1.5, 'C5', 0.36), (39, 1.5, 2.5, 'Bb4', 0.32)]:
         PN.add(sec(bt(b, beat)), piano(hz(midi(nm)), sec(d), v, bright=0.7), pan=0.05)
     # the swell — something appears in the dark (Asus4 -> A), then a breath of silence
     cut = 3.5
@@ -792,6 +992,12 @@ def render_score():
         BR.add(sec(b), brass(hz(m - 12), sec(d) * 0.97, 0.75, bright=1.2), pan=-0.35)
         V.add(sec(b), strings(hz(m + 12), sec(d), 0.7, a=0.05, r=0.6, voices=7, vib=0.006), pan=0.3)
         V.add(sec(b), strings(hz(m + 24), sec(d), 0.3, a=0.05, r=0.6, voices=5, vib=0.006), pan=0.45)
+    add_lead(phrase(THEME_MAJOR_FINAL, 49), vel=0.6, bright=1.2, drive=0.6, glide=0.06, pan=0.05)
+    counter = [(0, 0, 4, 'F#3'), (1, 0, 2, 'D4'), (1, 2, 2, 'F4'), (2, 0, 2, 'D4'), (2, 2, 2, 'B3'),
+               (3, 0, 2, 'C#4'), (3, 2, 2, 'E4'), (4, 0, 2, 'F#4'), (4, 2, 2, 'A4'), (5, 0, 2, 'F4'),
+               (5, 2, 2, 'D4'), (6, 0, 2, 'E4'), (6, 2, 2, 'G4'), (7, 0, 4, 'F#4')]
+    for b, d, m in line(counter, 49):
+        BR.add(sec(b), brass(hz(m), sec(d) * 0.96, 0.6, bright=1.0, a=0.12), pan=0.45)
     # final bar of the climax: timpani roll into the landing
     for i in range(24):
         DR.add(sec(bt(56, i / 6)), timpani(hz(midi('D2')), lerp(0.3, 0.85, i / 23)), jitter=0.002)
@@ -815,15 +1021,19 @@ def render_score():
                 m = arp[i % 4]
                 PN.add(sec(bt(bar, i * 0.5)), piano(hz(m), sec(0.5), v, ring=sec(1.5)), pan=(m - 62) / 40)
     SB.add(sec(bt(57)), sub(hz(midi('D1')), sec(4), 0.5, r=2.0))
-    home = [(57, 0, 2, 'D5'), (57, 2, 2, 'A5'),
-            (58, 0, 1.5, 'G5'), (58, 1.5, 0.5, 'F#5'), (58, 2, 2, 'G5'),
-            (59, 0, 2, 'A5'), (59, 2, 2, 'C#6'),
-            (60, 0, 3, 'A5'), (60, 3, 0.5, 'F#5'), (60, 3.5, 0.5, 'E5'),
-            (61, 0, 2, 'D5'), (61, 2, 2, 'A5'),
+    home = [(57, 0, 1.5, 'D5'), (57, 1.5, 0.5, 'A5'), (57, 2, 2, 'D6'),
+            (58, 0, 1.5, 'C6'), (58, 1.5, 0.5, 'Bb5'), (58, 2, 2, 'A5'),
+            (59, 0, 1.5, 'G5'), (59, 1.5, 0.5, 'B5'), (59, 2, 2, 'D6'),
+            (60, 0, 2, 'E6'), (60, 2, 1, 'D6'), (60, 3, 1, 'C#6'),
+            (61, 0, 1.5, 'D5'), (61, 1.5, 0.5, 'A5'), (61, 2, 2, 'D6'),
             (62, 0, 1.5, 'Bb5'), (62, 1.5, 0.5, 'A5'), (62, 2, 2, 'G5'),
             (63, 0, 4, 'F#5')]
+    PL.add(sec(bt(64, 2)), pluck(hz(midi('A6')), 0.3, decay=2.2), pan=0.2, jitter=0)
     for b, beat, d, nm in home:
         PN.add(sec(bt(b, beat)), piano(hz(midi(nm)), sec(d), 0.68, bright=0.85), pan=0.1)
+    for m in ['D3', 'A3', 'D4', 'F#4', 'A4']:
+        CH.add(sec(bt(63)), choir(hz(midi(m)), sec(8), 0.3, a=2.5, r=4.5, formants=FORMANTS_OO),
+               pan=np.clip((midi(m) - 60) / 30, -0.5, 0.5))
     # last chord: a rolled D(add9), left to ring into the silence
     for i, nm in enumerate(['D2', 'D3', 'A3', 'E4', 'F#4', 'A4', 'D5']):
         PN.add(sec(bt(64)) + i * 0.09, piano(hz(midi(nm)), 7.5, 0.42 if i else 0.5, bright=0.8), pan=(midi(nm) - 60) / 40,
@@ -861,6 +1071,14 @@ def master():
     stats = {}
     for b in BUSES.values():
         x = b.buf.astype(np.float64) * b.gain
+        if b.name in ('strings', 'violins', 'spic'):
+            x = x + 0.3 * bp(x, 220, 380) + 0.2 * bp(x, 2600, 3800)
+        elif b.name == 'brass':
+            x = x + 0.35 * bp(x, 900, 1500)
+        elif b.name == 'lead':
+            x = pingpong(x, 0.75 * SPB, fb=0.33)
+        elif b.name == 'pluck':
+            x = pingpong(x, 0.75 * SPB, fb=0.3, lpf=5000)
         stats[b.name] = x
         dry += x
         send += x * b.send
