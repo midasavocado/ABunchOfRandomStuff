@@ -305,9 +305,12 @@ def mesh_obj(name, verts, faces, mat=None, smooth_shade=True, coll=None):
     return o
 
 
-def recalc_normals(o, inside=False):
+def recalc_normals(o, inside=False, weld=False):
     bm = bmesh.new()
     bm.from_mesh(o.data)
+    if weld:     # e.g. lathe profiles that touch the axis: fuse the pole vertices so the solid is manifold
+        bmesh.ops.remove_doubles(bm, verts=bm.verts, dist=1e-7)
+        bmesh.ops.dissolve_degenerate(bm, dist=1e-8, edges=bm.edges)
     bmesh.ops.recalc_face_normals(bm, faces=bm.faces)
     if inside:
         bmesh.ops.reverse_faces(bm, faces=bm.faces)
@@ -404,8 +407,9 @@ def shade_auto(o, angle=35):
             p.use_smooth = True
 
 
-def lathe(name, profile, segs=64, mat=None, axis='Z', close=False, smooth_shade=True):
-    """profile: list of (r, z). Returns a revolved mesh object."""
+def lathe(name, profile, segs=64, mat=None, axis='Z', close=False, smooth_shade=True, auto=40):
+    """profile: list of (r, z). Returns a revolved mesh object. Smooth shading is split at profile corners sharper
+    than `auto` degrees (otherwise interpolated normals across e.g. a glass rim flip refraction and look black)."""
     verts, faces = [], []
     n = len(profile)
     for i in range(segs):
@@ -418,7 +422,9 @@ def lathe(name, profile, segs=64, mat=None, axis='Z', close=False, smooth_shade=
         for k in range(n - 1):
             faces.append((i * n + k, j * n + k, j * n + k + 1, i * n + k + 1))
     o = mesh_obj(name, verts, faces, mat, smooth_shade)
-    recalc_normals(o)
+    recalc_normals(o, weld=True)
+    if smooth_shade and auto:
+        shade_auto(o, auto)
     if axis == 'X':
         o.rotation_euler = (0, math.pi / 2, 0)
     elif axis == 'Y':

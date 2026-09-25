@@ -167,7 +167,7 @@ def expression(rig, smile=0.0, brows=0.0, eyes=0.0, jaw=0.0):
     rot("jaw", 6.0 * jaw + 1.5 * s, 0.0, 0.0)
 
 
-def hair_color(parts, color, spec=0.35):
+def hair_color(parts, color, spec=0.25):
     """Re-colour MPFB card hair (keeps the strand texture/alpha): desaturate the diffuse and multiply by a natural
     colour; adds a soft anisotropic sheen so it reads as hair, not plastic."""
     for o in parts:
@@ -194,7 +194,89 @@ def hair_color(parts, color, spec=0.35):
                 nt.links.new(hsv.outputs[0], mul.inputs[6])
                 mul.inputs[7].default_value = (color[0] * 1.6, color[1] * 1.6, color[2] * 1.6, 1)
                 nt.links.new(mul.outputs[2], inp)
-                n.inputs['Roughness'].default_value = 0.38
-                n.inputs['Anisotropic'].default_value = 0.6
+                n.inputs['Roughness'].default_value = 0.55
+                n.inputs['Anisotropic'].default_value = 0.3
                 n.inputs['Specular IOR Level'].default_value = spec
                 n.inputs['Coat Weight'].default_value = 0.0
+
+
+def amputate(parts, side="R", bones=("lowerarm01", "lowerarm02", "wrist", "metacarpal", "finger")):
+    """Hide a forearm+hand (body and clothes) with a Mask modifier on a union vertex group of those bones' weights,
+    so a prosthesis + a sleeve built separately can take its place."""
+    import numpy as np
+    for o in parts:
+        if o.type != 'MESH':
+            continue
+        vgs = [g for g in o.vertex_groups if g.name.endswith("." + side) and any(g.name.startswith(b) for b in bones)]
+        if not vgs:
+            continue
+        idx = {g.index for g in vgs}
+        me = o.data
+        sel = []
+        for v in me.vertices:
+            w = sum(ge.weight for ge in v.groups if ge.group in idx)
+            if w > 0.35:
+                sel.append(v.index)
+        if not sel:
+            continue
+        g = o.vertex_groups.new(name="_amp_" + side)
+        g.add(sel, 1.0, 'REPLACE')
+        md = o.modifiers.new("Amputate" + side, 'MASK')
+        md.vertex_group = g.name
+        md.invert_vertex_group = True
+        # keep it right after the armature so the cut deforms with the pose
+        arm_i = next((i for i, m in enumerate(o.modifiers) if m.type == 'ARMATURE'), 0)
+        with bpy.context.temp_override(object=o):
+            bpy.ops.object.modifier_move_to_index(modifier=md.name, index=arm_i + 1)
+
+
+def garment_material(parts, key):
+    for o in parts:
+        if key in o.name.lower() and o.material_slots:
+            return o.material_slots[0].material
+    return None
+
+
+def look_at(rig, target, bones=(("neck02", 0.35), ("head", 0.65)), eyes=True, iters=25, limit=35.0):
+    """Turn neck/head (and the eyes) so the gaze points at `target` (world). The gaze direction is the eye bones'
+    Y axis (MPFB eye bones point out of the pupils). Small damped Gauss-Newton on (pitch x, yaw y) shared across
+    the chain by weight; clamped to +-limit degrees so nobody breaks their neck."""
+    import numpy as np
+    tgt = V(target)
+
+    def gaze():
+        bpy.context.view_layer.update()
+        e = [rig.pose.bones.get("eye." + s) for s in ("L", "R")]
+        mid = sum((rig.matrix_world @ b.head for b in e), V((0, 0, 0))) / 2
+        fwd = sum(((rig.matrix_world.to_3x3() @ b.matrix.to_3x3()).col[1] for b in e), V((0, 0, 0))).normalized()
+        return mid, fwd
+
+    for b, _ in bones:
+        rig.pose.bones[b].rotation_mode = 'XYZ'
+    x = np.zeros(2)
+    base = {b: V(rig.pose.bones[b].rotation_euler) for b, _ in bones}
+
+    def apply(xv):
+        for b, w in bones:
+            r = base[b].copy()
+            r.x += math.radians(float(np.clip(xv[0], -limit, limit))) * w
+            r.y += math.radians(float(np.clip(xv[1], -limit, limit))) * w
+            rig.pose.bones[b].rotation_euler = r
+
+    def err(xv):
+        apply(xv)
+        mid, fwd = gaze()
+        d = (tgt - mid).normalized()
+        return np.array(fwd - d)
+    for _ in range(iters):
+        r = err(x)
+        if np.linalg.norm(r) < 1e-3:
+            break
+        J = np.zeros((3, 2))
+        for i in range(2):
+            dx = np.zeros(2); dx[i] = 1.0
+            J[:, i] = (err(x + dx) - r)
+        x = x - np.linalg.solve(J.T @ J + 1e-6 * np.eye(2), J.T @ r)
+        x = np.clip(x, -limit, limit)
+    apply(x)
+    return x

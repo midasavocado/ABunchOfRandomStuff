@@ -121,7 +121,7 @@ def carbon():
     if "carbon" not in _MATS:
         # 2x2 twill: each 3 mm tow cell is either warp or weft; anisotropic fibre sheen rotates 90 deg between
         # them under a deep clear coat -> the characteristic shimmering herringbone steps, never a flat checker.
-        m = sb.mat("ProCarbon", (0.018, 0.019, 0.021), metal=0.0, rough=0.3, coat=1.0, coat_rough=0.04, spec=0.6, aniso=0.75)
+        m = sb.mat("ProCarbon", (0.012, 0.013, 0.015), metal=0.0, rough=0.34, coat=1.0, coat_rough=0.05, spec=0.35, aniso=0.45)
         nb = sb.NB(m)
         co = nb.coord('Object')
         sep = nb.new('ShaderNodeSeparateXYZ'); nb.link(co, sep.inputs[0])
