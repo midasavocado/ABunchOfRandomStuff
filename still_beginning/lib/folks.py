@@ -14,23 +14,28 @@ PRESETS = {
     "engineer": dict(phenotype=dict(age=0.62, gender=1.0, weight=0.5, muscle=0.55,
                                     race=dict(african=0.6, asian=0.1, caucasian=0.3)),
                      hair="short02", clothes=["male_worksuit01", "shoes01"], skin="middleage_african_male",
+                     hair_color=(0.02, 0.018, 0.016),
                      tint={"worksuit": (0.20, 0.22, 0.25)}),
     # s09: the prosthesis wearer (adult woman, 40s) and family
     "wearer": dict(phenotype=dict(age=0.66, gender=0.0, weight=0.5, muscle=0.5,
                                   race=dict(african=0.3, asian=0.1, caucasian=0.6)),
                    hair="bob02", clothes=["male_casualsuit01", "shoes02"], skin="middleage_caucasian_female",
+                   hair_color=(0.16, 0.09, 0.05),
                    tint={"casualsuit": (0.70, 0.64, 0.55)}),
     "partner": dict(phenotype=dict(age=0.68, gender=1.0, weight=0.55, muscle=0.5,
                                    race=dict(african=0.25, asian=0.35, caucasian=0.4)),
                     hair="short04", clothes=["male_casualsuit03", "shoes03"], skin="middleage_asian_male",
+                    hair_color=(0.03, 0.025, 0.022),
                     tint={"casualsuit": (0.20, 0.30, 0.38)}),
     "grandma": dict(phenotype=dict(age=0.92, gender=0.0, weight=0.55, muscle=0.35,
                                    race=dict(african=0.2, asian=0.1, caucasian=0.7)),
                     hair="bob01", clothes=["male_casualsuit03", "shoes02"], skin="old_caucasian_female",
+                    hair_color=(0.62, 0.60, 0.58),
                     tint={"casualsuit": (0.50, 0.40, 0.34)}),
     "teen": dict(phenotype=dict(age=0.27, gender=1.0, weight=0.45, muscle=0.45,
                                 race=dict(african=0.35, asian=0.2, caucasian=0.45)),
                  hair="short01", clothes=["male_casualsuit01", "shoes05"], skin="young_caucasian_male",
+                 hair_color=(0.10, 0.06, 0.035),
                  tint={"casualsuit": (0.55, 0.60, 0.52)}),
 }
 
@@ -70,6 +75,8 @@ def person(preset, name=None, subdiv=1):
     mhchild.fix_eyes(parts, "brownlight_eye.png") if False else None
     for k, c in p.get("tint", {}).items():
         tint_clothes(parts, k, c)
+    if p.get("hair_color"):
+        hair_color(parts, p["hair_color"])
     return bm, rig, parts
 
 
@@ -131,3 +138,63 @@ def reach(rig, side, target, elbow_hint=None, iters=40, bones=None, end="wrist",
         x = x + np.clip(dx, -0.3, 0.3)
     apply(x)
     return float(np.linalg.norm(f(x)[:3]))
+
+
+def expression(rig, smile=0.0, brows=0.0, eyes=0.0, jaw=0.0):
+    """Facial expression on the MPFB default rig's face bones (degrees / metres tuned by eye in lookdev):
+    smile 0..1 pulls the lip corners up/back and lifts the cheeks (with a slight eye squint - a real Duchenne
+    smile), brows -1..1 lowers/raises the inner brows, eyes 0..1 narrows the lids, jaw 0..1 parts the lips."""
+    def rot(b, x=0.0, y=0.0, z=0.0):
+        pb = rig.pose.bones.get(b)
+        if pb is None:
+            return
+        pb.rotation_mode = 'XYZ'
+        pb.rotation_euler = (math.radians(x), math.radians(y), math.radians(z))
+
+    def mov(b, v):
+        pb = rig.pose.bones.get(b)
+        if pb is None:
+            return
+        pb.location = v
+    s = smile
+    for side, sg in (("L", 1), ("R", -1)):
+        # lip corners up/out (bone-local offsets found in lookdev_face sweeps), cheeks lift, lower lids rise
+        mov("oris04.%s" % side, (-0.004 * s, 0.005 * s, 0.0))
+        mov("oris03.%s" % side, (-0.002 * s, 0.0025 * s, 0.0))
+        rot("levator05.%s" % side, 20.0 * s, 0.0, 0.0)
+        rot("orbicularis04.%s" % side, -6.0 * (0.6 * s + eyes), 0.0, 0.0)
+        rot("oculi01.%s" % side, 8.0 * brows, 0.0, 0.0)
+    rot("jaw", 6.0 * jaw + 1.5 * s, 0.0, 0.0)
+
+
+def hair_color(parts, color, spec=0.35):
+    """Re-colour MPFB card hair (keeps the strand texture/alpha): desaturate the diffuse and multiply by a natural
+    colour; adds a soft anisotropic sheen so it reads as hair, not plastic."""
+    for o in parts:
+        if not any(k in o.name.lower() for k in ("afro", "bob", "braid", "long", "ponytail", "short", "eyebrow")):
+            continue
+        for slot in o.material_slots:
+            m = slot.material
+            if not m or not m.use_nodes:
+                continue
+            nt = m.node_tree
+            for n in list(nt.nodes):
+                if n.type != 'BSDF_PRINCIPLED':
+                    continue
+                inp = n.inputs['Base Color']
+                src = inp.links[0].from_socket if inp.links else None
+                hsv = nt.nodes.new('ShaderNodeHueSaturation')
+                hsv.inputs['Saturation'].default_value = 0.0
+                mul = nt.nodes.new('ShaderNodeMix'); mul.data_type = 'RGBA'; mul.blend_type = 'MULTIPLY'
+                mul.inputs[0].default_value = 1.0
+                if src:
+                    nt.links.new(src, hsv.inputs['Color'])
+                else:
+                    hsv.inputs['Color'].default_value = inp.default_value
+                nt.links.new(hsv.outputs[0], mul.inputs[6])
+                mul.inputs[7].default_value = (color[0] * 1.6, color[1] * 1.6, color[2] * 1.6, 1)
+                nt.links.new(mul.outputs[2], inp)
+                n.inputs['Roughness'].default_value = 0.38
+                n.inputs['Anisotropic'].default_value = 0.6
+                n.inputs['Specular IOR Level'].default_value = spec
+                n.inputs['Coat Weight'].default_value = 0.0

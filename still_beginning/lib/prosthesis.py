@@ -119,16 +119,28 @@ def steel_pin():
 def carbon():
     """Forearm socket: carbon composite under a clear coat - low-contrast 3 mm tow checker, satin coat."""
     if "carbon" not in _MATS:
-        m = sb.mat("ProCarbon", (0.03, 0.031, 0.035), rough=0.32, coat=0.9, coat_rough=0.06, spec=0.5)
+        # 2x2 twill: each 3 mm tow cell is either warp or weft; anisotropic fibre sheen rotates 90 deg between
+        # them under a deep clear coat -> the characteristic shimmering herringbone steps, never a flat checker.
+        m = sb.mat("ProCarbon", (0.018, 0.019, 0.021), metal=0.0, rough=0.3, coat=1.0, coat_rough=0.04, spec=0.6, aniso=0.75)
         nb = sb.NB(m)
         co = nb.coord('Object')
-        ch = nb.new('ShaderNodeTexChecker')
-        nb.link(nb.mapping(co, rot=(0.0, 0.0, 0.785)), ch.inputs['Vector'])
-        ch.inputs['Scale'].default_value = 420.0
-        f = ch.outputs['Fac']
-        nb.set('Base Color', nb.mix(f, (0.026, 0.027, 0.030, 1), (0.036, 0.037, 0.041, 1)))
-        nb.set('Roughness', nb.mix(f, 0.26, 0.42, dtype='FLOAT'))
-        nb.b = None
+        sep = nb.new('ShaderNodeSeparateXYZ'); nb.link(co, sep.inputs[0])
+        tow = 0.003
+        u = nb.math('FLOOR', nb.math('DIVIDE', sep.outputs[0], tow))
+        v = nb.math('FLOOR', nb.math('DIVIDE', sep.outputs[1], tow))
+        twill = nb.math('LESS_THAN', nb.math('MODULO', nb.math('ADD', nb.math('ADD', u, v), 1000.0), 4.0), 2.0)
+        nb.set('Anisotropic Rotation', nb.math('MULTIPLY', twill, 0.25))
+        # fibre striations inside each tow + slight tow-to-tow value change
+        fib = nb.wave(nb.mapping(co, rot=(0.0, 0.0, 0.0)), scale=1800.0, dist=3.0, detail=3, wtype='BANDS', direction='X')
+        fib2 = nb.wave(co, scale=1800.0, dist=3.0, detail=3, wtype='BANDS', direction='Y')
+        f = nb.mix(twill, fib.outputs['Fac'], fib2.outputs['Fac'], dtype='FLOAT')
+        cell = nb.new('ShaderNodeTexWhiteNoise'); cell.noise_dimensions = '2D'
+        cmb = nb.new('ShaderNodeCombineXYZ'); nb.link(u, cmb.inputs[0]); nb.link(v, cmb.inputs[1]); nb.link(cmb.outputs[0], cell.inputs['Vector'])
+        base = nb.mix(twill, (0.016, 0.017, 0.019, 1), (0.028, 0.029, 0.032, 1))
+        base = nb.mix(nb.math('MULTIPLY', cell.outputs['Value'], 0.4), base, (0.04, 0.041, 0.045, 1))
+        nb.set('Base Color', base)
+        nb.set('Roughness', nb.maprange(f, 0.0, 1.0, 0.22, 0.36))
+        nb.set('Normal', nb.bump(f, strength=0.08, distance=0.00005))
         _MATS["carbon"] = m
     return _MATS["carbon"]
 

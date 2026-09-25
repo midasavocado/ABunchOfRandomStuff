@@ -7,7 +7,7 @@ a = sb.argv(); out = a[0]
 views = (a[1] if len(a) > 1 else "side,top,front").split(",")
 sc = sb.reset()
 sb.setup_render("EEVEE", mblur=False)
-sc.render.resolution_x, sc.render.resolution_y = 1600, 900
+sc.render.resolution_x, sc.render.resolution_y = (1600, 900) if not os.environ.get("SB_LDSMALL") else (960, 540)
 sb.world_gradient(top=(0.06, 0.065, 0.075), horizon=(0.14, 0.14, 0.145), bottom=(0.05, 0.05, 0.05), strength=0.8)
 H = P.Hand("PH")
 R, GC = 0.037, V((0.0, 0.058, -0.054))
