@@ -1,0 +1,214 @@
+{
+  "downbeats": [
+    {
+      "t": 0.0,
+      "frame": 0.0,
+      "sample": 0,
+      "bar": 1,
+      "label": "intro (click+breath, pulse)"
+    },
+    {
+      "t": 1.875,
+      "frame": 45.0,
+      "sample": 90000,
+      "bar": 2,
+      "label": "seed motif enters (felt piano)"
+    },
+    {
+      "t": 7.5,
+      "frame": 180.0,
+      "sample": 360000,
+      "bar": 5,
+      "label": "full theme, restrained"
+    },
+    {
+      "t": 15.0,
+      "frame": 360.0,
+      "sample": 720000,
+      "bar": 9,
+      "label": "ACCELERATION - filtered kick, 16th arps, off-beat bass"
+    },
+    {
+      "t": 22.5,
+      "frame": 540.0,
+      "sample": 1080000,
+      "bar": 13,
+      "label": "build: claps, filtered lead theme"
+    },
+    {
+      "t": 30.0,
+      "frame": 720.0,
+      "sample": 1440000,
+      "bar": 17,
+      "label": "FIRST DROP"
+    },
+    {
+      "t": 37.5,
+      "frame": 900.0,
+      "sample": 1800000,
+      "bar": 21,
+      "label": "drop 1 phrase 2 (answer)"
+    },
+    {
+      "t": 45.0,
+      "frame": 1080.0,
+      "sample": 2160000,
+      "bar": 25,
+      "label": "drop 1 phrase 3 (counter-arp, open hats)"
+    },
+    {
+      "t": 52.5,
+      "frame": 1260.0,
+      "sample": 2520000,
+      "bar": 29,
+      "label": "drop 1 phrase 4 (octave lift, ride)"
+    },
+    {
+      "t": 60.0,
+      "frame": 1440.0,
+      "sample": 2880000,
+      "bar": 33,
+      "label": "HUMAN BREATH - breakdown, exposed piano"
+    },
+    {
+      "t": 67.5,
+      "frame": 1620.0,
+      "sample": 3240000,
+      "bar": 37,
+      "label": "breakdown answer + controlled build"
+    },
+    {
+      "t": 75.0,
+      "frame": 1800.0,
+      "sample": 3600000,
+      "bar": 41,
+      "label": "FINAL DROP (ignition)"
+    },
+    {
+      "t": 82.5,
+      "frame": 1980.0,
+      "sample": 3960000,
+      "bar": 45,
+      "label": "final drop answer"
+    },
+    {
+      "t": 90.0,
+      "frame": 2160.0,
+      "sample": 4320000,
+      "bar": 49,
+      "label": "final drop - choir, octave-doubled lead"
+    },
+    {
+      "t": 97.5,
+      "frame": 2340.0,
+      "sample": 4680000,
+      "bar": 53,
+      "label": "final drop - peak phrase, toms"
+    },
+    {
+      "t": 105.0,
+      "frame": 2520.0,
+      "sample": 5040000,
+      "bar": 57,
+      "label": "RESOLUTION - half-time, sustained chords"
+    },
+    {
+      "t": 112.5,
+      "frame": 2700.0,
+      "sample": 5400000,
+      "bar": 61,
+      "label": "FINAL STATEMENT - cadence"
+    },
+    {
+      "t": 114.375,
+      "frame": 2745.0,
+      "sample": 5490000,
+      "bar": 62,
+      "label": "final D major arrival"
+    }
+  ],
+  "drop_hits": [
+    {
+      "t": 30.0,
+      "frame": 720.0,
+      "sample": 1440000,
+      "label": "FIRST DROP - bar 17 downbeat"
+    },
+    {
+      "t": 75.0,
+      "frame": 1800.0,
+      "sample": 3600000,
+      "label": "FINAL DROP / ROCKET IGNITION - bar 41 downbeat (sample 3,600,000)"
+    }
+  ],
+  "pre_drop_silences": [
+    {
+      "t0": 29.53125,
+      "t1": 30.0,
+      "frame0": 708.75,
+      "frame1": 720.0,
+      "label": "pull-out before first drop: last beat of bar 16 (low end drained over bar 16, kick out for bar 16); reverse swell + inhale"
+    },
+    {
+      "t0": 73.125,
+      "t1": 75.0,
+      "frame0": 1755.0,
+      "frame1": 1800.0,
+      "label": "pull-out before final drop: ALL of bar 40 (73.125-75.0, per brief times) - kick/bass/music out; small click @73.30 + inhale to the ignition"
+    }
+  ],
+  "final_chord": {
+    "t": 114.375,
+    "frame": 2745.0,
+    "sample": 5490000,
+    "label": "FINAL D MAJOR ARRIVAL - bar 62 downbeat"
+  },
+  "transients": [
+    {
+      "t": 0.05,
+      "frame": 1.2,
+      "sample": 2400,
+      "label": "opening lens/ratchet click"
+    },
+    {
+      "t": 60.0,
+      "frame": 1440.0,
+      "sample": 2880000,
+      "label": "crash/impact into breakdown (bar 33)"
+    },
+    {
+      "t": 73.3,
+      "frame": 1759.2,
+      "sample": 3518400,
+      "label": "small mechanical click in the pre-ignition held breath (bar 40)"
+    },
+    {
+      "t": 90.0,
+      "frame": 2160.0,
+      "sample": 4320000,
+      "label": "final drop answer phrase lift (bar 49) - crash + boom"
+    },
+    {
+      "t": 105.0,
+      "frame": 2520.0,
+      "sample": 5040000,
+      "label": "resolution opens (bar 57) - crash + boom, kick half-time"
+    },
+    {
+      "t": 118.2,
+      "frame": 2836.8,
+      "sample": 5673600,
+      "label": "closing lens click (bookend to the opening)"
+    }
+  ],
+  "meta": {
+    "bpm": 128,
+    "bars": 64,
+    "sr": 48000,
+    "samples": 5760000,
+    "fps": 24,
+    "bar_seconds": 1.875,
+    "bar_frames": 45,
+    "beat_frames": 11.25
+  }
+}

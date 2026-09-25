@@ -1,0 +1,14 @@
+18:38:17 START s01
+Traceback (most recent call last):
+  File "/Users/midas/Desktop/still_beginning/post.py", line 110, in <module>
+    run(sid, keep="--keep" in sys.argv, preview="--preview" in sys.argv)
+    ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Users/midas/Desktop/still_beginning/post.py", line 88, in run
+    x = grade(im.astype(np.float32) / scale, g, vm)
+  File "/Users/midas/Desktop/still_beginning/post.py", line 55, in grade
+    x = x * vig_mask[..., None]
+        ~~^~~~~~~~~~~~~~~~~~~~~
+ValueError: operands could not be broadcast together with shapes (540,960,3) (2160,3840,1) 
+21:32:08 START s01
+21:38:07 END s01 rc=0 358s 
+21:39:51 POST s01 s01 frames 90 expected 90 OK 
