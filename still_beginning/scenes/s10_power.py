@@ -215,6 +215,27 @@ def build_cooling():
     E.box("Wall", (4, 0.05, 3), loc=(0, 1.2, 0.5), mat=E.painted_steel("WallP", (0.02, 0.02, 0.022), rough=0.8))
     E.box("Bench", (1.6, 1.2, 0.03), loc=(0.1, 0.3, -0.055), mat=E.painted_steel("BenchP", (0.03, 0.031, 0.034), rough=0.55))
     E.box("Manifold2", (0.18, 0.06, 0.06), loc=(0.35, 0.55, 0.0), mat=black, bev=0.002)
+    # plant-room pipe rack behind the bench: lagged cryo lines (aluminium cladding with band clamps), bare
+    # stainless runs with flanges, valve handwheels, a pressure gauge, cable tray; reads as shapes + highlights
+    clad = E.stainless("Lagging", color=(0.70, 0.71, 0.72), rough=0.35, brushed=False, grime=0.3, scale=4.0)
+    band = E.stainless("Band", rough=0.2)
+    wheel_m = E.painted_steel("Wheel", (0.05, 0.05, 0.055), rough=0.5, wear=0.3)
+    for j, (y, z, r, m_) in enumerate(((0.95, 0.22, 0.045, clad), (0.95, 0.36, 0.03, ss), (1.02, 0.50, 0.055, clad),
+                                         (0.88, 0.62, 0.022, ss), (1.05, 0.78, 0.04, clad))):
+        E.cyl(f"Pipe{j}", r, 3.4, loc=(0.0, y, z), rot=(0, math.pi / 2, 0), mat=m_, verts=40)
+        for x in np.arange(-1.6, 1.7, 0.45 if m_ is clad else 0.9):
+            E.cyl(f"PBand{j}", r * 1.03, 0.012 if m_ is clad else 0.02, loc=(x + 0.07 * j, y, z), rot=(0, math.pi / 2, 0),
+                  mat=band if m_ is clad else ss, verts=40)
+    for j, x in enumerate((-0.75, 0.2, 0.95)):
+        E.cyl(f"Riser{j}", 0.028, 1.2, loc=(x, 0.82, 0.4), mat=clad, verts=32)
+        E.cyl(f"VStem{j}", 0.006, 0.12, loc=(x, 0.78, 0.36), rot=(math.pi / 2, 0, 0), mat=ss, verts=12)
+        E.lathe_obj(f"Wheel{j}", [(0.030, -0.004), (0.036, -0.004), (0.036, 0.004), (0.030, 0.004)], segs=48, mat=wheel_m,
+                    loc=(x, 0.715, 0.36), rot=(math.pi / 2, 0, 0))
+    E.cyl("Gauge", 0.05, 0.03, loc=(0.55, 0.78, 0.42), rot=(math.pi / 2, 0, 0), mat=ss, verts=48)
+    E.cyl("GaugeFace", 0.044, 0.002, loc=(0.55, 0.764, 0.42), rot=(math.pi / 2, 0, 0), mat=sb.mat("GaugeF", (0.85, 0.85, 0.83), rough=0.3), verts=48)
+    for x in np.arange(-1.6, 1.7, 0.6):
+        E.box("Strut", (0.04, 0.04, 1.2), loc=(x, 1.12, 0.4), mat=E.painted_steel("StrutP", (0.35, 0.36, 0.38), rough=0.5, wear=0.2))
+    E.box("Tray", (3.4, 0.25, 0.02), loc=(0, 0.95, 0.95), mat=band)
     for i in range(9):
         sb.prim("sphere", f"Prac{i}", loc=(-1.0 + i * 0.3 + rnd.uniform(-0.1, 0.1), 1.15, 0.2 + rnd.uniform(0, 0.6)), radius=0.01,
                 mat=sb.emit_mat(f"PracM{i}", (1.0, 0.6, 0.28) if i % 3 else (0.7, 0.8, 1.0), 40))
@@ -222,6 +243,8 @@ def build_cooling():
     sb.world_color((0.003, 0.0035, 0.0045), 1.0)
     sb.light('AREA', "Key", loc=(-0.6, -0.05, 0.35), target=(-0.05, 0, 0.03), energy=11, color=(0.78, 0.87, 1.0), size=0.3)
     sb.light('AREA', "Rim", loc=(0.40, 0.45, 0.30), target=(-0.05, 0, 0.06), energy=30, color=(1.0, 0.60, 0.28), size=0.2)
+    sb.light('AREA', "PlantRoom", loc=(0.3, 0.45, 1.1), target=(0.0, 1.0, 0.4), energy=9, color=(1.0, 0.78, 0.55), size=1.2)
+    sb.light('AREA', "FinGlint", loc=(-0.45, -0.6, 0.45), target=(-0.45, -0.47, 0.08), energy=1.5, color=(0.8, 0.88, 1.0), size=0.25)
     fill = sb.light('AREA', "Fill", loc=(-0.1, -0.7, 0.1), target=(0, 0, 0.03), energy=1.2, color=(0.8, 0.85, 1.0), size=1.0)
     fill.visible_glossy = False
     E.softbox("SB1", (-0.25, -0.45, 0.40), (0, 0, 0.05), size=(0.6, 0.05), strength=10.0, color=(0.85, 0.9, 1.0))
@@ -238,7 +261,7 @@ def build_cooling():
         return V((-0.10, 0.0, 0.03)).lerp(V((-0.03, 0.0, 0.035)), k)
     def foc(t):
         p = pos(t); fwd = (tgt(t) - p).normalized()
-        fp = V((-0.30, -0.46, 0.08)).lerp(V((-0.05, -0.012, 0.04)), sb.smooth(sb.remap(t, 0.1, 0.75)))
+        fp = V((-0.30, -0.46, 0.08)).lerp(V((-0.05, -0.012, 0.04)), sb.smooth(sb.remap(t, 0.0, 0.35)))
         return (fp - p).dot(fwd)
     sb.cam_bake(cam, F0, F1, pos, tgt, focus=foc)
 

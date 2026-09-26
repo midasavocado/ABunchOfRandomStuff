@@ -97,21 +97,17 @@ def env():
         post = sb.prim("cube", "Post", loc=(x - 0.45, 1.9, 1.0), scale=(0.025, 0.025, 1.0), mat=graph)
         for zz in (0.1, 2.0):
             sb.prim("cube", "FenceRail", loc=(x, 1.9, zz), scale=(0.43, 0.012, 0.012), mat=graph)
-    # the SLM machine: white/graphite cabinet, recessed window with the build chamber glow, control panel
-    cab = sb.prim("cube", "SLMCabinet", loc=(-1.55, 0.25, 1.05), scale=(0.55, 0.8, 1.05), mat=white)
-    sb.bevel(cab, 0.04, 4)
-    base = sb.prim("cube", "SLMBase", loc=(-1.55, 0.25, 0.08), scale=(0.56, 0.81, 0.08), mat=graph)
-    door = sb.prim("cube", "SLMDoor", loc=(-0.995, 0.25, 1.1), scale=(0.01, 0.42, 0.42), mat=graph)
-    sb.bevel(door, 0.02, 3)
-    win = sb.prim("cyl", "SLMWindow", loc=(-0.982, 0.25, 1.12), rot=(0, math.pi / 2, 0), vertices=64, radius=0.16, depth=0.01,
-                  mat=sb.emit_mat("SLMWin", (0.55, 0.62, 0.75), 0.8))
-    wr = sb.lathe("SLMWinRing", [(0.160, 0.0), (0.172, 0.0), (0.172, 0.01), (0.160, 0.01)], segs=96, mat=props.amber_anodized("SLMAmber"), axis='X')
-    wr.location = (-0.99, 0.25, 1.12)
-    panel = sb.prim("cube", "SLMPanel", loc=(-0.99, -0.35, 1.3), scale=(0.012, 0.12, 0.09), mat=sb.emit_mat("SLMPanelM", (0.18, 0.2, 0.24), 0.6))
+    # the hall around the cell: back wall + side wall, clerestory daylight, portal frame, trusses, ducting,
+    # a row of powder-bed machines (the one that built these parts is nearest), racking, controller + stack light
+    import factory
+    FM = factory.build()
+    factory.machine("SLM0", (-1.55, 0.25, 0), 0.0, FM)
+    factory.machine("SLM1", (-1.55, -1.95, 0), 0.0, FM, glow=(0.62, 0.66, 0.74), glow_s=0.6)
+    factory.machine("SLM2", (-1.55, 2.65, 0), 0.0, FM, glow=(1.0, 0.62, 0.3), glow_s=1.2)
+    factory.rack(-3.4, factory.Y_SIDE + 0.45, FM, bays=4, levels=4)
+    factory.controller((-0.55, 0.75), FM)
     # overhead: cable tray + high-bay linear lights (visible, soft)
     tray = sb.prim("cube", "CableTray", loc=(0.2, 1.4, 2.6), scale=(2.5, 0.12, 0.03), mat=sb.brushed_metal("Tray", (0.55, 0.56, 0.58), rough=0.4))
-    for x in (-1.2, 0.4, 2.0):
-        sb.prim("cube", "HighBay", loc=(x, 0.2, 3.3), scale=(0.6, 0.08, 0.02), mat=sb.emit_mat("HB", (0.95, 0.97, 1.0), 12.0))
     # parts bins + a rolling cart in the far background
     for i in range(4):
         b = sb.prim("cube", "Bin", loc=(1.3 + i * 0.28, 1.6, 0.9), scale=(0.12, 0.18, 0.08), mat=sb.painted("BinM", (0.08, 0.085, 0.095), rough=0.6))

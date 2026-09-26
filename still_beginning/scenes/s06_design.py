@@ -102,12 +102,12 @@ else:
 
     def pos(t):
         k = sb.smooth(t)
-        return scr_c + V((sb.lerp(-0.10, -0.06, k), sb.lerp(-0.80, -0.70, k), sb.lerp(0.05, 0.04, k)))
+        return scr_c + V((sb.lerp(-0.22, -0.17, k), sb.lerp(-0.78, -0.68, k), sb.lerp(0.05, 0.04, k)))
 
     def tg(t):
-        return scr_c + V((sb.lerp(0.10, 0.12, sb.smooth(t)), 0, -0.005))
+        return scr_c + V((sb.lerp(0.03, 0.06, sb.smooth(t)), 0, -0.005))
 
-    sb.cam_bake(cam, s0, s1, pos, tg, lens=lambda t: sb.lerp(55, 60, t), focus=lambda t: (pos(t) - tg(t)).length, fstop=2.8)
+    sb.cam_bake(cam, s0, s1, pos, tg, lens=lambda t: sb.lerp(44, 50, t), focus=lambda t: (pos(t) - tg(t)).length, fstop=2.8)
 
 dbgcam.apply()
 sb.frames(s0, s1)

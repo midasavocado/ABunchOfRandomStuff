@@ -54,21 +54,33 @@ def bed_material(fused_ids=(0, 1, 2, 3), plate=0.12):
     trk = nb.math('SINE', nb.math('MULTIPLY', nb.math('ADD', proj, nb.math('MULTIPLY', wob.outputs['Fac'], 0.00004)), 2 * math.pi / 0.0001))
     ripple = nb.math('SINE', nb.math('MULTIPLY', nb.vmath('DOT_PRODUCT', pos, (math.cos(h), math.sin(h), 0.0)), 2 * math.pi / 0.00005))
     hfused = nb.math('ADD', nb.math('MULTIPLY', trk, 0.5), nb.math('MULTIPLY', ripple, 0.12))
-    hpow = nb.math('ADD', grain, nb.math('MULTIPLY', g2.outputs['Fac'], 0.3))
+    # recoater streaks: the blade drags along Y, leaving faint ridges running along Y with random spacing,
+    # plus a slow layer-to-layer undulation of the powder surface
+    stretch = nb.new('ShaderNodeVectorMath'); stretch.operation = 'MULTIPLY'
+    nb.link(pos, stretch.inputs[0]); stretch.inputs[1].default_value = (1.0, 0.02, 1.0)
+    st = nb.noise(stretch.outputs[0], scale=2600, detail=3, rough=0.55)
+    streak = nb.math('MULTIPLY', nb.maprange(st.outputs['Fac'], 0.45, 0.75), 0.22)
+    und = nb.noise(pos, scale=60, detail=2)
+    hpow = nb.math('ADD', nb.math('ADD', grain, nb.math('MULTIPLY', g2.outputs['Fac'], 0.3)),
+                   nb.math('ADD', streak, nb.math('MULTIPLY', und.outputs['Fac'], 0.6)))
     height = nb.mix(fmask, hpow, hfused, dtype='FLOAT')
     bump = nb.bump(height, strength=0.45, distance=0.00002)
     powder = nt.nodes.new('ShaderNodeBsdfPrincipled')
     powder.inputs['Base Color'].default_value = (0.30, 0.30, 0.31, 1)
-    nb.link(nb.mix(grain, (0.13, 0.13, 0.135, 1), (0.30, 0.30, 0.31, 1)), powder.inputs['Base Color'])
-    powder.inputs['Metallic'].default_value = 0.35
-    powder.inputs['Roughness'].default_value = 0.62
+    # Ti-6Al-4V powder: mid grey spheres, dark gaps; a few grains catch the light (metallic sparkle)
+    pcol = nb.mix(grain, (0.10, 0.10, 0.105, 1), (0.40, 0.395, 0.39, 1))
+    pcol = nb.mix(nb.maprange(streak, 0.0, 0.45, 0.0, 0.35), pcol, (0.46, 0.455, 0.45, 1))
+    nb.link(pcol, powder.inputs['Base Color'])
+    spark = nb.maprange(nb.voronoi(pos, scale=9000, feature='F1').outputs['Distance'], 0.0, 0.12, 1.0, 0.0)
+    nb.link(nb.maprange(spark, 0.0, 1.0, 0.25, 0.9), powder.inputs['Metallic'])
+    nb.link(nb.maprange(spark, 0.0, 1.0, 0.62, 0.22), powder.inputs['Roughness'])
     nb.link(bump, powder.inputs['Normal'])
     fz = nt.nodes.new('ShaderNodeBsdfPrincipled')
     tint = nb.noise(pos, scale=400, detail=3)
     fcol = nb.mix(nb.maprange(tint.outputs['Fac'], 0.35, 0.65), (0.30, 0.29, 0.28, 1), (0.42, 0.40, 0.36, 1))
     nb.link(fcol, fz.inputs['Base Color'])
     fz.inputs['Metallic'].default_value = 1.0
-    fz.inputs['Roughness'].default_value = 0.28
+    fz.inputs['Roughness'].default_value = 0.36
     nb.link(bump, fz.inputs['Normal'])
     mx = nt.nodes.new('ShaderNodeMixShader')
     nb.link(fmask, mx.inputs[0]); nb.link(powder.outputs[0], mx.inputs[1]); nb.link(fz.outputs[0], mx.inputs[2])
@@ -177,6 +189,27 @@ def chamber(plate=0.12):
     # chamber walls + inert-gas flow nozzle bar at the back
     for (loc, sc_) in (((0, 0.2, 0.15), (0.25, 0.005, 0.15)), ((-0.25, 0, 0.15), (0.005, 0.25, 0.15)), ((0.25, 0, 0.15), (0.005, 0.25, 0.15))):
         sb.prim("cube", "Wall", loc=loc, scale=sc_, mat=dark)
+    # chamber lighting the fused metal catches at a grazing view: LED strip along the back wall above the gas bar,
+    # the round viewing port (warm room light beyond), side LED bars; bolted wall panels
+    led = sb.emit_mat("ChamberLEDStrip", (0.82, 0.88, 1.0), 14.0)
+    sb.prim("cube", "LEDStrip", loc=(0, 0.1935, 0.058), scale=(0.22, 0.001, 0.0045), mat=led)
+    for sx in (-1, 1):
+        sb.prim("cube", "LEDSide", loc=(sx * 0.2435, 0.02, 0.07), scale=(0.001, 0.17, 0.004), mat=led)
+    # the strip as a real light too: the fused tracks show its long glossy highlight
+    sb.light('AREA', "LEDStripLight", loc=(0, 0.19, 0.058), target=(0, 0.0, 0.0), energy=0.14, color=(0.82, 0.88, 1.0), size=0.44, size_y=0.01)
+    port_m = sb.emit_mat("ViewPort", (1.0, 0.86, 0.66), 2.2)
+    port = sb.prim("cyl", "ViewPort", loc=(0.09, 0.1945, 0.16), rot=(math.pi / 2, 0, 0), radius=0.045, depth=0.002, mat=port_m)
+    ring = sb.prim("torus", "PortRing", loc=(0.09, 0.193, 0.16), rot=(math.pi / 2, 0, 0), major_radius=0.049, minor_radius=0.005, mat=steel)
+    bolt_m = sb.mat("PanelBolt", (0.3, 0.3, 0.31), metal=1.0, rough=0.35)
+    for i in range(16):
+        a = i / 16 * 2 * math.pi
+        sb.prim("cyl", "PortBolt", loc=(0.09 + 0.058 * math.cos(a), 0.1935, 0.16 + 0.058 * math.sin(a)), rot=(math.pi / 2, 0, 0),
+                radius=0.0025, depth=0.003, vertices=6, mat=bolt_m)
+    seam_m = sb.mat("PanelSeam", (0.012, 0.012, 0.013), rough=0.7)
+    for x in (-0.13, 0.0, 0.13):
+        sb.prim("cube", "Seam", loc=(x - 0.065, 0.1943, 0.15), scale=(0.0006, 0.0008, 0.15), mat=seam_m)
+        for z in (0.1, 0.22):
+            sb.prim("cyl", "SeamBolt", loc=(x - 0.065, 0.194, z), rot=(math.pi / 2, 0, 0), radius=0.002, depth=0.002, vertices=6, mat=bolt_m)
     noz = sb.prim("cube", "GasNozzle", loc=(0, 0.17, 0.02), scale=(0.16, 0.012, 0.018), mat=steel)
     sb.bevel(noz, 0.002)
     slots_m = sb.mat("Slots", (0.01, 0.01, 0.01), rough=0.8)
