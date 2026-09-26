@@ -258,7 +258,7 @@ lift_axis = (HL_M0.to_3x3() @ V((1, 0, 0))).normalized()     # leaf local X = hi
 
 def lift_angle(f):
     k = sb.smoother(sb.remap(f, 47, 76))
-    return math.radians(-13.0) * k + math.radians(0.6) * math.sin(max(0, f - 76) * 0.25) * sb.remap(f, 76, 89)
+    return math.radians(-30.0) * k + math.radians(1.2) * math.sin(max(0, f - 76) * 0.25) * sb.remap(f, 76, 89)
 
 
 def leaf_matrix(f):
@@ -339,7 +339,7 @@ if HAND:
     print("HAND contact err mm", e0 * 1000, "contact", tuple(round(c, 3) for c in C_rest),
           "shoulder", tuple(round(c, 3) for c in rig.matrix_world @ pb["upperarm01.R"].head), "pad", tuple(round(c, 3) for c in pad_point()))
     # approach path: from lower-right-front toward the contact under the leaf, arriving with a gentle ease
-    APP0 = t_contact + V((0.16, -0.14, -0.10))
+    APP0 = t_contact + V((0.34, -0.22, -0.12))          # enters from outside frame (right, low)
 
     def wrist_target(f):
         if f < 47:
