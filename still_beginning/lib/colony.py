@@ -307,7 +307,7 @@ def build(F0, F1, detail=1.0):
     SM = ship.materials("SH")
     # A: lands on pad A (the s24c hero)
     A = ship.build("ShipA", M=SM, legs_deployed=0.0)
-    A["root"].rotation_euler = (0, 0, math.radians(35))
+    A["root"].rotation_euler = (0, 0, math.radians(200))      # white side to the drone (belly north)
     zA = gz(PAD_A.x, PAD_A.y) + 0.55 - ship.GROUND_Z
     FTD = EV_TD
 
@@ -332,7 +332,7 @@ def build(F0, F1, detail=1.0):
     B = ship.build("ShipB", M=SM, legs_deployed=1.0)
     zB = gz(PAD_B.x, PAD_B.y) + 0.55 - ship.GROUND_Z
     B["root"].location = (PAD_B.x, PAD_B.y, zB)
-    B["root"].rotation_euler = (0, 0, math.radians(-60))
+    B["root"].rotation_euler = (0, 0, math.radians(160))
 
     def posB(f):
         t = max(0.0, (f - EV_LO_B) / 24.0)
@@ -346,7 +346,7 @@ def build(F0, F1, detail=1.0):
         ship.dust_ring("DustB", (PAD_B.x, PAD_B.y, gz(PAD_B.x, PAD_B.y)), EV_LO_B - 10, F1, radius_max=180.0, n=30,
                        color=(0.60, 0.40, 0.25), density=0.14, seed=9, height=14.0, rise=1.2)
     # D, E: standing ships
-    for nm, P, rz in (("ShipD", PAD_D, 20.0), ("ShipE", PAD_E, 140.0)):
+    for nm, P, rz in (("ShipD", PAD_D, 195.0), ("ShipE", PAD_E, 170.0)):
         S_ = ship.build(nm, M=SM, legs_deployed=1.0)
         S_["root"].location = (P.x, P.y, gz(P.x, P.y) + 0.55 - ship.GROUND_Z)
         S_["root"].rotation_euler = (0, 0, math.radians(rz))

@@ -134,15 +134,44 @@ def fly(sh, f0, f1, pos_fn, thrust_fn, tilt_fn=None, legs_fn=None, light_max=6e5
             set_legs(sh["legs"], legs_fn(f), frame=f)
 
 
+def dust_mat(name, color=(0.62, 0.42, 0.26), density=0.25):
+    """billowing regolith dust: soft radial falloff broken by turbulence, bright forward scattering, a little
+    self-glow so a thick cloud reads sunlit and never as a dark blob."""
+    m = bpy.data.materials.new(name)
+    m.use_nodes = True
+    nt = m.node_tree
+    nt.nodes.clear()
+    nb = sb.NB.__new__(sb.NB); nb.m, nb.nt, nb.n, nb.l = m, nt, nt.nodes, nt.links
+    co = nb.coord('Object')
+    r = nb.vmath('LENGTH', co)
+    tn = nb.noise(co, scale=1.8, detail=6, rough=0.6, dist=0.4)
+    fall = nb.maprange(nb.math('ADD', r, nb.math('MULTIPLY', nb.math('SUBTRACT', tn.outputs['Fac'], 0.5), 0.9)), 1.0, 0.25)
+    dens = nb.math('MULTIPLY', nb.math('POWER', fall, 1.6), density)
+    pv = nb.new('ShaderNodeVolumePrincipled')
+    pv.inputs['Color'].default_value = (*color, 1)
+    pv.inputs['Absorption Color'].default_value = (0.9, 0.8, 0.7, 1)
+    pv.inputs['Anisotropy'].default_value = 0.45
+    nb.link(dens, pv.inputs['Density'])
+    pv.inputs['Emission Color'].default_value = (*color, 1)
+    nb.link(nb.math('MULTIPLY', dens, 0.9), pv.inputs['Emission Strength'])
+    o = nb.new('ShaderNodeOutputMaterial')
+    nb.link(pv.outputs[0], o.inputs['Volume'])
+    return m
+
+
 def dust_ring(name, center, f_on, f_off, radius_max=60.0, n=26, color=(0.55, 0.38, 0.24), density=0.25, seed=1,
               height=6.0, rise=0.3):
     """Radial ground dust thrown out by the plume: soft volume puffs racing outward and settling. Returns objects."""
     rs = random.Random(seed)
-    vm = sb.volume_mat(name + "M", density=density, color=color, anisotropy=0.3)
+    vm = dust_mat(name + "M", color=color, density=density * 1.6)
+    try:
+        bpy.context.scene.eevee.use_volumetric_shadows = False      # dust must not print a dark ring on the ground
+    except Exception:
+        pass
     objs = []
     for i in range(n):
         a = 2 * math.pi * i / n + rs.uniform(-0.1, 0.1)
-        o = sb.prim("sphere", name + "%d" % i, loc=center, segments=16, ring_count=8, radius=1.0, mat=vm)
+        o = sb.prim("ico", name + "%d" % i, loc=center, subdivisions=2, radius=1.0, mat=vm)
         o.visible_shadow = False
         spd = rs.uniform(0.7, 1.2)
         for f in range(f_on - 1, f_off + 30):
@@ -151,7 +180,7 @@ def dust_ring(name, center, f_on, f_off, radius_max=60.0, n=26, color=(0.55, 0.3
             r = radius_max * (1 - math.exp(-t * 1.4 * spd))
             s = (2.0 + r * 0.22) * (0.2 if f < f_on else 1.0) * act + 0.001
             o.location = V(center) + V((math.cos(a) * r, math.sin(a) * r, height * 0.4 + r * rise * 0.1))
-            o.scale = (s, s, s * 0.45)
+            o.scale = (s, s, s * 0.7)
             o.keyframe_insert("location", frame=f); o.keyframe_insert("scale", frame=f)
         objs.append(o)
     return objs
