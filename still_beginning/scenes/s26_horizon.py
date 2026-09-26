@@ -28,7 +28,7 @@ def sun_elev(f):
     return -(dip + 0.9) + 0.065 * (f - RISE_F) + 0.9
 
 
-E = earth.build(alt_km=ALT, sun_dir=tuple(sb.sun_dir(sun_elev(F0), SUN_AZ)), clouds=0.45, lights=3.0, samples=16,
+E = earth.build(alt_km=ALT, sun_dir=tuple(sb.sun_dir(sun_elev(F0), SUN_AZ)), clouds=0.45, lights=float(os.environ.get("S26_LIGHTS", "14.0")), samples=16,
                 nadir=(20.0, 10.0, 0.0), detail=0.9)
 lamp = E.sun_lamp(strength=0.0)
 for f in range(F0 - 2, F1 + 3):
