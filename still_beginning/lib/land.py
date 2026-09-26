@@ -57,8 +57,21 @@ def field_mat(name, rows_dir=(1.0, 0.0), pitch=0.75, green=(0.05, 0.13, 0.03), s
         # field patchwork: cells of ~150-300 m with different crops
         fv = nb.voronoi(nb.mapping(co, scale=(1.0, 1.35, 1.0)), scale=0.0045, feature='F1', rand=0.8)
         fc = nb.new('ShaderNodeSeparateColor'); nb.link(fv.outputs['Color'], fc.inputs[0])
-        crop = nb.ramp(fc.outputs[0], [(0.0, (0.055, 0.12, 0.03)), (0.30, (0.08, 0.15, 0.035)), (0.45, (0.30, 0.22, 0.07)),
-                                        (0.6, (0.42, 0.33, 0.13)), (0.75, (0.07, 0.10, 0.03)), (1.0, (0.12, 0.16, 0.05))])
+        crop = nb.ramp(fc.outputs[0], [(0.0, (0.055, 0.12, 0.03)), (0.16, (0.09, 0.16, 0.04)), (0.30, (0.30, 0.22, 0.07)),
+                                        (0.42, (0.45, 0.35, 0.14)), (0.54, (0.50, 0.42, 0.22)), (0.64, (0.15, 0.10, 0.065)),
+                                        (0.76, (0.07, 0.10, 0.03)), (0.88, (0.20, 0.24, 0.09)), (1.0, (0.12, 0.16, 0.05))])
+        crop.node.color_ramp.interpolation = 'CONSTANT'
+        # tramlines (sprayer wheel tracks every 24 m along the rows) + field margins / hedge lines at cell edges
+        tram = nb.maprange(nb.math('ABSOLUTE', nb.math('SUBTRACT', nb.math('FRACT', nb.math('DIVIDE', across, 24.0)), 0.5)), 0.488, 0.496)
+        crop = nb.mix(nb.math('MULTIPLY', tram, 0.55), crop, (0.11, 0.08, 0.05, 1))
+        edge = nb.new('ShaderNodeTexVoronoi'); edge.feature = 'DISTANCE_TO_EDGE'
+        edge.inputs['Scale'].default_value = 0.0045
+        edge.inputs['Randomness'].default_value = 0.8
+        nb.link(nb.mapping(co, scale=(1.0, 1.35, 1.0)), edge.inputs['Vector'])
+        margin = nb.maprange(edge.outputs['Distance'], 0.006, 0.014, 1.0, 0.0)
+        hedge = nb.maprange(edge.outputs['Distance'], 0.0, 0.004, 1.0, 0.0)
+        crop = nb.mix(margin, crop, (0.10, 0.15, 0.05, 1))
+        crop = nb.mix(hedge, crop, (0.03, 0.06, 0.018, 1))
         far = nb.new('ShaderNodeCameraData')
         dfar = nb.maprange(far.outputs['View Distance'], 60.0, 260.0, 0.0, 1.0)
         # the solar site (|x|<380, |y|<300) keeps its green understorey crop

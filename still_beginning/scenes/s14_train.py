@@ -105,7 +105,7 @@ for k in range(60):
 L.place_trees(lib_near, near, seed=2, name="Tn")
 L.place_trees(lib_far, far, seed=3, name="Tf")
 # ---- the city on the horizon (same palette/architecture as s15)
-city = C.far_city(center=(CITY_X + 700, 0, 1.5), radius=1100, n=320, seed=15, haze=hz, tall=9)
+city = C.far_city(center=(CITY_X + 700, 0, 1.5), radius=1100, n=320, seed=15, haze=lambda m: W.aerial(m, dist=HAZE * 2.4), tall=9)
 # ---- the train
 tr, wheels, panto = R.train("Train", ncars=8)
 for o in [tr] + list(tr.children_recursive):

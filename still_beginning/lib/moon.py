@@ -301,8 +301,11 @@ def shield_mat(name="RegShield", sun_dir=(0, 1, 0.1)):
     co = nb.coord('Object')
     sep = nb.new('ShaderNodeSeparateXYZ'); nb.link(co, sep.inputs[0])
     lay = nb.math('SINE', nb.math('MULTIPLY', nb.math('ADD', sep.outputs[2], nb.math('MULTIPLY', nb.noise(co, scale=0.8, detail=2).outputs['Fac'], 0.03)), 2 * math.pi / 0.055))
-    bag = nb.voronoi(nb.mapping(co, scale=(1.0, 1.0, 2.2)), scale=2.2, feature='DISTANCE_TO_EDGE')
-    bg = nb.maprange(bag.outputs['Distance'], 0.0, 0.06, -1.0, 0.0)
+    # printed courses (0.24 m) read at a distance under the grazing sun, over the fine 5.5 cm layers
+    course = nb.math('SINE', nb.math('MULTIPLY', sep.outputs[2], 2 * math.pi / 0.24))
+    lay = nb.math('ADD', lay, nb.math('MULTIPLY', course, 3.0))
+    bag = nb.voronoi(nb.mapping(co, scale=(1.0, 1.0, 1.8)), scale=1.5, feature='DISTANCE_TO_EDGE')
+    bg = nb.maprange(bag.outputs['Distance'], 0.0, 0.08, -3.0, 0.0)
     grn = nb.noise(co, scale=300.0, detail=3)
     lump = nb.noise(co, scale=3.0, detail=5, rough=0.6)
     h = nb.math('ADD', nb.math('MULTIPLY', lay, 0.004), nb.math('MULTIPLY', bg, 0.012))
@@ -340,6 +343,33 @@ def habitat(name, T, x, y, heading, length=11.0, width=6.2, height=3.6, M=None, 
     sb.recalc_normals(o)
     o.matrix_world = base
     out.append(o)
+    # viewports set into the shield on both flanks (deep graphite reveal, warm cabin light behind the glass) and a
+    # floodlight mast: the signs of life that tell the mound is a home
+    zw = height * 0.52
+    yw = width / 2 * 1.05 * (1 - 0.52 ** 2.4) ** (1 / 2.4) - 0.05
+    for side in (-1, 1):
+        for xw in (-length * 0.22, length * 0.06):
+            fr = sb.prim("cube", name + "Port", scale=(0.62, 0.35, 0.42), mat=mats["graphite"])
+            fr.location = (xw, side * yw, zw); sb.bevel(fr, 0.06, 3)
+            gl = sb.prim("cube", name + "PortGlass", scale=(0.48, 0.02, 0.3), mat=mats["window"])
+            gl.location = (xw, side * (yw + 0.35), zw)
+            out += [fr, gl]
+            fr.matrix_world = base @ fr.matrix_world
+            gl.matrix_world = base @ gl.matrix_world
+    pole = sb.prim("cyl", name + "FloodPole", vertices=12, radius=0.06, depth=5.2, mat=mats["graphite"])
+    pole.location = (-length * 0.35, -(width / 2 + 1.6), 2.6)
+    arm = sb.prim("cube", name + "FloodArm", scale=(0.5, 0.05, 0.05), mat=mats["graphite"])
+    arm.location = (-length * 0.35, -(width / 2 + 1.6), 5.15)
+    heads = []
+    for dx in (-0.45, 0.45):
+        hd = sb.prim("cube", name + "FloodHead", scale=(0.16, 0.12, 0.08), mat=mats["graphite"])
+        hd.location = (-length * 0.35 + dx, -(width / 2 + 1.6), 5.05)
+        em = sb.prim("cube", name + "FloodLED", scale=(0.13, 0.09, 0.01), mat=mats["lamp"])
+        em.location = (-length * 0.35 + dx, -(width / 2 + 1.6), 4.965)
+        heads += [hd, em]
+    for ob in [pole, arm] + heads:
+        ob.matrix_world = base @ ob.matrix_world
+        out.append(ob)
     if airlock:
         L = 3.4
         al = sb.prim("cyl", name + "Airlock", vertices=64, radius=1.25, depth=L, mat=mats["white"])

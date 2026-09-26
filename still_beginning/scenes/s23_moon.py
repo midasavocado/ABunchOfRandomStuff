@@ -45,13 +45,18 @@ pad = np.hypot(pts[:, 0] + 4, pts[:, 1] - 63) < 32
 keep = ~(lane | (pad & (sz > 0.1)))
 rk = moon.rocks(T, "Rocks", pts[keep], sz[keep], rockm, seed=2)
 mass_m = moon.regolith_mat("Massif", SUN, albedo=0.115, bump=0.25, attr_fresh=False, coord_scale=0.08)
-ms = moon.massifs("Massifs", (0, 0), -80, 80, mat=mass_m)
+# south-polar massifs (Malapert / Mouton scale): several km high, 20-60 km away, rising well above the horizon
+# (their camera-facing flanks only catch the grazing sun right of centre: the sun is behind-left, so the big ones stand
+# there; a low gap under the Earth)
+PEAKS = [(-14.0, 44000, 4200, 12000), (-34.0, 64000, 2600, 14000), (4.0, 62000, 3600, 12000), (40.0, 26000, 2400, 7000),
+         (58.0, 40000, 4600, 12000), (30.0, 78000, 3600, 16000), (75.0, 52000, 3800, 15000)]
+ms = moon.massifs("Massifs", (0, 0), -80, 80, mat=mass_m, peaks=PEAKS)
 
 # ---------------------------------------------------------------- sky: black + Earth (earth.py) + sun lamp
 try:
     import earth
     ed = V((0.35, 1.0, 0.0)).normalized()
-    el = math.radians(4.2)
+    el = math.radians(6.0)
     edir = V((ed.x * math.cos(el), ed.y * math.cos(el), math.sin(el)))
     E = earth.build(center_km=tuple(edir * 384400.0), sun_dir=tuple(SUN), clouds=0.55, sun_strength=5.0, sun_disc=False,
                     nadir=(-30.0, 40.0, 0.0), samples=12)
@@ -70,7 +75,7 @@ except Exception:
 import suit
 M = suit.materials(dust=0.55, dirt=0.3)
 SM = dict(shield=moon.shield_mat("Shield", SUN), white=suit.graphite_mat("HabWhite", color=(0.72, 0.71, 0.68), wear=0.3, dust=0.4),
-          graphite=M["graphite"], window=sb.emit_mat("HabWindow", (1.0, 0.72, 0.42), 6.0), lamp=sb.emit_mat("HabLamp", (1.0, 0.95, 0.88), 25.0),
+          graphite=M["graphite"], window=sb.emit_mat("HabWindow", (1.0, 0.68, 0.36), 40.0), lamp=sb.emit_mat("HabLamp", (1.0, 0.93, 0.84), 80.0),
           cells=moon.cells_mat("Cells"), metal=M["metal"], wheel=moon.wheel_mat(), seat=M["fabric_soft"],
           screen=sb.emit_mat("RoverScreen", (0.55, 0.62, 0.7), 0.6))
 habs = []
@@ -236,6 +241,8 @@ def cam_tgt(t):
 
 sb.cam_bake(cam, S0 - 2, S1 + 2, lambda t: cam_pos((t * (S1 - S0 + 4) - 2) / (S1 - S0)),
             lambda t: cam_tgt((t * (S1 - S0 + 4) - 2) / (S1 - S0)), focus=11.8)
+import dbgcam
+dbgcam.apply()
 print("BUILD %.1fs" % (time.time() - T0))
 sb.frames(S0, S1)
 if os.environ.get("SB_SAVE"):

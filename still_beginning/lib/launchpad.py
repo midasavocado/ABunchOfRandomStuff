@@ -1383,6 +1383,69 @@ def ground(M, parent=None):
     return g
 
 
+def far_site(M, parent=None):
+    """The rest of the spaceport beyond the treeline (3-6 km): the vehicle assembly building with lit slot windows,
+    a neighbouring pad's tower + lightning masts, propellant tank farms, a sodium-lit perimeter road, red beacons.
+    Placed where the s19b / s20 cameras look past the vehicle; bases drop behind the treeline."""
+    fog = lambda m: add_distance_fog(m, dist=7000.0)
+    clad = fog(cladding_mat("FarClad", (0.40, 0.41, 0.42)))
+    dark = fog(tower_steel("FarSteel", (0.10, 0.10, 0.105), rust=0.3, grime=0.3))
+    tank = fog(sb.painted("FarTank", (0.55, 0.55, 0.54), rough=0.45, grime=0.3, scale=0.05))
+    win = window_mat("FarWin", (1.0, 0.8, 0.55), 4.0)
+    out = []
+
+    def P(*a, **k):
+        o = sb.prim(*a, **k)
+        o.parent = parent
+        out.append(o)
+        return o
+
+    def beacon(p):
+        P("sphere", "FarBeacon", loc=p, radius=0.9, segments=12, ring_count=6, mat=M["beacon"])
+    # vehicle assembly building: a 150 m block with a low annex, tall door slots (lit), roof beacons
+    c = V((-3400.0, 2900.0, 0.0)); hd = math.radians(28)
+    P("cube", "VAB", loc=c + V((0, 0, 78)), rot=(0, 0, hd), scale=(80, 62, 78), mat=clad)
+    P("cube", "VABAnnex", loc=c + V((-70 * math.cos(hd), -70 * math.sin(hd), 22)), rot=(0, 0, hd), scale=(40, 55, 22), mat=clad)
+    fwd = V((math.sin(hd), -math.cos(hd), 0))
+    side = V((math.cos(hd), math.sin(hd), 0))
+    for k in (-1, 1):
+        P("cube", "VABDoor", loc=c + fwd * 62.3 + side * (k * 30) + V((0, 0, 70)), rot=(0, 0, hd), scale=(7, 0.3, 66), mat=win)
+    for k in range(-5, 6):
+        P("cube", "VABSlot", loc=c + fwd * 62.3 + side * (k * 6.5) + V((0, 0, 148)), rot=(0, 0, hd), scale=(1.2, 0.3, 3.5), mat=win)
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            beacon(c + side * (sx * 78) + fwd * (sy * 60) + V((0, 0, 157.5)))
+    # neighbouring pad: service tower + three lightning masts + its own floodlights
+    q = V((1900.0, 2950.0, 0.0))
+    P("cube", "Pad2Tower", loc=q + V((0, 0, 52)), scale=(7, 7, 52), mat=dark)
+    P("cube", "Pad2Top", loc=q + V((0, 0, 108)), scale=(4, 4, 4), mat=dark)
+    P("cube", "Pad2Arm", loc=q + V((-14, 0, 78)), scale=(9, 1.4, 1.2), mat=dark)
+    beacon(q + V((0, 0, 113)))
+    for k in range(3):
+        a = math.radians(40 + k * 120)
+        m = q + V((math.cos(a) * 140, math.sin(a) * 140, 0))
+        P("cyl", "Pad2Mast", loc=m + V((0, 0, 60)), vertices=8, radius=1.1, depth=120, mat=dark)
+        beacon(m + V((0, 0, 121)))
+    for k in range(4):
+        a = math.radians(-20 + k * 90)
+        m = q + V((math.cos(a) * 110, math.sin(a) * 110, 0))
+        P("sphere", "Pad2Flood", loc=m + V((0, 0, 30)), radius=1.4, segments=12, ring_count=6, mat=M["lamp_flood"])
+    # propellant tank farms (spheres + horizontal cylinders)
+    for (tx, ty) in ((820.0, 2450.0), (-1300.0, 3350.0)):
+        for k in range(3):
+            P("sphere", "FarSphere", loc=(tx + k * 38, ty, 17), radius=16, segments=48, ring_count=24, mat=tank)
+        for k in range(4):
+            P("cyl", "FarHTank", loc=(tx + 20 + k * 11, ty + 40, 6), rot=(math.radians(90), 0, 0), vertices=32, radius=4.5, depth=34, mat=tank)
+    # perimeter road with sodium lights (warm points across the dusk horizon)
+    rs = random.Random(9)
+    for k in range(70):
+        u = k / 69.0
+        x = -4200 + 8400 * u
+        y = 2700 + 380 * math.sin(u * 3.1 + 0.4) + rs.uniform(-6, 6)
+        P("sphere", "FarSodium", loc=(x, y, 11), radius=0.7, segments=8, ring_count=4, mat=M["lamp_sodium"])
+    return out
+
+
 def build_complex(detail=1, far=True, trucks=True):
     """Builds the whole launch complex (without the vehicle). Returns dict:
     M, clamps[4] (dict jaw/open), tsm[2] (dict plate/dir), tower (dict upper_arm/crew_arm pivots, lamp_locs, beacons),
@@ -1412,6 +1475,7 @@ def build_complex(detail=1, far=True, trucks=True):
     if far:
         water_tower(M, root)
         treeline(M, root)
+        far_site(M, root)
     if trucks:
         truck("Truck0", (70.0, -58.0, 0), 172.0, M, root, "tanker")
         truck("Truck1", (74.0, -66.0, 0), 176.0, M, root, "tanker")

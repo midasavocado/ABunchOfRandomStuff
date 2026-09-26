@@ -47,16 +47,22 @@ def mars_ground_mat(name, haze_col=(0.50, 0.29, 0.14)):
     co = n.coord('Object')
     n1 = n.noise(co, scale=0.02, detail=6, rough=0.6)
     n2 = n.noise(co, scale=0.4, detail=5, rough=0.6)
-    col = n.mix(n.maprange(n1.outputs['Fac'], 0.3, 0.7), (0.17, 0.075, 0.035, 1), (0.30, 0.14, 0.065, 1))
-    col = n.mix(n.maprange(n2.outputs['Fac'], 0.55, 0.75, 0.0, 0.6), col, (0.09, 0.05, 0.03, 1))
-    # aerial perspective: dust haze by distance from the module
+    col = n.mix(n.maprange(n1.outputs['Fac'], 0.3, 0.7), (0.15, 0.065, 0.03, 1), (0.34, 0.16, 0.075, 1))
+    # dark basaltic patches + bright dust drifts, sand ripples (wave, ~0.4 m) in the drifts
+    n3 = n.noise(co, scale=0.08, detail=4, rough=0.55)
+    col = n.mix(n.maprange(n2.outputs['Fac'], 0.52, 0.72, 0.0, 0.75), col, (0.07, 0.04, 0.025, 1))
+    drift = n.maprange(n3.outputs['Fac'], 0.55, 0.7)
+    col = n.mix(n.math('MULTIPLY', drift, 0.6), col, (0.42, 0.22, 0.11, 1))
+    rip = n.wave(n.mapping(co, scale=(1.0, 0.35, 1.0)), scale=2.4, wtype='BANDS', direction='Y', dist=4.0, detail=2)
+    # aerial perspective: dust haze by distance from the module (kilometres, not hundreds of metres)
     cam_d = n.vmath('LENGTH', n.vmath('SUBTRACT', n.coord('Object'), (0.0, 0.0, 0.0)))
-    hz = n.math('SUBTRACT', 1.0, n.math('EXPONENT', n.math('DIVIDE', cam_d, -700.0)))
-    col = n.mix(hz, col, (*haze_col, 1))
+    hz = n.math('SUBTRACT', 1.0, n.math('EXPONENT', n.math('DIVIDE', cam_d, -2500.0)))
+    col = n.mix(n.math('MULTIPLY', hz, 0.55), col, (*haze_col, 1))
     n.set('Base Color', col)
     n.set('Emission Color', (*haze_col, 1))
-    n.set('Emission Strength', n.math('MULTIPLY', hz, 1.2))
-    n.set('Normal', n.bump(n.noise(co, scale=3.0, detail=6).outputs['Fac'], strength=0.4, distance=0.3))
+    n.set('Emission Strength', n.math('MULTIPLY', n.math('MULTIPLY', hz, hz), 0.18))
+    bh = n.math('ADD', n.noise(co, scale=3.0, detail=6).outputs['Fac'], n.math('MULTIPLY', n.math('MULTIPLY', rip.outputs['Fac'], drift), 0.8))
+    n.set('Normal', n.bump(bh, strength=0.5, distance=0.3))
     return m
 
 
@@ -68,6 +74,13 @@ ys = 3 + (3000 - 3) * np.linspace(0, 1, N) ** 2.2
 X, Y = np.meshgrid(xs, ys, indexing='ij')
 H = -1.2 + 0.8 * np.sin(X * 0.01) * np.cos(Y * 0.013) + 2.5 * np.sin(X * 0.003 + 1) * np.sin(Y * 0.0021)
 H += 45.0 * np.clip((Y - 1600) / 900, 0, 1) ** 2 * (0.6 + 0.4 * np.sin(X * 0.0023 + 0.5))     # distant mesa rise
+# flat-topped mesas + a long crater-rim ridge on the horizon (150-300 m, 2-3 km out): steep eroded flanks
+def _mesa(cx, cy, r, h):
+    d = np.hypot((X - cx) / r[0], (Y - cy) / r[1])
+    return h * np.clip((1.25 - d) / 0.35, 0, 1) ** 1.6
+H += _mesa(-900, 2500, (520, 260), 120) + _mesa(-250, 2750, (300, 200), 95) + _mesa(700, 2400, (650, 300), 150)
+H += _mesa(1350, 2800, (500, 220), 110)
+H += 50.0 * np.clip((Y - 2300) / 500, 0, 1) * (0.55 + 0.45 * np.sin(X * 0.0017 + 1.3))
 H += 20.0 * np.clip((Y - 250) / 600, 0, 1) * (0.5 + 0.5 * np.sin(X * 0.004 + 2.0)) * np.clip((Y - 250) / 300, 0, 1)
 ii = np.arange(N * N).reshape(N, N)
 F = np.stack([ii[:-1, :-1], ii[1:, :-1], ii[1:, 1:], ii[:-1, 1:]], -1).reshape(-1, 4)
@@ -97,6 +110,27 @@ ring_ = sb.prim("cyl", "DomeRing", loc=(40.0, 92.0, -0.6), vertices=64, radius=9
 mast = sb.prim("cyl", "Mast", loc=(-40.0, 110.0, 8.0), vertices=12, radius=0.18, depth=18.0, mat=hab_white)
 tun = sb.prim("cyl", "Corridor", loc=(0.0, 18.0, 0.2), vertices=32, radius=1.3, depth=30.0, mat=hab_white)
 tun.rotation_euler = (math.radians(90), 0, math.radians(-8))
+
+# solar field (tilted rows toward the sun) + a parked pressurised rover between the modules
+cells = moon.cells_mat("MarsCells")
+dust_film = sb.mat("PanelDust", (0.36, 0.2, 0.1), rough=0.9)
+for r in range(5):
+    for c in range(8):
+        x = 30.0 + c * 4.6; y = 30.0 + r * 5.5
+        z = float(_T().height(np.array([x]), np.array([y]))[0])
+        pnl = sb.prim("cube", "SolarP", loc=(x, y, z + 1.0), rot=(math.radians(-28), 0, 0), scale=(2.1, 1.1, 0.03), mat=cells)
+        sb.prim("cyl", "SolarLeg", loc=(x, y + 0.2, z + 0.45), vertices=8, radius=0.05, depth=0.9, mat=M["graphite"])
+rz = float(_T().height(np.array([-6.0]), np.array([30.0]))[0])
+rv_body = sb.prim("cube", "PRover", loc=(-6.0, 30.0, rz + 1.55), rot=(0, 0, math.radians(24)), scale=(2.6, 1.3, 0.9), mat=hab_white)
+sb.bevel(rv_body, 0.45, 4)
+for dx in (-1.7, 0.0, 1.7):
+    for dy in (-1.35, 1.35):
+        p_ = V((dx, dy, 0))
+        p_.rotate(Euler((0, 0, math.radians(24))))
+        w_ = sb.prim("cyl", "PRWheel", loc=(-6.0 + p_.x, 30.0 + p_.y, rz + 0.55), rot=(math.radians(90), 0, math.radians(24)),
+                     vertices=32, radius=0.55, depth=0.45, mat=M["graphite"])
+win_r = sb.prim("cube", "PRWin", loc=(-6.0 + 2.2 * math.cos(math.radians(24)), 30.0 + 2.2 * math.sin(math.radians(24)), rz + 1.9),
+                rot=(0, 0, math.radians(24)), scale=(0.5, 1.0, 0.3), mat=sb.emit_mat("PRWinM", (1.0, 0.72, 0.42), 4.0))
 
 # ---------------------------------------------------------------- greenhouse module interior
 wall_m = suit.graphite_mat("GHWall", color=(0.70, 0.69, 0.66), wear=0.15)
@@ -242,7 +276,7 @@ if HAND:
                                     race=dict(african=0.5, asian=0.3, caucasian=0.2)), hair="bob01",
                                     clothes=["male_casualsuit01"], skin="young_african_female")
     mhchild.recolor_top(parts, color=(0.20, 0.22, 0.16))           # sage work shirt
-    GP = V((0.52, -0.42, 0.0))
+    GP = V((0.323, -0.068, 0.0))
     rig.location = GP
     rig.rotation_euler = (0, 0, math.radians(160))                   # faces +Y toward the trough, slightly left
     bpy.context.view_layer.update()
@@ -302,7 +336,8 @@ if HAND:
     pole.location = GP + V((0.45, 0.2, 0.6))
     C_rest = contact_world(0)
     t_contact, e0 = solve_target(C_rest, C_rest + V((0.05, -0.12, -0.05)))
-    print("HAND contact err mm", e0 * 1000)
+    print("HAND contact err mm", e0 * 1000, "contact", tuple(round(c, 3) for c in C_rest),
+          "shoulder", tuple(round(c, 3) for c in rig.matrix_world @ pb["upperarm01.R"].head), "pad", tuple(round(c, 3) for c in pad_point()))
     # approach path: from lower-right-front toward the contact under the leaf, arriving with a gentle ease
     APP0 = t_contact + V((0.16, -0.14, -0.10))
 
@@ -334,10 +369,14 @@ if HAND:
             pass
 
 # ---------------------------------------------------------------- camera
-cam = sb.camera("Cam", loc=(-0.72, -0.30, 1.00), target=V((0.25, 1.2, 0.98)), lens=45, fstop=5.6, clip=(0.02, 10000))
+# aimed so the hand's lift (contact ~(0.23, 0.33)) plays just right of centre, the window bays behind it
+cam = sb.camera("Cam", loc=(-0.72, -0.30, 0.95), target=V((0.36, 0.95, 0.97)), lens=50, fstop=5.6, clip=(0.02, 10000))
+cam.data.dof.focus_distance = 1.14
 FOCUS = os.environ.get("S24_FOCUS")
 if FOCUS:
     cam.data.dof.focus_distance = float(FOCUS)
+import dbgcam
+dbgcam.apply()
 print("BUILD %.1fs" % (time.time() - T0))
 sb.frames(S0, S1)
 if os.environ.get("SB_SAVE"):

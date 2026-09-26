@@ -1197,7 +1197,7 @@ def save(name):
 
 def world_bluehour(glow_az=30.0, glow=6.0, zenith=(0.012, 0.03, 0.10), horizon=(0.12, 0.15, 0.25),
                    ground=(0.004, 0.005, 0.007), glow_col=(1.0, 0.38, 0.08), glow_width=40.0,
-                   band_height=5.0, strength=1.0, sun=None):
+                   band_height=5.0, strength=1.0, sun=None, clouds=0.0, cloud_seed=0.0):
     """Twilight sky: elevation gradient + a warm afterglow band hugging the horizon around azimuth glow_az
     (degrees, 0 = +Y, 90 = +X). Optional sun = (elev, az, size_deg, strength) adds a sun disc (sunrise)."""
     sc = bpy.context.scene
@@ -1243,6 +1243,26 @@ def world_bluehour(glow_az=30.0, glow=6.0, zenith=(0.012, 0.03, 0.10), horizon=(
         halo = nb.math('POWER', nb.math('MAXIMUM', sdp, 0.0), 400.0)
         s_amt = nb.math('ADD', nb.math('MULTIPLY', disc, sstr), nb.math('MULTIPLY', halo, sstr * 0.02))
         col = nb.mix(nb.math('MULTIPLY', s_amt, below), col, (1.0, 0.72, 0.4, 1), blend='ADD', clamp=False)
+    if clouds > 0:
+        # high cirrus: streaky fbm projected on a plane overhead (x/z, y/z), fading into the horizon; the undersides
+        # catch the afterglow (rose-gold toward glow_az, low) and are slate-blue elsewhere, a touch above the sky
+        zc = nb.math('MAXIMUM', z, 0.03)
+        cu = nb.new('ShaderNodeCombineXYZ')
+        nb.link(nb.math('DIVIDE', sep.outputs[0], zc), cu.inputs[0])
+        nb.link(nb.math('DIVIDE', sep.outputs[1], zc), cu.inputs[1])
+        cu.inputs[2].default_value = cloud_seed
+        pm = nb.mapping(cu.outputs[0], scale=(0.9, 3.2, 1.0), rot=(0, 0, math.radians(32)))
+        n1 = nb.noise(pm, scale=0.55, detail=7, rough=0.62)
+        n2 = nb.noise(pm, scale=4.0, detail=5, rough=0.7)
+        cov = nb.maprange(n1.outputs['Fac'], 0.46, 0.70)
+        wisp = nb.maprange(n2.outputs['Fac'], 0.35, 0.7, 0.35, 1.0)
+        fade = nb.math('MULTIPLY', nb.math('POWER', nb.maprange(z, 0.01, 0.22), 1.5), nb.maprange(z, 0.95, 0.6))
+        mask = nb.math('MULTIPLY', nb.math('MULTIPLY', nb.math('MULTIPLY', cov, wisp), fade), clouds)
+        lit = nb.math('MULTIPLY', lobe, nb.math('EXPONENT', nb.math('MULTIPLY', nb.math('MAXIMUM', z, 0.0), -3.0)))
+        slate = tuple(min(1.0, c * 2.4 + 0.012) for c in zenith)
+        ccol = nb.mix(nb.math('MINIMUM', nb.math('MULTIPLY', lit, 1.4), 1.0), (*slate, 1),
+                      (glow_col[0] * 0.30 * glow, glow_col[1] * 0.42 * glow + 0.02, glow_col[2] * 0.9 * glow + 0.04, 1))
+        col = nb.mix(mask, col, ccol)
     bg = nt.nodes.new('ShaderNodeBackground')
     bg.inputs[1].default_value = strength
     out = nt.nodes.new('ShaderNodeOutputWorld')

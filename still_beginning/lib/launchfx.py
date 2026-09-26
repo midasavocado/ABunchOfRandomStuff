@@ -24,7 +24,8 @@ def environment(sc, haze=0.00032, glow=2.0, strength=1.0):
     """Pre-dawn blue hour: deep blue zenith, cool horizon, a restrained amber band behind the pad. Pad haze box
     (makes flood beams and later the fire glow readable)."""
     w, bg = sb.world_bluehour(glow_az=GLOW_AZ, glow=glow, zenith=(0.006, 0.016, 0.055), horizon=(0.07, 0.095, 0.16),
-                              glow_col=(1.0, 0.36, 0.07), glow_width=55, band_height=2.2, strength=strength)
+                              glow_col=(1.0, 0.36, 0.07), glow_width=55, band_height=2.2, strength=strength,
+                              clouds=0.85)
     haze_box(haze)
     return w
 

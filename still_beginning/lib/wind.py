@@ -108,8 +108,31 @@ def turbine_mats():
     n = nb.noise(co, scale=0.08, detail=6, rough=0.6)
     streak = nb.noise(nb.mapping(co, scale=(3.0, 3.0, 0.05)), scale=1.2, detail=5, rough=0.6)
     dirt = nb.maprange(streak.outputs['Fac'], 0.55, 0.8, 0.0, 0.22)
-    nb.set('Base Color', nb.mix(dirt, nb.mix(nb.maprange(n.outputs['Fac'], 0.3, 0.7), (0.74, 0.75, 0.76, 1), (0.82, 0.83, 0.84, 1)), (0.55, 0.55, 0.53, 1)))
-    nb.set('Roughness', nb.maprange(n.outputs['Fac'], 0.3, 0.7, 0.28, 0.42))
+    # nacelle GRP panelling (turbine-local metres; only above z > HUB_H - 10 so the rotor, modelled about its own
+    # origin, is untouched): transverse panel joints every 2.25 m, the upper/lower cover split line, roof panel
+    # joints, rivet rows beside the joints; darker sealant, slight recess, grime collecting under the joints
+    sep = nb.new('ShaderNodeSeparateXYZ'); nb.link(co, sep.inputs[0])
+    on = nb.math('GREATER_THAN', sep.outputs[2], HUB_H - 10.0)
+    fy = nb.math('ABSOLUTE', nb.math('SUBTRACT', nb.math('FRACT', nb.math('DIVIDE', nb.math('ADD', sep.outputs[1], 0.3), 2.25)), 0.5))
+    j_y = nb.maprange(fy, 0.4955, 0.4985)
+    j_z = nb.maprange(nb.math('ABSOLUTE', nb.math('SUBTRACT', sep.outputs[2], HUB_H - 0.6)), 0.016, 0.008)
+    j_x = nb.math('MULTIPLY', nb.maprange(nb.math('ABSOLUTE', nb.math('SUBTRACT', nb.math('ABSOLUTE', sep.outputs[0]), 1.3)), 0.014, 0.007),
+                  nb.math('GREATER_THAN', sep.outputs[2], HUB_H + 3.0))
+    joint = nb.math('MULTIPLY', nb.math('MAXIMUM', nb.math('MAXIMUM', j_y, j_z), j_x), on)
+    # rivets: dots every 0.18 m along a row 0.05 m either side of each transverse joint
+    ry = nb.maprange(fy, 0.4745, 0.4775, 0.0, 1.0)
+    ry = nb.math('MULTIPLY', ry, nb.maprange(fy, 0.4805, 0.4775, 0.0, 1.0))
+    rz = nb.math('ABSOLUTE', nb.math('SUBTRACT', nb.math('FRACT', nb.math('DIVIDE', nb.math('ADD', sep.outputs[2], sep.outputs[0]), 0.18)), 0.5))
+    rivet = nb.math('MULTIPLY', nb.math('MULTIPLY', ry, nb.maprange(rz, 0.06, 0.03)), on)
+    under = nb.math('MULTIPLY', nb.maprange(nb.math('SUBTRACT', HUB_H - 0.6, sep.outputs[2]), 0.0, 1.2, 1.0, 0.0),
+                    nb.math('LESS_THAN', sep.outputs[2], HUB_H - 0.6))
+    dirt = nb.math('MAXIMUM', dirt, nb.math('MULTIPLY', nb.math('MULTIPLY', under, on), nb.math('MULTIPLY', streak.outputs['Fac'], 0.3)))
+    col = nb.mix(dirt, nb.mix(nb.maprange(n.outputs['Fac'], 0.3, 0.7), (0.74, 0.75, 0.76, 1), (0.82, 0.83, 0.84, 1)), (0.55, 0.55, 0.53, 1))
+    col = nb.mix(nb.math('MULTIPLY', joint, 0.85), col, (0.30, 0.31, 0.32, 1))
+    col = nb.mix(nb.math('MULTIPLY', rivet, 0.5), col, (0.62, 0.63, 0.64, 1))
+    nb.set('Base Color', col)
+    nb.set('Roughness', nb.mix(joint, nb.maprange(n.outputs['Fac'], 0.3, 0.7, 0.28, 0.42), 0.6, dtype='FLOAT'))
+    nb.set('Normal', nb.bump(nb.math('ADD', nb.math('MULTIPLY', joint, -1.0), nb.math('MULTIPLY', rivet, 0.6)), strength=0.35, distance=0.01))
     blade = sb.mat("BladeWhite", (0.82, 0.83, 0.84), rough=0.3, coat=0.3, coat_rough=0.12)
     nb = sb.NB(blade)
     co = nb.coord('Object')
@@ -122,6 +145,19 @@ def turbine_mats():
     nb.set('Roughness', nb.mix(le, 0.28, 0.6, dtype='FLOAT'))
     yellow = E.painted_steel("TPYellow", (0.80, 0.55, 0.04), rough=0.45, wear=0.35, scale=0.3)
     grey = E.painted_steel("TowerGrey", (0.66, 0.67, 0.68), rough=0.4, wear=0.15, scale=0.05)
+    # tower can welds: circumferential bead every 3.2 m (plate width) + a longitudinal seam; faint rust weep below
+    nb = sb.NB(grey)
+    co = nb.coord('Object')
+    sep = nb.new('ShaderNodeSeparateXYZ'); nb.link(co, sep.inputs[0])
+    fz = nb.math('ABSOLUTE', nb.math('SUBTRACT', nb.math('FRACT', nb.math('DIVIDE', sep.outputs[2], 3.2)), 0.5))
+    weld = nb.maprange(fz, 0.4955, 0.4985)
+    ang = nb.math('ARCTAN2', sep.outputs[1], sep.outputs[0])
+    lw = nb.math('MULTIPLY', nb.maprange(nb.math('ABSOLUTE', nb.math('SUBTRACT', ang, 2.2)), 0.004, 0.002),
+                 nb.math('GREATER_THAN', sep.outputs[2], 17.6))
+    bead = nb.math('MAXIMUM', weld, lw)
+    bsdf = [n_ for n_ in grey.node_tree.nodes if n_.type == 'BSDF_PRINCIPLED'][0]
+    prev = bsdf.inputs['Normal'].links[0].from_socket if bsdf.inputs['Normal'].is_linked else None
+    nb.link(nb.bump(bead, strength=0.5, distance=0.006, normal=prev), bsdf.inputs['Normal'])
     dark = E.painted_steel("DarkSteel", (0.05, 0.05, 0.055), rough=0.5, wear=0.2, scale=0.3)
     galv = E.painted_steel("Galv", (0.45, 0.46, 0.47), rough=0.45, wear=0.2, scale=0.5)
     return dict(white=white, blade=blade, yellow=yellow, grey=grey, dark=dark, galv=galv)
@@ -181,6 +217,22 @@ def turbine_parts(M, detail=True):
         for (x, y, sx_, sy_) in ((3.35, -10.5, 0.06, 7.5), (-3.35, -10.5, 0.06, 7.5), (0, -6.8, 6.8, 0.06)):
             for hz in (0.6, 1.2):
                 static.append(E.box(f"HR{x}{y}{hz}", (sx_, sy_, 0.06), loc=(x, y, HUB_H + 3.9 + hz), mat=M['yellow']))
+        # side louvre banks (rear flanks), service hatches, roof grab rails + tie-off points, aviation lights
+        for sx in (-1, 1):
+            for k in range(9):
+                static.append(E.box(f"Louv{sx}{k}", (0.12, 2.6, 0.05), loc=(sx * 3.62, -13.2, HUB_H + 0.6 + k * 0.2),
+                                    rot=(0, sx * math.radians(35), 0), mat=M['galv']))
+            static.append(E.box(f"LouvFr{sx}", (0.06, 2.8, 2.0), loc=(sx * 3.585, -13.2, HUB_H + 1.4), mat=M['dark']))
+            for (hy, hz, hw, hh) in ((-4.2, HUB_H + 0.7, 1.4, 1.6), (-8.6, HUB_H - 1.6, 1.0, 0.8)):
+                static.append(E.box(f"Hatch{sx}{hy}", (0.03, hw, hh), loc=(sx * 3.61, hy, hz), mat=M['white'], bev=0.02))
+                static.append(E.box(f"HatchL{sx}{hy}", (0.05, 0.06, 0.18), loc=(sx * 3.64, hy + hw / 2 - 0.12, hz), mat=M['dark']))
+            static.append(E.box(f"GrabR{sx}", (0.05, 12.0, 0.05), loc=(sx * 2.9, -7.5, HUB_H + 4.1), mat=M['yellow']))
+            for y in np.arange(-13.0, -1.0, 1.5):
+                static.append(E.box(f"GrabP{sx}{y:.1f}", (0.05, 0.05, 0.3), loc=(sx * 2.9, y, HUB_H + 3.95), mat=M['yellow']))
+        for sx in (-1, 1):
+            static.append(E.cyl(f"AvLt{sx}", 0.18, 0.35, loc=(sx * 2.6, -16.2, HUB_H + 7.0), mat=M['dark'], verts=16))
+            static.append(E.lathe_obj(f"AvDome{sx}", [(0.0, 0.0), (0.16, 0.0), (0.14, 0.12), (0.0, 0.2)], segs=24,
+                                      mat=sb.emit_mat("AvRed", (1.0, 0.08, 0.04), 30.0), loc=(sx * 2.6, -16.2, HUB_H + 7.17)))
         static.append(E.cyl("MetMast", 0.06, 3.0, loc=(1.5, -17.2, HUB_H + 8.2), mat=M['galv'], verts=8))
         static.append(E.cyl("Anemo", 0.25, 0.1, loc=(1.5, -17.2, HUB_H + 9.7), mat=M['dark'], verts=12))
     for o in static:
@@ -206,6 +258,26 @@ def turbine_parts(M, detail=True):
             rr = np.interp(zz, pr[:, 1], pr[:, 0]) + 0.012
             pts.append((rr * math.sin(a), zz, rr * math.cos(a)))
         rot.append(E.sweep(f"SpSeam{k}", pts, radius=0.018, segs=6, mat=seam_m, sub=1, resample=False))
+    # fasteners: countersunk bolt heads either side of each radial seam + round the nose hatch
+    bolt_m = sb.mat("SpBolt", (0.52, 0.53, 0.54), metal=0.8, rough=0.35)
+    bsrc = []
+    for k in range(3):
+        a0 = 2 * math.pi * k / 3 + math.pi / 3
+        for zz in np.arange(-2.2, 4.9, 0.32):
+            rr = float(np.interp(zz, pr[:, 1], pr[:, 0])) + 0.004
+            for da in (-0.07, 0.07):
+                a = a0 + da / max(rr, 0.5)
+                bsrc.append(sb.prim("sphere", "SpB", loc=(rr * math.sin(a), zz, rr * math.cos(a)), segments=8, ring_count=4,
+                                    radius=0.032, scale=(1, 1, 1), mat=bolt_m))
+    for i in range(16):
+        a = 2 * math.pi * i / 16
+        bsrc.append(sb.prim("sphere", "NoseB", loc=(0.78 * math.sin(a), 5.12 - 0.02, 0.78 * math.cos(a)), segments=8, ring_count=4,
+                            radius=0.03, mat=bolt_m))
+    for b_ in bsrc:
+        b_.scale = (1.0, 0.35, 1.0) if b_.name.startswith("Nose") else (1.0, 1.0, 1.0)
+    rot.extend(bsrc)
+    hatch = E.lathe_obj("NoseHatch", [(0.0, 0.0), (0.9, 0.0), (0.9, 0.012), (0.0, 0.012)], segs=64, mat=seam_m)
+    hatch.rotation_euler = (-math.pi / 2, 0, 0); hatch.location = (0, 5.0, 0)
     for zz in (0.9, 3.2):
         rr = float(np.interp(zz, pr[:, 1], pr[:, 0])) + 0.01
         rg = E.lathe_obj(f"SpRing{zz}", [(rr, -0.02), (rr + 0.02, 0.0), (rr, 0.02)], segs=128, mat=seam_m)
@@ -217,6 +289,13 @@ def turbine_parts(M, detail=True):
         col.rotation_euler = (0, a, 0)
         col.location = V((0, -0.4, 0)) + V((math.sin(a), 0, math.cos(a))) * 3.6
         rot.append(col)
+    root_m = E.painted_steel("BladeRoot", (0.42, 0.43, 0.44), rough=0.45, wear=0.2, scale=2.0)
+    for k in range(3):
+        a = 2 * math.pi * k / 3
+        rc = E.lathe_obj(f"RootCyl{k}", [(1.745, 0.0), (1.745, 1.1), (1.70, 1.2), (0.0, 1.2)], segs=96, mat=root_m)
+        rc.rotation_euler = (0, a, 0)
+        rc.location = V((0, -0.4, 0)) + V((math.sin(a), 0, math.cos(a))) * 3.3
+        rot.append(rc)
     blade = blade_mesh("Blade", mat=M['blade'])
     for k in range(3):
         b = blade.copy(); b.data = blade.data
