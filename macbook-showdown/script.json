@@ -1,0 +1,401 @@
+{
+ "bpm": 120,
+ "voices": {
+  "N": {
+   "voice": "af_heart",
+   "speed": 1.15
+  },
+  "A": {
+   "voice": "am_fenrir",
+   "speed": 1.06
+  }
+ },
+ "scenes": [
+  {
+   "id": "intro",
+   "lead": 0.6,
+   "tail": 0.24,
+   "lines": [
+    {
+     "id": "n01",
+     "v": "N",
+     "text": "Your buddy has a problem."
+    },
+    {
+     "id": "n02a",
+     "v": "N",
+     "text": "Two MacBook Pros.",
+     "gap": 0.3
+    },
+    {
+     "id": "n02b",
+     "v": "N",
+     "text": "A hundred and twenty-five bucks apart.",
+     "gap": 0.15
+    },
+    {
+     "id": "n02c",
+     "v": "N",
+     "text": "And he can't.",
+     "gap": 0.25
+    },
+    {
+     "id": "n02d",
+     "v": "N",
+     "text": "Decide.",
+     "gap": 0.26
+    },
+    {
+     "id": "n03",
+     "v": "N",
+     "text": "So let's settle this. The only way we know how.",
+     "gap": 0.38
+    }
+   ]
+  },
+  {
+   "id": "title",
+   "lead": 0.0,
+   "tail": 0.0,
+   "hold": 2.5,
+   "lines": []
+  },
+  {
+   "id": "fighters",
+   "lead": 0.3,
+   "tail": 0.36,
+   "lines": [
+    {
+     "id": "a01",
+     "v": "A",
+     "text": "In the red corner! The thirteen-inch, M one MacBook Pro!"
+    },
+    {
+     "id": "n04",
+     "v": "N",
+     "text": "Eight-core CPU. Eight-core graphics. And, a Touch Bar.",
+     "gap": 0.3
+    },
+    {
+     "id": "a02",
+     "v": "A",
+     "text": "And in the blue corner! The fourteen-inch, M one Pro!",
+     "gap": 0.52
+    },
+    {
+     "id": "n05",
+     "v": "N",
+     "text": "Ten-core CPU. Sixteen-core graphics. And, a notch.",
+     "gap": 0.3
+    },
+    {
+     "id": "n06",
+     "v": "N",
+     "text": "Both packing sixteen gigs of RAM, and a five-twelve gig SSD. Now, fight!",
+     "gap": 0.6
+    }
+   ]
+  },
+  {
+   "id": "r1",
+   "lead": 0.2,
+   "tail": 0.36,
+   "lines": [
+    {
+     "id": "a03",
+     "v": "A",
+     "text": "Round one! Brains!"
+    },
+    {
+     "id": "n07",
+     "v": "N",
+     "text": "The M one Pro has double the graphics cores, and almost three times the memory bandwidth.",
+     "gap": 0.45
+    },
+    {
+     "id": "n08a",
+     "v": "N",
+     "text": "The thirteen-inch is a golden retriever.",
+     "gap": 0.38
+    },
+    {
+     "id": "n08b",
+     "v": "N",
+     "text": "The fourteen-inch is a golden retriever, with a jetpack.",
+     "gap": 0.3
+    }
+   ]
+  },
+  {
+   "id": "r2",
+   "lead": 0.2,
+   "tail": 0.3,
+   "lines": [
+    {
+     "id": "a04",
+     "v": "A",
+     "text": "Round two! The screen!"
+    },
+    {
+     "id": "n09",
+     "v": "N",
+     "text": "The thirteen has a perfectly nice sixty hertz LCD.",
+     "gap": 0.45
+    },
+    {
+     "id": "n10a",
+     "v": "N",
+     "text": "The fourteen? A mini-LED XDR display.",
+     "gap": 0.3
+    },
+    {
+     "id": "n10b",
+     "v": "N",
+     "text": "A hundred and twenty hertz, and up to sixteen hundred nits.",
+     "gap": 0.15
+    },
+    {
+     "id": "n10c",
+     "v": "N",
+     "text": "Scrolling on it is like butter on a hot skillet.",
+     "gap": 0.26
+    }
+   ]
+  },
+  {
+   "id": "r3",
+   "lead": 0.2,
+   "tail": 0.36,
+   "lines": [
+    {
+     "id": "a05",
+     "v": "A",
+     "text": "Round three! Ports!"
+    },
+    {
+     "id": "n11a",
+     "v": "N",
+     "text": "The thirteen-inch has two USB-C ports.",
+     "gap": 0.45
+    },
+    {
+     "id": "n11b",
+     "v": "N",
+     "text": "That's it. Hope you like dongles.",
+     "gap": 0.25
+    },
+    {
+     "id": "n12a",
+     "v": "N",
+     "text": "The fourteen has three Thunderbolt ports, HDMI, an SD slot, and MagSafe.",
+     "gap": 0.45
+    },
+    {
+     "id": "n12b",
+     "v": "N",
+     "text": "So when someone trips on your charger, your laptop stays put, instead of doing a triple backflip.",
+     "gap": 0.26
+    }
+   ]
+  },
+  {
+   "id": "r4",
+   "lead": 0.2,
+   "tail": 0.3,
+   "lines": [
+    {
+     "id": "a06",
+     "v": "A",
+     "text": "Round four! Video calls!"
+    },
+    {
+     "id": "n13a",
+     "v": "N",
+     "text": "Seven-twenty P camera, versus ten-eighty P.",
+     "gap": 0.45
+    },
+    {
+     "id": "n13b",
+     "v": "N",
+     "text": "One makes you look like a potato in witness protection.",
+     "gap": 0.3
+    },
+    {
+     "id": "n13c",
+     "v": "N",
+     "text": "The other makes you look like, you.",
+     "gap": 0.3
+    },
+    {
+     "id": "n14",
+     "v": "N",
+     "text": "Plus, six speakers instead of two.",
+     "gap": 0.38
+    }
+   ]
+  },
+  {
+   "id": "comeback",
+   "lead": 0.3,
+   "tail": 0.36,
+   "lines": [
+    {
+     "id": "n15",
+     "v": "N",
+     "text": "But wait! The thirteen-inch fights back!"
+    },
+    {
+     "id": "n16a",
+     "v": "N",
+     "text": "It's half a pound lighter,",
+     "gap": 0.3
+    },
+    {
+     "id": "n16b",
+     "v": "N",
+     "text": "and its battery lasts hours longer.",
+     "gap": 0.1
+    },
+    {
+     "id": "n17a",
+     "v": "N",
+     "text": "And the Touch Bar can scroll through emoji.",
+     "gap": 0.38
+    },
+    {
+     "id": "n17b",
+     "v": "N",
+     "text": "Nobody asked for that.",
+     "gap": 0.34
+    },
+    {
+     "id": "n17c",
+     "v": "N",
+     "text": "But it can.",
+     "gap": 0.34
+    }
+   ]
+  },
+  {
+   "id": "math",
+   "lead": 0.3,
+   "tail": 0.36,
+   "lines": [
+    {
+     "id": "n18",
+     "v": "N",
+     "text": "So what does a hundred and twenty-five bucks buy?"
+    },
+    {
+     "id": "m1",
+     "v": "N",
+     "text": "Double the graphics.",
+     "gap": 0.26
+    },
+    {
+     "id": "m2",
+     "v": "N",
+     "text": "Triple the bandwidth.",
+     "gap": 0.05
+    },
+    {
+     "id": "m3",
+     "v": "N",
+     "text": "A way better screen.",
+     "gap": 0.05
+    },
+    {
+     "id": "m4",
+     "v": "N",
+     "text": "Camera.",
+     "gap": 0.05
+    },
+    {
+     "id": "m5",
+     "v": "N",
+     "text": "Speakers.",
+     "gap": 0.05
+    },
+    {
+     "id": "m6",
+     "v": "N",
+     "text": "MagSafe.",
+     "gap": 0.05
+    },
+    {
+     "id": "m7",
+     "v": "N",
+     "text": "HDMI.",
+     "gap": 0.05
+    },
+    {
+     "id": "m8",
+     "v": "N",
+     "text": "An SD slot.",
+     "gap": 0.05
+    },
+    {
+     "id": "m9",
+     "v": "N",
+     "text": "And a second display.",
+     "gap": 0.05
+    },
+    {
+     "id": "n20a",
+     "v": "N",
+     "text": "That's about fourteen bucks per upgrade.",
+     "gap": 0.45
+    },
+    {
+     "id": "n20b",
+     "v": "N",
+     "text": "That's cheaper than one Apple dongle.",
+     "gap": 0.3
+    }
+   ]
+  },
+  {
+   "id": "verdict",
+   "lead": 0.3,
+   "tail": 0.24,
+   "lines": [
+    {
+     "id": "a07",
+     "v": "A",
+     "text": "And the winner, by knockout..."
+    },
+    {
+     "id": "a08",
+     "v": "A",
+     "text": "The fourteen-inch, M one Pro!",
+     "gap": 0.68
+    },
+    {
+     "id": "n21",
+     "v": "N",
+     "text": "Get the fourteen. Your eyes, your ears, and your future self will thank you.",
+     "gap": 1.2
+    },
+    {
+     "id": "n22",
+     "v": "N",
+     "text": "Unless you really, really love the Touch Bar.",
+     "gap": 0.38
+    },
+    {
+     "id": "n23",
+     "v": "N",
+     "text": "Nobody really loves the Touch Bar.",
+     "gap": 0.52
+    }
+   ]
+  },
+  {
+   "id": "end",
+   "lead": 0.0,
+   "tail": 0.0,
+   "hold": 3.5,
+   "lines": []
+  }
+ ]
+}
