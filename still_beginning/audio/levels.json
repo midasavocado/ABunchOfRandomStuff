@@ -8,16 +8,16 @@
   "glue_max_gr_db": 3.13,
   "limiter_max_gr_db": 3.92,
   "first_drop_lufs_30_60": -11.72,
-  "final_drop_lufs_75_105": -10.15,
-  "intro_lufs_0_15": -19.39,
+  "final_drop_lufs_75_105": -10.14,
+  "intro_lufs_0_15": -19.4,
   "build_lufs_15_28": -13.61,
-  "breakdown_lufs_60_73": -15.44,
-  "resolution_lufs_105_120": -11.12,
+  "breakdown_lufs_60_73": -15.39,
+  "resolution_lufs_105_120": -11.13,
   "premaster_peak_dbfs": -6.0,
-  "drop_contrast_lu": 1.57,
+  "drop_contrast_lu": 1.58,
   "ffmpeg_ebur128": {
     "I": -12.0,
-    "LRA": 8.5,
+    "LRA": 8.4,
     "TP": -1.3
   }
 }

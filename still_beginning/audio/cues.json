@@ -195,6 +195,24 @@
       "label": "resolution opens (bar 57) - crash + boom, kick half-time"
     },
     {
+      "t": 27.166667,
+      "frame": 652.0,
+      "sample": 1304000,
+      "label": "s08a pin seats (metal click)"
+    },
+    {
+      "t": 74.541667,
+      "frame": 1789.0,
+      "sample": 3578000,
+      "label": "s19c lock bolt withdraws (pneumatic clack) in the held breath"
+    },
+    {
+      "t": 99.833333,
+      "frame": 2396.0,
+      "sample": 4792000,
+      "label": "s25 mirror wing latches"
+    },
+    {
       "t": 118.2,
       "frame": 2836.8,
       "sample": 5673600,
