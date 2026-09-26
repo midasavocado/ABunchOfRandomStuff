@@ -31,6 +31,11 @@ SHOT_STYLE = {
     "s20": "locked", "s21": "weightless", "s22": "weightless", "s23e": "weightless", "s23": "steady",
     "s23m": "weightless", "s25": "weightless", "s24c": "drone", "s24": "handheld", "s25z": "drone", "s28": "weightless",
 }
+# the operator's signature move: a slow orbit around the subject (the focus point) + a touch of crane, so an authored
+# A->B line becomes a curved move with parallax. degrees of yaw across the shot per style (sign/size seeded per shot);
+# 0 for shots whose authored move is already the whole idea
+ARC_STYLE = {"steady": 7.0, "handheld": 4.0, "drone": 9.0, "macro": 6.0, "weightless": 8.0, "locked": 0.0}
+ARC_NONE = {"s01", "s15", "s23e", "s23m", "s24c", "s25z", "s28", "s11", "s20", "s19b", "s14", "s12b"}
 # (trim_in, trim_out) as fractions of the authored move; 0 keeps an exact authored frame (first shot / title end)
 TRIM_DEFAULT = (0.06, 0.06)
 # callables (cam, f0, f1) run after the camera is rebuilt -- e.g. the analytic Earth re-bakes the camera position
@@ -111,6 +116,24 @@ def finish(sid, cam=None, style=None):
         return clips[min(int(round(u * N)), N)]
 
     amp, period, rdeg, rolldeg = st
+    rsd = random.Random(hash((sid, "arc")) & 0xffffffff)
+    arc = 0.0 if sid in ARC_NONE else math.radians(ARC_STYLE.get(style or SHOT_STYLE.get(sid, "steady"), 5.0)) * \
+        rsd.uniform(0.6, 1.0) * rsd.choice((-1.0, 1.0))
+    crane = 0.0 if sid in ARC_NONE else rsd.uniform(-0.05, 0.05)
+
+    def operate(g, p, q, fd):
+        """orbit the authored camera around its subject by the arc angle at g (linear in time, so it keeps its
+        speed through the handles) and crane it a little, re-aimed at the subject."""
+        if arc == 0.0 and crane == 0.0:
+            return p, q
+        x = (g - a) / max(1, N) - 0.5
+        S = p + (q @ V((0.0, 0.0, -1.0))) * fd
+        R = Quaternion((0.0, 0.0, 1.0), arc * x)
+        p2 = S + R @ (p - S) + V((0.0, 0.0, 1.0)) * (crane * fd * x)
+        q2 = R @ q
+        f_old = q2 @ V((0.0, 0.0, -1.0))
+        f_new = (S - p2).normalized()
+        return p2, f_old.rotation_difference(f_new) @ q2
     nx, ny, nz = (_noise1(hash((sid, c)) & 0xffff, period) for c in "xyz")
     npn, ntl, nrl = (_noise1(hash((sid, c)) & 0xffff, period * 1.3) for c in ("pan", "tilt", "roll"))
     nlens = _noise1(hash((sid, "lens")) & 0xffff, period * 2.0)
@@ -123,6 +146,7 @@ def finish(sid, cam=None, style=None):
     for g in range(a - hin, b + hout):
         p, q, lens, fd = state(g)
         dist = max(0.05, fd)
+        p, q = operate(g, p, q, dist)
         R = q.to_matrix()
         right, up = R.col[0], R.col[1]
         off = (right * nx(g) + up * ny(g) + R.col[2] * nz(g) * 0.5) * (amp * dist)

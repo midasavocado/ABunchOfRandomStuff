@@ -38,10 +38,13 @@ def ease(t):
 
 
 def pos(t):
-    d0 = P0.length
-    e = ease(t)
-    d = d0 * (D1 / d0) ** e
-    dr = P0.normalized().slerp(DIR1, sb.smoother(sb.remap(e, 0.35, 1.0)))
+    # ease log(d_Earth / d_Moon): slow at both worlds, the crossing rushes; |d_E| + |d_M| ~ the Earth-Moon distance
+    Dm = E_KM.length * KM
+    dE0, dM0 = (P0 - E_KM * KM).length, P0.length
+    r0, r1 = math.log(dE0 / dM0), math.log((Dm - D1) / D1)
+    r = r0 + (r1 - r0) * ease(t)
+    d = Dm / (1.0 + math.exp(r))
+    dr = P0.normalized().slerp(DIR1, sb.smoother(sb.remap(ease(t), 0.45, 1.0)))
     return dr * d
 
 
