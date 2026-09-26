@@ -14,7 +14,7 @@ from mathutils import Vector as V, Matrix, Euler, Quaternion
 sid = (sb.argv() or ["s22"])[0]
 _, F0, F1, _ = TL.shot(sid)
 sc = sb.reset()
-sb.setup_render(os.environ.get("SB_ENGINE", "CYCLES"), cycles_samples=96, samples=32, mblur=True, shutter=0.5,
+sb.setup_render(os.environ.get("SB_ENGINE", "EEVEE"), cycles_samples=96, samples=32, mblur=True, shutter=0.5,
                 look="AgX - Medium High Contrast", exposure=float(os.environ.get("SB_EXPO", "0.0")))
 rs = random.Random(22)
 ALT = 410.0

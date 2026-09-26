@@ -331,6 +331,47 @@ def empty(name="E", loc=(0, 0, 0), parent=None):
     return o
 
 
+_PRIM_KW = {"size", "radius", "depth", "vertices", "segments", "ring_count", "subdivisions", "radius1", "radius2",
+            "x_subdivisions", "y_subdivisions"}
+_PRIM_NAME = {"cube": "Cube", "sphere": "Sphere", "ico": "Icosphere", "cyl": "Cylinder", "cone": "Cone", "plane": "Plane",
+              "circle": "Circle", "grid": "Grid"}
+
+
+def _prim_fast(kind, kw):
+    """bmesh build of the mesh primitive (None -> use the operator: torus or unusual options)."""
+    import bmesh
+    if kind not in _PRIM_NAME or not set(kw) <= _PRIM_KW:
+        return None
+    bm = bmesh.new()
+    bm.loops.layers.uv.new("UVMap")
+    g = kw.get
+    if kind == "cube":
+        bmesh.ops.create_cube(bm, size=g("size", 2.0), calc_uvs=True)
+    elif kind == "plane":
+        bmesh.ops.create_grid(bm, x_segments=1, y_segments=1, size=g("size", 2.0) / 2, calc_uvs=True)
+    elif kind == "grid":
+        bmesh.ops.create_grid(bm, x_segments=g("x_subdivisions", 10), y_segments=g("y_subdivisions", 10),
+                              size=g("size", 2.0) / 2, calc_uvs=True)
+    elif kind == "sphere":
+        bmesh.ops.create_uvsphere(bm, u_segments=g("segments", 32), v_segments=g("ring_count", 16), radius=g("radius", 1.0),
+                                  calc_uvs=True)
+    elif kind == "ico":
+        bmesh.ops.create_icosphere(bm, subdivisions=g("subdivisions", 2), radius=g("radius", 1.0), calc_uvs=True)
+    elif kind == "cyl":
+        r = g("radius", 1.0)
+        bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=g("vertices", 32), radius1=r, radius2=r,
+                              depth=g("depth", 2.0), calc_uvs=True)
+    elif kind == "cone":
+        bmesh.ops.create_cone(bm, cap_ends=True, cap_tris=False, segments=g("vertices", 32), radius1=g("radius1", 1.0),
+                              radius2=g("radius2", 0.0), depth=g("depth", 2.0), calc_uvs=True)
+    elif kind == "circle":
+        bmesh.ops.create_circle(bm, cap_ends=False, segments=g("vertices", 32), radius=g("radius", 1.0), calc_uvs=True)
+    me = bpy.data.meshes.new(_PRIM_NAME[kind])
+    bm.to_mesh(me)
+    bm.free()
+    return me
+
+
 def prim(kind, name=None, loc=(0, 0, 0), rot=(0, 0, 0), scale=(1, 1, 1), mat=None,
          smooth_shade=True, parent=None, **kw):
     ops = {
@@ -344,8 +385,22 @@ def prim(kind, name=None, loc=(0, 0, 0), rot=(0, 0, 0), scale=(1, 1, 1), mat=Non
         "circle": bpy.ops.mesh.primitive_circle_add,
         "grid": bpy.ops.mesh.primitive_grid_add,
     }
-    ops[kind](location=loc, rotation=rot, **kw)
-    o = bpy.context.active_object
+    fast = _prim_fast(kind, kw) if os.environ.get("SB_OPSPRIM") != "1" else None
+    if fast is not None:
+        # same geometry/UVs as the operator (verified vertex-for-vertex), without the operator's full scene
+        # re-evaluation (which made big scenes' builds quadratic); same side effects: linked to the active
+        # collection, selected, active
+        o = bpy.data.objects.new(fast.name, fast)
+        bpy.context.collection.objects.link(o)
+        for x in bpy.context.selected_objects:
+            x.select_set(False)
+        o.select_set(True)
+        bpy.context.view_layer.objects.active = o
+        o.location = loc
+        o.rotation_euler = rot
+    else:
+        ops[kind](location=loc, rotation=rot, **kw)
+        o = bpy.context.active_object
     o.scale = scale
     if name:
         o.name = name

@@ -12,7 +12,7 @@ from mathutils import Vector as V, Matrix, Euler, Quaternion
 sid = (sb.argv() or ["s21"])[0]
 _, F0, F1, _ = TL.shot(sid)
 sc = sb.reset()
-ENGINE = os.environ.get("SB_ENGINE", "CYCLES")
+ENGINE = os.environ.get("SB_ENGINE", "EEVEE")          # the analytic Earth is EEVEE-only (Cycles: SVM stack)
 sb.setup_render(ENGINE, cycles_samples=96, samples=32, mblur=True, shutter=0.5, look="AgX - Medium High Contrast",
                 exposure=float(os.environ.get("SB_EXPO", "0.2")))
 ALT = 78.0
