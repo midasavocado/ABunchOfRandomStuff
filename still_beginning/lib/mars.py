@@ -214,13 +214,20 @@ class Terrain:
         mes = _ss(0.20, 0.27, fbm(x, y, 1800.0, 5, seed=8)) * _ss(-4000.0, -1500.0, y - yedge) * _ss(2500.0, 4000.0, r)
         top = np.maximum(scarp, mes)
         h += 230.0 * top * (0.9 + 0.1 * fbm(x, y, 1500.0, 2, seed=9))
-        for cx, cy, cr in self.cr:
-            m = (np.abs(x - cx) < 2.2 * cr) & (np.abs(y - cy) < 2.2 * cr)
-            if not np.any(m):
-                continue
-            dd = np.hypot(x[m] - cx, y[m] - cy) / cr
-            prof = np.where(dd < 1.0, (dd * dd - 1.0) * 0.2, 0.0) + 0.05 * np.exp(-((dd - 1.0) / 0.25) ** 2)
-            h[m] += prof * cr
+        if x.size <= 4096:                                     # few points (seating objects): all craters at once
+            cx, cy, cr = self.cr[:, 0], self.cr[:, 1], self.cr[:, 2]
+            dd = np.hypot(x.reshape(-1, 1) - cx, y.reshape(-1, 1) - cy) / cr
+            prof = np.where(dd < 1.0, (dd * dd - 1.0) * 0.2, 0.0) + 0.05 * np.exp(-np.minimum(((dd - 1.0) / 0.25) ** 2, 80.0))
+            prof = np.where(dd < 2.2, prof, 0.0)
+            h += (prof * cr).sum(1).reshape(h.shape)
+        else:
+            for cx, cy, cr in self.cr:
+                m = (np.abs(x - cx) < 2.2 * cr) & (np.abs(y - cy) < 2.2 * cr)
+                if not np.any(m):
+                    continue
+                dd = np.hypot(x[m] - cx, y[m] - cy) / cr
+                prof = np.where(dd < 1.0, (dd * dd - 1.0) * 0.2, 0.0) + 0.05 * np.exp(-((dd - 1.0) / 0.25) ** 2)
+                h[m] += prof * cr
         # levelled colony site + fade to the smooth sphere at the cap edge
         h *= _ss(self.LEVEL, self.LEVEL + 900.0, r) * 0.96 + 0.04
         h *= np.clip((CAP_R * 0.8 - r) / (CAP_R * 0.3), 0, 1)
