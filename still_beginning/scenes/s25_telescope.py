@@ -14,18 +14,21 @@ sid = (sb.argv() or ["s25"])[0]
 _, F0, F1, _ = TL.shot(sid)
 sc = sb.reset()
 sb.setup_render(os.environ.get("SB_ENGINE", "CYCLES"), cycles_samples=128, samples=48, mblur=True, shutter=0.5,
-                look="AgX - Medium High Contrast", exposure=float(os.environ.get("SB_EXPO", "1.2")))
+                look="AgX - Medium High Contrast", exposure=float(os.environ.get("SB_EXPO", "0.5")))
 rs = random.Random(25)
 space.starfield(strength=6.0, density=0.7)
 # deployment attitude: the sun grazes across the mirror face from the left (the gold segments and their amber
 # rings catch it); a dim cool fill from the opposite side stands in for scattered light off the sunshield
-sun = sb.sun(14.0, 245.0, energy=5.0, color=(1.0, 0.96, 0.9), angle=0.53)
+# the sun sits where the mirror reflects it toward the lens: as the camera glides, a broad gold sheen sweeps
+# across the segments (the mirror otherwise reflects black space and reads as nothing)
+sun = sb.sun(float(os.environ.get("S25_SUNEL", "58")), float(os.environ.get("S25_SUNAZ", "10")), energy=0.6,
+             color=(1.0, 0.96, 0.9), angle=0.53)
 sb.light('AREA', "ShieldBounce", loc=(6, 8, -3), target=(0, 0, 0.5), energy=900.0, color=(0.95, 0.8, 0.75), size=10.0)
 
-gold = sb.mat("MirrorGold", (1.0, 0.72, 0.30), metal=1.0, rough=0.16)
+gold = sb.mat("MirrorGold", (1.0, 0.62, 0.2), metal=1.0, rough=0.16)
 nb = sb.NB(gold)
 co = nb.coord('Object')
-nb.set('Roughness', nb.maprange(nb.noise(co, scale=60, detail=4).outputs['Fac'], 0.3, 0.7, 0.13, 0.2))
+nb.set('Roughness', nb.maprange(nb.noise(co, scale=60, detail=4).outputs['Fac'], 0.3, 0.7, 0.2, 0.28))
 backing = sb.painted("MirrorBack", (0.06, 0.065, 0.07), rough=0.4, wear=0.1)
 struts = sb.brushed_metal("Strut", (0.1, 0.1, 0.11), rough=0.35)
 kapton = sb.mat("Shield", (0.86, 0.80, 0.86), metal=1.0, rough=0.18, thin_film=520.0)
