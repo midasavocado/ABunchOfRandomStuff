@@ -13,12 +13,15 @@ bm, rig, parts = folks.person(preset)
 import json
 ov = json.loads(os.environ.get("SB_FACE", "{}"))
 folks.expression(rig, smile=smile)
+if os.environ.get("SB_SOULFACE"):
+    import soul
+    soul.face(parts + [bm], os.environ["SB_SOULFACE"])
 for b, (loc, rot) in ov.items():
     pb = rig.pose.bones[b]; pb.location = loc; pb.rotation_mode = 'XYZ'; pb.rotation_euler = [math.radians(r) for r in rot]
 bpy.context.view_layer.update()
 h = (folks.bone_world(rig, "eye.L") + folks.bone_world(rig, "eye.R")) / 2 + V((0, 0, -0.03))
 sb.light('AREA', "Key", loc=h + V((-0.8, -1.2, 0.5)), target=h, energy=120, color=(1, 0.9, 0.8), size=1.0)
 sb.light('AREA', "Rim", loc=h + V((0.8, 0.8, 0.4)), target=h, energy=60, color=(0.8, 0.88, 1.0), size=0.6)
-cam = sb.camera("C", loc=h + V((-0.3, -1.0, 0.02)), target=h, lens=85, fstop=4)
+cam = sb.camera("C", loc=h + V((-0.3, -1.0, 0.02)), target=h, lens=float(os.environ.get("SB_FLENS", "85")), fstop=4)
 sc.render.filepath = out
 bpy.ops.render.render(write_still=True)

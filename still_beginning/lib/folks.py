@@ -13,13 +13,13 @@ PRESETS = {
     # s08: engineer at the bench (hands + forearms mostly, body soft)
     "engineer": dict(phenotype=dict(age=0.62, gender=1.0, weight=0.5, muscle=0.55,
                                     race=dict(african=0.6, asian=0.1, caucasian=0.3)),
-                     hair="short02", clothes=["male_worksuit01", "shoes01"], skin="middleage_african_male",
+                     hair="short02", clothes=["male_worksuit01", "shoes01"], skin="middleage_african_male", iris="darkbrown",
                      hair_color=(0.02, 0.018, 0.016),
                      tint={"worksuit": (0.20, 0.22, 0.25)}),
     # s09: the prosthesis wearer (adult woman, 40s) and family
     "wearer": dict(phenotype=dict(age=0.66, gender=0.0, weight=0.5, muscle=0.5,
                                   race=dict(african=0.3, asian=0.1, caucasian=0.6)),
-                   hair="bob02", clothes=["male_casualsuit01", "shoes02"], skin="middleage_caucasian_female",
+                   hair="ponytail01", clothes=["male_casualsuit01", "shoes02"], skin="middleage_caucasian_female", iris="hazel",
                    hair_color=(0.16, 0.09, 0.05),
                    tint={"casualsuit": (0.70, 0.64, 0.55)}),
     "partner": dict(phenotype=dict(age=0.68, gender=1.0, weight=0.55, muscle=0.5,
@@ -29,12 +29,12 @@ PRESETS = {
                     tint={"casualsuit": (0.20, 0.30, 0.38)}),
     "grandma": dict(phenotype=dict(age=0.92, gender=0.0, weight=0.55, muscle=0.35,
                                    race=dict(african=0.2, asian=0.1, caucasian=0.7)),
-                    hair="bob01", clothes=["male_casualsuit03", "shoes02"], skin="old_caucasian_female",
+                    hair="short03", clothes=["male_casualsuit03", "shoes02"], skin="old_caucasian_female", iris="blue",
                     hair_color=(0.62, 0.60, 0.58),
                     tint={"casualsuit": (0.50, 0.40, 0.34)}),
     "teen": dict(phenotype=dict(age=0.27, gender=1.0, weight=0.45, muscle=0.45,
                                 race=dict(african=0.35, asian=0.2, caucasian=0.45)),
-                 hair="short01", clothes=["male_casualsuit01", "shoes05"], skin="young_caucasian_male",
+                 hair="short01", clothes=["male_casualsuit01", "shoes05"], skin="young_caucasian_male", iris="green",
                  hair_color=(0.10, 0.06, 0.035),
                  tint={"casualsuit": (0.55, 0.60, 0.52)}),
 }
@@ -71,7 +71,7 @@ def tint_clothes(parts, key, color):
 def person(preset, name=None, subdiv=1):
     p = PRESETS[preset]
     bm, rig, parts = mhchild.build(name=name or preset.capitalize(), hair=p["hair"], clothes=p["clothes"],
-                                   skin=p["skin"], phenotype=p["phenotype"], subdiv=subdiv)
+                                   skin=p["skin"], phenotype=p["phenotype"], subdiv=subdiv, iris=p.get("iris", "brown"))
     mhchild.fix_eyes(parts, "brownlight_eye.png") if False else None
     for k, c in p.get("tint", {}).items():
         tint_clothes(parts, k, c)
@@ -112,6 +112,14 @@ def reach(rig, side, target, elbow_hint=None, iters=40, bones=None, end="wrist",
         rig.pose.bones[b].rotation_mode = 'XYZ'
     x = np.array([rig.pose.bones[b].rotation_euler[ax] for b, ax in vars_], float)
     tgt = np.array(target, float)
+    if elbow_hint is None and end == "wrist":
+        # natural elbow: below the shoulder-target line, a little out from the body and back (arms hang, not flare)
+        sh = bone_world(rig, "upperarm01.%s" % side)
+        spine = bone_world(rig, "spine03")
+        out = V((sh.x - spine.x, sh.y - spine.y, 0.0))
+        out = out.normalized() if out.length > 1e-6 else V((0, 0, 0))
+        mid = (sh + V(target)) / 2
+        elbow_hint = mid + V((0, 0, -0.14)) + out * 0.06
 
     def apply(xv):
         for (b, ax), v in zip(vars_, xv):
@@ -137,34 +145,34 @@ def reach(rig, side, target, elbow_hint=None, iters=40, bones=None, end="wrist",
         dx = -np.linalg.solve(J.T @ J + lam * np.eye(len(x)), J.T @ r)
         x = x + np.clip(dx, -0.3, 0.3)
     apply(x)
-    return float(np.linalg.norm(f(x)[:3]))
+    err = float(np.linalg.norm(f(x)[:3]))
+    if err > 0.03:
+        print("REACH %s.%s short by %.0f mm (target out of reach?)" % (rig.name, side, err * 1000))
+    return err
 
 
-def expression(rig, smile=0.0, brows=0.0, eyes=0.0, jaw=0.0):
-    """Facial expression on the MPFB default rig's face bones (degrees / metres tuned by eye in lookdev):
-    smile 0..1 pulls the lip corners up/back and lifts the cheeks (with a slight eye squint - a real Duchenne
-    smile), brows -1..1 lowers/raises the inner brows, eyes 0..1 narrows the lids, jaw 0..1 parts the lips."""
-    def rot(b, x=0.0, y=0.0, z=0.0):
+def expression(rig, smile=0.0, brows=0.0, eyes=0.0, jaw=0.0, frame=None):
+    """Facial expression on MakeHuman's sculpted expression units (lib/soul.py): smile 0..1 is a real Duchenne
+    smile (zygomaticus corner pull, cheeks lifting the lower lids, a little nose wrinkle and parted lips as it grows),
+    brows -1..1 lowers/raises (inner brows lead), eyes 0..1 narrows, jaw 0..1 opens the mouth. frame -> keyed."""
+    import soul
+    meshes = [o for o in rig.children_recursive if o.type == 'MESH']
+    s = max(0.0, smile)
+    w = {"mouth-corner-puller": 0.9 * s,
+         "mouth-upward-retraction": 0.35 * max(0.0, s - 0.45),
+         "mouth-parling": 0.35 * max(0.0, s - 0.55) + 0.4 * jaw,
+         "mouth-open": 0.55 * jaw,
+         "eye-*-slit": min(1.0, 0.32 * s + 0.5 * eyes),
+         "nose-*-elevation": 0.25 * max(0.0, s - 0.5),
+         "eyebrows-*-up": 0.4 * max(0.0, brows),
+         "eyebrows-*-inner-up": 0.25 * max(0.0, brows) + 0.08 * s,
+         "eyebrows-*-down": 0.4 * max(0.0, -brows)}
+    soul.set_units(meshes, w, frame)
+    # the old bone-driven face stays neutral (it tore the lip corners at strong smiles)
+    for b in ("oris04.L", "oris04.R", "oris03.L", "oris03.R"):
         pb = rig.pose.bones.get(b)
-        if pb is None:
-            return
-        pb.rotation_mode = 'XYZ'
-        pb.rotation_euler = (math.radians(x), math.radians(y), math.radians(z))
-
-    def mov(b, v):
-        pb = rig.pose.bones.get(b)
-        if pb is None:
-            return
-        pb.location = v
-    s = smile
-    for side, sg in (("L", 1), ("R", -1)):
-        # lip corners up/out (bone-local offsets found in lookdev_face sweeps), cheeks lift, lower lids rise
-        mov("oris04.%s" % side, (-0.004 * s, 0.005 * s, 0.0))
-        mov("oris03.%s" % side, (-0.002 * s, 0.0025 * s, 0.0))
-        rot("levator05.%s" % side, 20.0 * s, 0.0, 0.0)
-        rot("orbicularis04.%s" % side, -6.0 * (0.6 * s + eyes), 0.0, 0.0)
-        rot("oculi01.%s" % side, 8.0 * brows, 0.0, 0.0)
-    rot("jaw", 6.0 * jaw + 1.5 * s, 0.0, 0.0)
+        if pb:
+            pb.location = (0, 0, 0)
 
 
 def hair_color(parts, color, spec=0.25):
@@ -317,3 +325,27 @@ def arms_down(rig, drop=32.0, elbow=10.0):
     """Relaxed standing arms from MPFB's A-pose rest."""
     for side, sg in (("L", 1.0), ("R", -1.0)):
         pose(rig, {"upperarm01." + side: (4.0, 0, -drop * sg), "lowerarm01." + side: (elbow, 0, 0)})
+
+
+HANDS = {
+    # per finger (thumb=1 .. pinky=5): curl of the three joints in degrees (bone X)
+    "relaxed": {1: (8, 12, 10), 2: (12, 18, 12), 3: (16, 22, 14), 4: (20, 26, 16), 5: (24, 30, 18)},
+    "flat": {1: (4, 6, 4), 2: (4, 6, 4), 3: (5, 6, 4), 4: (6, 8, 5), 5: (8, 10, 6)},
+    "point": {1: (25, 35, 20), 2: (2, 3, 2), 3: (70, 85, 45), 4: (75, 90, 50), 5: (78, 92, 50)},
+    "touch": {1: (12, 16, 10), 2: (8, 10, 6), 3: (22, 28, 16), 4: (32, 40, 24), 5: (38, 46, 26)},
+    "fist_soft": {1: (30, 30, 20), 2: (55, 65, 40), 3: (60, 70, 45), 4: (62, 72, 45), 5: (64, 74, 45)},
+}
+
+
+def hand(rig, side, shape="relaxed", spread=1.0, seed=0):
+    """Finger shape for one hand, with a little per-finger irregularity (no two fingers ever match)."""
+    import random as _r
+    rs = _r.Random(hash((rig.name, side, seed)) & 0xffff)
+    for fi, curls in HANDS[shape].items():
+        for j, c in enumerate(curls):
+            pb = rig.pose.bones.get("finger%d-%d.%s" % (fi, j + 1, side))
+            if pb is None:
+                continue
+            pb.rotation_mode = 'XYZ'
+            splay = (fi - 3) * 3.0 * spread if j == 0 else 0.0
+            pb.rotation_euler = (math.radians(c + rs.uniform(-3, 3)), 0.0, math.radians(splay * (1 if side == "L" else -1)))

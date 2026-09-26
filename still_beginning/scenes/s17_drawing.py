@@ -169,6 +169,7 @@ mhchild.fix_eyes(parts)
 mhchild.recolor_top(parts)
 cuffs = mhchild.add_cuffs(rig, parts)
 folks.sit(rig, knee=85, hip=80)
+folks.expression(rig, smile=0.3, brows=-0.15, eyes=0.1)          # absorbed, a small private smile
 folks.place(rig, (0.02, -0.30, 0.0), 180.0)                 # facing the desk/window (+Y)
 bpy.context.view_layer.update()
 pel = folks.bone_world(rig, "pelvis.L")
@@ -255,6 +256,8 @@ cam = sb.camera("Cam", loc=P[0], target=Tg[0], lens=35, fstop=3.2, clip=(0.02, 3
 sb.cam_bake(cam, F0, F1, cam_pos, cam_tgt, lens=lambda t: sb.lerp(35.0, 50.0, sb.smoother(t)),
             focus=lambda t: (cam_pos(t) - cam_tgt(t)).length)
 dbgcam.apply()
+import soul
+soul.alive_all(sid, breathe=0.0, sway=0.0, head=0.4, calm=1.4)
 sb.frames(F0, F1)
 if os.environ.get("SB_SAVE"):
     sb.save(sid)

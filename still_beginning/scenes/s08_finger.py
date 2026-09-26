@@ -130,7 +130,7 @@ else:
     folks.pose(rig, {"wrist.R": (0, 0, 10), "wrist.L": (0, 0, -10)})
     # a small smile grows as the fingers close and open (face stays soft in the background)
     for f in range(F0 - 2, F1 + 2):
-        folks.expression(rig, smile=0.25 + 0.75 * sb.smoother((f - 692) / 16.0))
+        folks.expression(rig, smile=0.25 + 0.75 * sb.smoother((f - 692) / 16.0), brows=0.3 * sb.smoother((f - 692) / 16.0), frame=f)
         for b in ("oris04.L", "oris04.R", "oris03.L", "oris03.R"):
             rig.pose.bones[b].keyframe_insert("location", frame=f)
         for b in ("levator05.L", "levator05.R", "orbicularis04.L", "orbicularis04.R"):
@@ -168,6 +168,8 @@ else:
     s0, s1 = F0, F1
 
 dbgcam.apply()
+import soul
+soul.alive_all(sid, breathe=0.5)
 sb.frames(s0, s1)
 if os.environ.get("SB_SAVE"):
     sb.save(sid)

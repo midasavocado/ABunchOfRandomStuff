@@ -246,6 +246,8 @@ else:
                 focus=lambda t: (p0.lerp(p1, ease(t)) - g0.lerp(V((-0.2, -0.1, Z + 0.3)), ease(t))).length)
 
 dbgcam.apply()
+import soul
+soul.alive_all(sid, calm=0.85, per={"Wearer": dict(breathe=0.0, sway=0.0, head=0.6)})
 sb.frames(F0, F1)
 if os.environ.get("SB_SAVE"):
     sb.save(sid)

@@ -34,7 +34,7 @@ def terrain(name, fn, x0, x1, y0, y1, nx, ny, mat=None):
 
 # =========================================================================== materials
 def field_mat(name, rows_dir=(1.0, 0.0), pitch=0.75, green=(0.05, 0.13, 0.03), soil=(0.10, 0.07, 0.045),
-              patch=True, haze=None):
+              patch=True, haze=None, site=True):
     """Farmland: crop rows (stripes of plants over soil) with growth variation, field patchwork of different crops
     at large scale (green crops, ripening wheat, meadow), tractor wheel lines."""
     m = sb.mat(name, green, rough=0.8)
@@ -75,8 +75,11 @@ def field_mat(name, rows_dir=(1.0, 0.0), pitch=0.75, green=(0.05, 0.13, 0.03), s
         far = nb.new('ShaderNodeCameraData')
         dfar = nb.maprange(far.outputs['View Distance'], 60.0, 260.0, 0.0, 1.0)
         # the solar site (|x|<380, |y|<300) keeps its green understorey crop
+        site_m = site
         site = nb.math('MULTIPLY', nb.maprange(nb.math('ABSOLUTE', sep.outputs[0]), 380.0, 400.0, 1.0, 0.0),
                        nb.maprange(nb.math('ABSOLUTE', sep.outputs[1]), 290.0, 310.0, 1.0, 0.0))
+        if not site_m:
+            site = nb.math('MULTIPLY', site, 0.0)
         blend = nb.math('MULTIPLY', nb.math('SUBTRACT', 1.0, site), 0.85)
         texd = nb.mix(nb.maprange(fine.outputs['Fac'], 0.3, 0.7), (0.8, 0.8, 0.8, 1), (1.15, 1.15, 1.1, 1))
         crop2 = nb.mix(1.0, crop, texd, blend='MULTIPLY')

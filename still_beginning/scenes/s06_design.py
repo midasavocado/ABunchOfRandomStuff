@@ -110,6 +110,8 @@ else:
     sb.cam_bake(cam, s0, s1, pos, tg, lens=lambda t: sb.lerp(44, 50, t), focus=lambda t: (pos(t) - tg(t)).length, fstop=2.8)
 
 dbgcam.apply()
+import soul
+soul.alive_all(sid, breathe=0.7, calm=1.1)
 sb.frames(s0, s1)
 sb.save("s06")
 sb.render_shot(sid)

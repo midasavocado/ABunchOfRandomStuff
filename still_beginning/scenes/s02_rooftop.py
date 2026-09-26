@@ -27,6 +27,11 @@ rooftop.string_lights((0.6, 0.55, 1.95), (5.4, 2.6, 2.3), n=12, sag=0.3, strengt
 import mhchild
 bm, rig, parts = mhchild.build()
 mhchild.fix_eyes(parts)
+import soul
+# right eye at the eyepiece: the free left eye half-closes (everyone squints it at a telescope), brows lifted in
+# concentration, the start of a smile at what she sees
+soul.set_units([o for o in rig.children_recursive if o.type == 'MESH'],
+               {"eye-left-closure": 0.55, "eyebrows-*-inner-up": 0.25, "mouth-corner-puller": 0.22, "mouth-parling": 0.15})
 mhchild.recolor_top(parts)
 mhchild.add_cuffs(rig, parts)
 BEND = dict(spine01=5, spine02=6, spine03=6, spine04=4, neck01=11, neck02=9, head=13)
@@ -198,6 +203,8 @@ sb.cam_bake(cam, F0, F1, cpos, ctar,
             focus=lambda t: sb.lerp((cpos(t) - obj_c).length, (cpos(t) - child_focus).length, sb.smoother(sb.remap(t, 0.1, 0.7))),
             fstop=lambda t: sb.lerp(8.0, 2.8, sb.smoother(sb.remap(t, 0.0, 0.5))))
 
+import soul
+soul.alive_all(sid, head=0.15, sway=0.0, breathe=0.4, calm=1.3)
 sb.frames(F0, F1 + 1)
 if os.environ.get('SB_DIAG'):
     exec(open(os.environ['SB_DIAG']).read()); raise SystemExit

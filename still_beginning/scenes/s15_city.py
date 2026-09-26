@@ -172,6 +172,8 @@ cam = sb.camera("Cam", loc=PATH[0], target=LOOK[0], lens=28, fstop=4.0, clip=(0.
 sb.cam_bake(cam, F0, F1, lambda t: sb.catmull(PATH, e(t)), lambda t: sb.catmull(LOOK, e(t)),
             focus=lambda t: sb.lerp(18.0, 60.0, e(t)))
 dbgcam.apply()
+import soul
+soul.alive_all(sid, calm=0.9)
 sb.frames(F0, F1)
 if os.environ.get("SB_SAVE"):
     sb.save(sid)

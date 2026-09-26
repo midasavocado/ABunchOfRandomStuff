@@ -250,30 +250,59 @@ else:  # s16c learning space
             continue
         o = sb.prim("cyl", "Part", loc=p, vertices=6, radius=rs.uniform(0.005, 0.02), depth=rs.uniform(0.005, 0.03),
                     mat=rs.choice([M["steel"], M["brass"], M["black"], M["blue_cer"]]))
-    # kids + teacher
-    kids = [((-0.35, -0.72), 90.0), ((0.4, -0.7), 100.0), ((0.9, 0.2), 180.0), ((-0.9, 0.5), 0.0)]
-    for k, ((x, y), rz) in enumerate(kids):
-        bm, rig, parts = mhchild.build(name="Kid%d" % k, hair=["short01", "ponytail01", "afro01", "bob01"][k],
-                                       top=["male_casualsuit01", "female_casualsuit01", "male_casualsuit03", "male_casualsuit05"][k],
-                                       skin=["young_asian_female", "young_caucasian_female", "young_african_male", "young_caucasian_male"][k],
-                                       phenotype=dict(age=0.14 + 0.01 * k, gender=[1.0, 0.0, 1.0, 0.0][k],
-                                                      race=[dict(asian=0.7, caucasian=0.3, african=0.0), dict(caucasian=0.8, asian=0.1, african=0.1),
-                                                            dict(african=0.8, caucasian=0.2, asian=0.0), dict(caucasian=0.5, asian=0.3, african=0.2)][k]))
-        folks.arms_down(rig)
-        folks.place(rig, (x, y, 0.0), rz + 90.0)
+    # kids + teacher: a real moment around the rover. Everyone stands clear of the table (top 0.74, x +-1.2, y +-0.5),
+    # leans in, hands where hands go; gazes connect (the rover, and each other)
+    import soul
+    ROVER = V((0.0, 0.0, 0.84))
+    TZ = 0.765
+    kids = [
+        # (name, hair, top, skin, gender, race, stand xy, facing (deg, 0 = faces -Y), mood, lean)
+        ("Kid0", "short01", "male_casualsuit01", "young_asian_female", 1.0, dict(asian=0.7, caucasian=0.3, african=0.0), (-0.42, -0.66), 180.0, "delight", 16),
+        ("Kid1", "braid01", "female_casualsuit01", "young_caucasian_female", 0.0, dict(caucasian=0.8, asian=0.1, african=0.1), (0.32, -0.66), 188.0, "wonder", 16),
+        ("Kid2", "afro01", "male_casualsuit03", "young_african_male", 1.0, dict(african=0.8, caucasian=0.2, asian=0.0), (0.5, 0.66), 0.0, "laugh", 24),
+        ("Kid3", "short03", "male_casualsuit05", "young_caucasian_male", 0.0, dict(caucasian=0.5, asian=0.3, african=0.2), (-0.72, 0.66), 350.0, "focus", 20),
+    ]
+    rigs = {}
+    for k, (nm, hair, top, skin_, g_, race, (x, y), face_deg, md, lean) in enumerate(kids):
+        bm, rig, parts = mhchild.build(name=nm, hair=hair, top=top, skin=skin_, iris=["darkbrown", "blue", "darkbrown", "green"][k],
+                                       phenotype=dict(age=0.14 + 0.012 * k, gender=g_, race=race))
         folks.arms_down(rig, drop=30, elbow=20)
-        tgt_r = V((0.0, 0.0, 0.8)) + (V((x, y, 0.8)) - V((0.0, 0.0, 0.8))).normalized() * 0.2
-        folks.reach(rig, "R", tgt_r + V((0.0, 0.0, 0.03)), iters=25)
-        if k % 2 == 0:
-            folks.reach(rig, "L", tgt_r + V((0.06, 0.06, 0.02)), iters=25)
-        folks.look_at(rig, V((0.0, 0.0, 0.8)))
-        folks.expression(rig, smile=0.6)
+        folks.place(rig, (x, y, 0.0), face_deg)
+        folks.pose(rig, {"spine01": (lean * 0.5, 0, 0), "spine02": (lean * 0.3, 0, 0), "spine03": (lean * 0.2, 0, 0)})
+        rigs[nm] = rig
+    bpy.context.view_layer.update()
+    r = rigs["Kid0"]            # points at the front-left wheel, other hand braced on the table edge
+    folks.reach(r, "R", V((-0.2, -0.3, 0.9)), iters=40); folks.hand(r, "R", "point")
+    folks.reach(r, "L", V((-0.6, -0.42, TZ + 0.03)), iters=40); folks.hand(r, "L", "flat")
+    r = rigs["Kid1"]            # fingertips on the rover's camera head, left hand resting on the table
+    folks.reach(r, "L", V((0.13, -0.22, 0.84)), iters=40); folks.hand(r, "L", "touch")
+    folks.reach(r, "R", V((0.5, -0.42, TZ + 0.03)), iters=40); folks.hand(r, "R", "relaxed")
+    r = rigs["Kid2"]            # on his forearms across the table, laughing at Kid0's discovery
+    folks.reach(r, "R", V((0.36, 0.3, TZ + 0.03)), iters=40); folks.hand(r, "R", "relaxed")
+    folks.reach(r, "L", V((0.66, 0.3, TZ + 0.03)), iters=40); folks.hand(r, "L", "relaxed", seed=2)
+    r = rigs["Kid3"]            # chin propped on a hand, watching the rover closely
+    folks.reach(r, "L", V((-0.58, 0.32, TZ + 0.03)), iters=40); folks.hand(r, "L", "flat")
+    folks.reach(r, "R", V((-0.86, 0.34, TZ + 0.03)), iters=40); folks.hand(r, "R", "relaxed")
+    gaze = {"Kid0": ROVER + V((-0.15, -0.15, -0.04)), "Kid1": V((0.1, -0.15, 0.86)),
+            "Kid2": None, "Kid3": ROVER}
+    for nm, rig in rigs.items():
+        gp = gaze[nm]
+        if gp is None:
+            gp = (folks.bone_world(rigs["Kid0"], "eye.L") + folks.bone_world(rigs["Kid0"], "eye.R")) / 2
+        folks.look_at(rig, gp)
+    for k, (nm, *_rest) in enumerate(kids):
+        soul.face([o for o in rigs[nm].children_recursive if o.type == 'MESH'], _rest[7])
+        soul.alive_shot(rigs[nm], sid, calm=0.8)
     bm, rig, parts = folks.person("researcher", name="Teacher")
-    folks.arms_down(rig)
-    folks.place(rig, (0.2, 0.85, 0.0), 0.0)
-    folks.pose(rig, {"spine01": (18, 0, 0), "spine02": (10, 0, 0)})
-    folks.look_at(rig, V((0.0, 0.0, 0.8)))
-    folks.expression(rig, smile=0.7)
+    folks.arms_down(rig, drop=30, elbow=15)
+    folks.place(rig, (-0.1, 0.7, 0.0), 355.0)
+    folks.pose(rig, {"spine01": (20, 0, 0), "spine02": (12, 0, 4), "pelvis.L": (0, 0, 0)})
+    bpy.context.view_layer.update()
+    folks.reach(rig, "R", V((-0.3, 0.44, TZ + 0.03)), iters=40); folks.hand(rig, "R", "flat")
+    folks.hand(rig, "L", "relaxed")
+    folks.look_at(rig, (folks.bone_world(rigs["Kid0"], "eye.L") + folks.bone_world(rigs["Kid0"], "eye.R")) / 2)
+    soul.face([o for o in rig.children_recursive if o.type == 'MESH'], "tender")
+    soul.alive_shot(rig, sid)
     tgt = V((0.0, 0.0, 0.95))
 
     def cp(t):
@@ -283,6 +312,8 @@ else:  # s16c learning space
     sb.cam_bake(cam, F0, F1, cp, lambda t: tgt, focus=lambda t: (cp(t) - tgt).length)
 
 dbgcam.apply()
+import soul
+soul.alive_all(sid)
 sb.frames(F0, F1)
 if os.environ.get("SB_SAVE"):
     sb.save(sid)

@@ -21,7 +21,7 @@ sb.setup_render("EEVEE", mblur=True, shutter=0.5, look="AgX - Medium High Contra
 rnd = random.Random(14)
 SUN_EL, SUN_AZ = float(os.environ.get("SUNEL", "11")), float(os.environ.get("SUNAZ", "262"))
 HAZE = float(os.environ.get("HAZED", "5200"))
-CITY_X = 7600.0
+CITY_X = 4800.0
 VT = 83.0                  # train speed m/s (~300 km/h)
 
 sb.world_sky(elev=SUN_EL, azim=SUN_AZ, strength=float(os.environ.get("SKY", "0.13")), sun_disc=False, aerosol=1.8)
@@ -45,7 +45,7 @@ def ground(X, Y):
 
 
 # ---- land
-field = L.field_mat("Field", rows_dir=(1.0, 0.25), pitch=0.75)
+field = L.field_mat("Field", rows_dir=(1.0, 0.25), pitch=0.75, site=False)
 field.node_tree.nodes  # (site mask in field_mat is harmless here)
 hz(field)
 ter = L.terrain("Terrain", ground, -1500, 12000, -4500, 4500, 540, 360, field)
@@ -105,10 +105,11 @@ for k in range(60):
     for m_ in range(rnd.randint(5, 18)):
         x, y = cx_ + rnd.gauss(0, 22), cy_ + rnd.gauss(0, 22)
         far.append(V((x, y, float(ground(np.array(x), np.array(y))) - 0.2)))
+far = [p for p in far if not (p.x > CITY_X - 700 and abs(p.y) < 2000)]      # no orchards through the city
 L.place_trees(lib_near, near, seed=2, name="Tn")
 L.place_trees(lib_far, far, seed=3, name="Tf")
 # ---- the city on the horizon (same palette/architecture as s15)
-city = C.far_city(center=(CITY_X + 700, 0, 1.5), radius=1100, n=320, seed=15, haze=lambda m: W.aerial(m, dist=HAZE * 2.4), tall=9)
+city = C.far_city(center=(CITY_X + 700, 0, 1.5), radius=1100, n=320, seed=15, haze=lambda m: W.aerial(m, dist=HAZE * 2.4), tall=16)
 # ---- the train
 tr, wheels, panto = R.train("Train", ncars=8)
 for o in [tr] + list(tr.children_recursive):

@@ -22,7 +22,7 @@ PHENOTYPE = dict(gender=0.3, age=0.155, muscle=0.5, weight=0.48, proportions=0.5
 
 
 def build(name="Child", hair="afro01", top="male_casualsuit01", shoes="shoes05", rig="default", subdiv=1,
-          skin="young_african_female", eyes_mat="brown", phenotype=None, clothes=None, eyebrows="eyebrow010"):
+          skin="young_african_female", eyes_mat="brown", phenotype=None, clothes=None, eyebrows="eyebrow010", iris="hazel"):
     """Build a rigged MPFB human. phenotype: dict overriding PHENOTYPE (age 0.5 = 25 y, 0.155 ~ 9 y, 0.875 ~ 60 y;
     gender 0 = female, 1 = male; race weights). clothes: list of clothes asset names (overrides top/shoes)."""
     HS = mpfb()
@@ -51,6 +51,10 @@ def build(name="Child", hair="afro01", top="male_casualsuit01", shoes="shoes05",
     new = [o for o in bpy.data.objects if o not in before]
     rig_obj = next((o for o in new if o.type == 'ARMATURE'), None)
     parts = [o for o in new if o.type == 'MESH']
+    import soul
+    soul.ensoul(parts, iris=iris)          # living skin + wet eyes for everyone
+    race = max(ph.get("race", {"caucasian": 1.0}).items(), key=lambda kv: kv[1])[0]
+    soul.load_face_units(basemesh, race)   # sculpted expression units (smile, blink, brows) as shape keys
     return basemesh, rig_obj, parts
 
 
@@ -93,6 +97,8 @@ def pose_bone(rig, name, rot=None, quat=None):
 
 
 def fix_eyes(parts, tex="brownlight_eye.png"):
+    """(Superseded: lib/soul.py eyes() runs in build() - amber-hazel iris by default, wet cornea.)"""
+    return
     """Swap the iris texture to the warm light-brown (amber-hazel) iris; wet, glossy cornea."""
     import os
     d = os.path.join(bpy.utils.user_resource('EXTENSIONS'), ".user", "user_default", "mpfb", "data", "eyes", "materials")
