@@ -258,7 +258,7 @@ lift_axis = (HL_M0.to_3x3() @ V((1, 0, 0))).normalized()     # leaf local X = hi
 
 def lift_angle(f):
     k = sb.smoother(sb.remap(f, 47, 76))
-    return math.radians(-30.0) * k + math.radians(1.2) * math.sin(max(0, f - 76) * 0.25) * sb.remap(f, 76, 89)
+    return math.radians(-22.0) * k + math.radians(1.0) * math.sin(max(0, f - 76) * 0.25) * sb.remap(f, 76, 89)
 
 
 def leaf_matrix(f):
@@ -325,13 +325,26 @@ if HAND:
         return head.lerp(tail, 0.55) + zf * 0.0068
 
     def solve_target(goal, guess):
+        """move the IK target until the finger pad meets goal; damped + clamped so an unreachable goal can't
+        send the target flying (keeps the best found)"""
         tgt.location = guess
-        for _ in range(6):
+        best = (1e9, guess.copy())
+        for _ in range(10):
             bpy.context.view_layer.update()
             err = goal - pad_point()
-            tgt.location = tgt.location + err
+            if err.length < best[0]:
+                best = (err.length, tgt.location.copy())
+            step = err * 0.8
+            if step.length > 0.05:
+                step = step.normalized() * 0.05
+            tgt.location = tgt.location + step
         bpy.context.view_layer.update()
-        return tgt.location.copy(), (goal - pad_point()).length
+        e = (goal - pad_point()).length
+        if e > best[0]:
+            tgt.location = best[1]
+            bpy.context.view_layer.update()
+            e = best[0]
+        return tgt.location.copy(), e
 
     pole.location = GP + V((0.45, 0.2, 0.6))
     C_rest = contact_world(0)
@@ -370,8 +383,11 @@ if HAND:
 
 # ---------------------------------------------------------------- camera
 # aimed so the hand's lift (contact ~(0.23, 0.33)) plays just right of centre, the window bays behind it
-cam = sb.camera("Cam", loc=(-0.72, -0.30, 0.95), target=V((0.36, 0.95, 0.97)), lens=50, fstop=5.6, clip=(0.02, 10000))
-cam.data.dof.focus_distance = 1.14
+# over the gardener's right shoulder: her hand reaches into the plants and lifts the leaf toward the light, the
+# window bays and Mars beyond; her shoulder soft in the foreground. Slow drift in.
+cam = sb.camera("Cam", loc=(0.66, -0.42, 1.34), target=V((0.18, 0.42, 0.96)), lens=40, fstop=4.0, clip=(0.02, 10000))
+sb.cam_bake(cam, S0, S1, lambda t: V((0.66, -0.42, 1.34)).lerp(V((0.6, -0.3, 1.3)), sb.smooth(t)),
+            lambda t: V((0.18, 0.42, 0.96)).lerp(V((0.22, 0.38, 0.99)), sb.smooth(t)), focus=lambda t: 0.95)
 FOCUS = os.environ.get("S24_FOCUS")
 if FOCUS:
     cam.data.dof.focus_distance = float(FOCUS)
@@ -381,4 +397,4 @@ print("BUILD %.1fs" % (time.time() - T0))
 sb.frames(S0, S1)
 if os.environ.get("SB_SAVE"):
     sb.save("s24")
-sb.render_shot(sid)
+exec(open(os.environ['SB_PROBE']).read()) if os.environ.get('SB_PROBE') else sb.render_shot(sid)
