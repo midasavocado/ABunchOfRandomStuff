@@ -25,23 +25,70 @@ def probe(path, *args):
     return subprocess.run(["ffprobe", "-v", "error", *args, path], capture_output=True, text=True).stdout.strip()
 
 
+class ShotReader:
+    """Sequential decoder of one graded shot (edit/<sid>.mov incl. handles) addressed by GLOBAL frame number."""
+
+    def __init__(self, sid, suffix):
+        _, a, b, _ = TL.shot(sid)
+        hin, hout = TL.handles(sid)
+        self.first = a - hin
+        self.last = b + hout - 1
+        self.path = os.path.join(ROOT, "edit", f"{sid}{suffix}.mov")
+        w, h = probe(self.path, "-select_streams", "v:0", "-show_entries", "stream=width,height", "-of", "csv=p=0").split(",")[:2]
+        self.w, self.h = int(w), int(h)
+        self.p = subprocess.Popen(["ffmpeg", "-v", "error", "-i", self.path, "-f", "rawvideo", "-pix_fmt", "rgb24", "-"],
+                                  stdout=subprocess.PIPE, stderr=subprocess.DEVNULL)
+        self.pos = self.first
+        self.cur = None
+
+    def get(self, g):
+        import numpy as np
+        assert self.first <= g <= self.last, (self.path, g)
+        n = self.w * self.h * 3
+        while self.pos <= g:
+            buf = self.p.stdout.read(n)
+            if len(buf) < n:
+                raise RuntimeError(f"{self.path}: short read at frame {self.pos}")
+            self.cur = np.frombuffer(buf, np.uint8).reshape(self.h, self.w, 3)
+            self.pos += 1
+        return self.cur
+
+    def close(self):
+        try:
+            self.p.stdout.close(); self.p.wait(timeout=10)
+        except Exception:
+            self.p.kill()
+
+
+def blend_weight(x):
+    """0..1 across the transition window: a soft S-curve (the cut should barely register)."""
+    x = min(1.0, max(0.0, x))
+    return x * x * x * (x * (x * 6 - 15) + 10)
+
+
 def main():
+    import numpy as np
     TL.check()
     suffix = "_prev" if PREVIEW else ""
-    parts = []
     for sid, a, b, _ in TL.SHOTS:
         p = os.path.join(ROOT, "edit", f"{sid}{suffix}.mov")
         if not os.path.exists(p):
             sys.exit(f"missing {p}")
+        hin, hout = TL.handles(sid)
         n = probe(p, "-count_frames", "-select_streams", "v:0", "-show_entries", "stream=nb_read_frames", "-of", "csv=p=0")
-        if n != str(b - a):
-            sys.exit(f"{sid}: {n} frames, expected {b - a}")
-        parts.append(p)
-    lst = os.path.join(ROOT, "edit", "_concat.txt")
-    with open(lst, "w") as f:
-        for p in parts:
-            f.write(f"file '{p}'\n")
+        if n != str(b - a + hin + hout):
+            sys.exit(f"{sid}: {n} frames, expected {b - a + hin + hout} (shot + handles); re-render it")
+    ids = [s[0] for s in TL.SHOTS]
+    starts = {s[0]: s[1] for s in TL.SHOTS}
+    readers = {}
 
+    def reader(sid):
+        if sid not in readers:
+            readers[sid] = ShotReader(sid, suffix)
+        return readers[sid]
+
+    r0 = reader(ids[0])
+    W, H = r0.w, r0.h
     vf = ["scale=3840:2160:flags=lanczos" if PREVIEW else "null",
           # fine luma grain (temporal), breaks up banding in dark gradients before 8-bit quantisation
           "noise=c0s=5:c0f=t+u:c1s=0:c2s=0",
@@ -49,7 +96,7 @@ def main():
           # tag the frames themselves: newer ffmpeg takes colour metadata from the filter graph, not the output flags
           "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv"]
     cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
-           "-f", "concat", "-safe", "0", "-i", lst, "-i", AUDIO,
+           "-f", "rawvideo", "-pix_fmt", "rgb24", "-s", f"{W}x{H}", "-r", "24", "-i", "-", "-i", AUDIO,
            "-map", "0:v:0", "-map", "1:a:0",
            "-vf", ",".join(vf), "-fps_mode", "cfr", "-r", "24", "-frames:v", "2880",
            "-c:v", "libx264", "-profile:v", "high", "-preset", os.environ.get("SB_MASTER_PRESET", "slow"), "-tune", "film",
@@ -58,9 +105,46 @@ def main():
            "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", "-color_range", "tv",
            "-c:a", "aac", "-b:a", "320k", "-ar", "48000", "-ac", "2",
            "-t", "120", "-movflags", "+faststart", OUT + ".part.mp4"]
-    run(cmd)
+    print("+ conform (soft motion-continuous blends at every cut) -> ffmpeg ...")
+    enc = subprocess.Popen(cmd, stdin=subprocess.PIPE)
+    k = 0                                            # index of the shot that owns frame g
+    for g in range(TL.TOTAL):
+        while k + 1 < len(ids) and g >= starts[ids[k + 1]]:
+            k += 1
+            if k >= 2 and ids[k - 2] in readers:          # two shots back: no longer needed
+                readers.pop(ids[k - 2]).close()
+        sid = ids[k]
+        x = reader(sid).get(g).astype(np.float32)
+        # blending with the next shot (its incoming window straddles our end)
+        if k + 1 < len(ids):
+            nxt = ids[k + 1]; c = starts[nxt]; L = TL.trans(nxt)
+            if L and g >= c - L // 2:
+                w = blend_weight((g - (c - L // 2) + 0.5) / L)
+                y = reader(nxt).get(g).astype(np.float32)
+                x = _mix(x, y, w)
+        # blending with the previous shot (we are the incoming one)
+        if k > 0:
+            c = starts[sid]; L = TL.trans(sid)
+            if L and g < c + (L - L // 2):
+                w = blend_weight((g - (c - L // 2) + 0.5) / L)
+                y = reader(ids[k - 1]).get(g).astype(np.float32)
+                x = _mix(y, x, w)
+        enc.stdin.write(np.clip(x + 0.5, 0, 255).astype(np.uint8).tobytes())
+    enc.stdin.close()
+    if enc.wait() != 0:
+        sys.exit("encode failed")
+    for r in readers.values():
+        r.close()
     os.replace(OUT + ".part.mp4", OUT)       # never leave a half-written master under the delivery name
     verify()
+
+
+def _mix(a, b, w):
+    """dissolve a -> b with weight w; the incoming shot's highlights lead slightly (a lab-dissolve feel, no dip)."""
+    import numpy as np
+    lb = b.max(axis=2, keepdims=True) / 255.0
+    wl = np.clip(w + 0.15 * (lb - 0.5) * 4 * w * (1 - w), 0, 1)
+    return a * (1 - wl) + b * wl
 
 
 def verify():

@@ -121,8 +121,10 @@ def vignette(h, w, amt):
 
 def run(sid, keep=False, preview=False):
     _, a, b, _ = TL.shot(sid)
+    hin, hout = TL.handles(sid)                 # handle frames past each cut (the master blends across them)
+    a0 = a - hin
     src = os.path.join(ROOT, "preview" if preview else "renders", sid)
-    frames = [os.path.join(src, "%04d.png" % f) for f in range(a, b)]
+    frames = [os.path.join(src, "%04d.png" % f) for f in range(a0, b + hout)]
     missing = [f for f in frames if not os.path.exists(f)]
     if missing:
         print("missing", len(missing)); return False
@@ -142,19 +144,19 @@ def run(sid, keep=False, preview=False):
         scale = 65535.0 if im.dtype == np.uint16 else 255.0
         x = grade(im.astype(np.float32) / scale, g, vm)
         if sid == "s28":
-            x = apply_title(x, a + fi)
+            x = apply_title(x, a0 + fi)
         p.stdin.write((x * 65535.0 + 0.5).astype(np.uint16).tobytes())
     p.stdin.close()
     p.wait()
     # verify decoded frame count
     n = subprocess.run(["ffprobe", "-v", "error", "-count_frames", "-select_streams", "v:0", "-show_entries",
                         "stream=nb_read_frames", "-of", "csv=p=0", out], capture_output=True, text=True).stdout.strip()
-    ok = n.isdigit() and int(n) == (b - a)
-    print(sid, "frames", n, "expected", b - a, "OK" if ok else "FAIL")
+    ok = n.isdigit() and int(n) == len(frames)
+    print(sid, "frames", n, "expected", len(frames), "OK" if ok else "FAIL")
     if ok and not keep and not preview:
         # keep first/mid/last stills (8-bit jpg) for review, delete the heavy PNGs
         rv = os.path.join(ROOT, "stills", sid); os.makedirs(rv, exist_ok=True)
-        for f in (frames[0], frames[len(frames) // 2], frames[-1]):
+        for f in (frames[hin], frames[hin + (b - a) // 2], frames[hin + (b - a) - 1]):
             im = cv2.imread(f, cv2.IMREAD_UNCHANGED)
             cv2.imwrite(os.path.join(rv, os.path.basename(f)[:-4] + ".jpg"), (im / 257).astype(np.uint8) if im.dtype == np.uint16 else im, [cv2.IMWRITE_JPEG_QUALITY, 92])
         for f in frames:

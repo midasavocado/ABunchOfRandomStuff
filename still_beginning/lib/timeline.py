@@ -47,14 +47,39 @@ SHOTS = [
     ("s19c", 1778, 1800, "s19_ready"),            # hold-down clamp
     ("s20",  1800, 1980, "s20_launch"),           # HERO TWO
     ("s21",  1980, 2070, "s21_edge"),             # THE EDGE
-    ("s22",  2070, 2160, "s22_orbit_build"),      # BUILDING BEYOND EARTH
-    ("s23",  2160, 2250, "s23_moon"),             # ANOTHER SHORE
-    ("s24",  2250, 2340, "s24_mars"),             # LIFE TRAVELS WITH US
-    ("s25",  2340, 2430, "s25_telescope"),        # LOOKING FARTHER
-    ("s26",  2430, 2610, "s26_horizon"),          # HERO THREE
-    ("s27",  2610, 2700, "s27_eye_return"),       # STILL US
-    ("s28",  2700, 2880, "s28_statement"),        # THE STATEMENT
+    ("s22",  2070, 2130, "s22_orbit_build"),      # BUILDING BEYOND EARTH
+    ("s23e", 2130, 2190, "s23_earth_moon"),       # Earth orbit -> the Moon grows -> dive to the south pole
+    ("s23",  2190, 2265, "s23_moon"),             # ANOTHER SHORE: the lunar colony, landers down and up
+    ("s23m", 2265, 2295, "s23_moon_mars"),        # leave the Moon into deep space
+    ("s25",  2295, 2355, "s25_telescope"),        # LOOKING FARTHER: the telescope unfolds on the way out
+    ("s24c", 2355, 2475, "s24_colony"),           # THE MARS COLONY: descend in; pads, starships landing + launching
+    ("s24",  2475, 2515, "s24_mars"),             # LIFE TRAVELS WITH US (greenhouse insert)
+    ("s25z", 2515, 2610, "s25_mars_zoom"),        # pull out: colony -> orbit -> the whole planet
+    ("s28",  2610, 2880, "s28_mars_sunrise"),     # sunrise over the Mars limb -> THE STATEMENT
 ]
+
+
+# ---- fluid edit: every shot renders HANDLE extra frames past each cut (not before the first / after the last) and
+# each cut is a soft motion-continuous blend of TRANS[incoming sid] frames centred on the cut (default 10 = 0.42 s).
+HANDLE = 8
+TRANS_DEFAULT = 10
+TRANS = {
+    "s09a": 4, "s20": 4,                     # the first drop and ignition land on the beat
+    "s02": 16, "s05": 16, "s12a": 16, "s18": 16, "s23": 16, "s23m": 14, "s24c": 16, "s25z": 14, "s28": 16,
+}
+
+
+def trans(sid):
+    """blend length (frames) of the cut INTO sid (0 for the first shot)."""
+    i = [s[0] for s in SHOTS].index(sid)
+    return 0 if i == 0 else min(2 * HANDLE, TRANS.get(sid, TRANS_DEFAULT))
+
+
+def handles(sid):
+    """(frames rendered before start, frames after end)."""
+    ids = [s[0] for s in SHOTS]
+    i = ids.index(sid)
+    return (0 if i == 0 else HANDLE), (0 if i == len(ids) - 1 else HANDLE)
 
 
 def shot(sid):

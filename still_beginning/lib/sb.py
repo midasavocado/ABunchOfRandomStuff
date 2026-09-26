@@ -172,6 +172,11 @@ def render_shot(sid, start=None, end=None, still=None):
     sc = bpy.context.scene
     lookdev_overrides(sc)
     _, s0, s1, _ = TL.shot(sid)
+    # the camera operator (organic float, in motion at the cuts, camera continued into the handles)
+    if os.environ.get("SB_NOCINEMA") != "1":
+        import cinema
+        cinema.finish(sid)
+    full = start is None and end is None
     s0 = s0 if start is None else start
     s1 = s1 if end is None else end
     d = out_path(sid)
@@ -191,6 +196,9 @@ def render_shot(sid, start=None, end=None, still=None):
             bpy.ops.render.render(write_still=True)
         return
     skip = os.environ.get("SB_SKIP_EXISTING", "1") == "1"
+    if full and os.environ.get("SB_NOHANDLES") != "1":
+        hin, hout = TL.handles(sid)          # extra frames past each cut for the edit's blends
+        s0, s1 = s0 - hin, s1 + hout
     for f in range(s0, s1):
         fp = os.path.join(d, "%04d.png" % f)
         if skip and os.path.exists(fp) and os.path.getsize(fp) > 0:
