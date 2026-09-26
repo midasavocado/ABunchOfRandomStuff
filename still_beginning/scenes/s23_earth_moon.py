@@ -43,10 +43,19 @@ def pos(t):
     Dm = E_KM.length * KM
     dE0, dM0 = (P0 - E_KM * KM).length, P0.length
     r0, r1 = math.log(dE0 / dM0), math.log((Dm - D1) / D1)
-    r = r0 + (r1 - r0) * ease(t)
-    d = Dm / (1.0 + math.exp(r))
+    e = ease(t)
+    r = r0 + (r1 - r0) * e
+    f0 = Dm / (1.0 + math.exp(r0))
+    d = Dm / (1.0 + math.exp(r)) * (dM0 / f0) ** (1.0 - e)      # anchored: exactly P0 at the start, D1 at the end
     dr = P0.normalized().slerp(DIR1, sb.smoother(sb.remap(ease(t), 0.45, 1.0)))
-    return dr * d
+    pB = dr * d
+    # early: climb away from the Earth (radially, leaning toward the Moon) so the planet shrinks away under frame
+    # instead of swinging behind the camera; blend into the lunar approach by mid-flight
+    Ec = E_KM * KM
+    dEt = dE0 * (60000e3 / dE0) ** sb.remap(e, 0.0, 0.35) * (1.0 + max(0.0, e - 0.35) * 4.0)   # log climb off the Earth
+    pA = Ec + ((P0 - Ec).normalized().slerp((u0 + V((0.0, 0.55, 0.0))).normalized(), sb.smoother(sb.remap(e, 0.0, 0.25)))) * dEt
+    w = sb.smoother(sb.remap(e, 0.2, 0.6))
+    return pA.lerp(pB, w)
 
 
 def aim_quat(p, t):
