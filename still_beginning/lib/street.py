@@ -251,6 +251,85 @@ def cafe_set(name, loc, M, rs):
     return t
 
 
+def nose_mat(xg):
+    """One shader, regions by smooth position masks (crisp edges whatever the topology): paint, wrap-around
+    windscreen with a rubber gasket, amber line, dark bumper."""
+    m = sb.mat("TramNoseM", (0.82, 0.82, 0.80), rough=0.3, coat=0.6, coat_rough=0.05)
+    nb = sb.NB(m)
+    co = nb.coord('Object')
+    sp = nb.new('ShaderNodeSeparateXYZ'); nb.link(co, sp.inputs[0])
+    x, z = sp.outputs[0], sp.outputs[2]
+    def band(v, a, b, soft=0.004):
+        return nb.math('MULTIPLY', nb.maprange(v, a - soft, a + soft), nb.maprange(v, b + soft, b - soft))
+    front = nb.maprange(x, xg - 0.004, xg + 0.004)
+    glass = nb.math('MULTIPLY', front, band(z, 1.47, 2.70))
+    gasket = nb.math('SUBTRACT', nb.math('MULTIPLY', nb.maprange(x, xg - 0.03, xg - 0.022), band(z, 1.44, 2.73)), glass)
+    gasket = nb.math('MAXIMUM', gasket, 0.0)
+    amber = band(z, 1.05, 1.11, 0.003)
+    dark = nb.maprange(z, 0.62, 0.61)
+    col = nb.mix(amber, (0.82, 0.82, 0.80, 1), (0.75, 0.32, 0.04, 1))
+    col = nb.mix(dark, col, (0.06, 0.065, 0.07, 1))
+    col = nb.mix(glass, col, (0.015, 0.018, 0.022, 1))
+    col = nb.mix(gasket, col, (0.01, 0.01, 0.01, 1))
+    nb.set('Base Color', col)
+    nb.set('Roughness', nb.mix(glass, nb.mix(gasket, 0.3, 0.6, dtype='FLOAT'), 0.02, dtype='FLOAT'))
+    # destination display behind the top of the glass: amber LED strip (text-free)
+    dest = nb.math('MULTIPLY', glass, band(z, 2.5, 2.64, 0.003))
+    ecol = nb.mix(dest, (1.0, 0.82, 0.62, 1), (1.0, 0.5, 0.1, 1))
+    nb.set('Emission Color', ecol)
+    nb.set('Emission Strength', nb.math('ADD', nb.math('MULTIPLY', glass, 0.12), nb.math('MULTIPLY', dest, 4.0)))
+    return m
+
+
+def tram_nose(name, g, white, win, dark, amber):
+    """Lofted cab: superellipse sections taper and rake from the car body, then close in a rounded front dome, so
+    the front is real surface (windscreen above ~1.45 m wrapping the corners, amber line, dark bumper)."""
+    import bmesh
+    NS, ND, NP = 16, 8, 56
+    x0, x1, dome = -0.18, 1.0, 0.55
+    secs = []
+    for i in range(NS + 1):
+        u = i / NS
+        secs.append((x0 + (x1 - x0) * u, 1.325 * (1 - 0.22 * u ** 2.2), 0.25 + 0.1 * u ** 2, 3.25 - 0.55 * u ** 1.6, 5.0 - 1.5 * u))
+    xe, hwe, zbe, zte, ne = secs[-1]
+    zce, hhe = (zbe + zte) / 2, (zte - zbe) / 2
+    for k in range(1, ND + 1):
+        th = k / ND * math.pi / 2 * 0.97
+        f = math.cos(th) ** 0.55
+        # the dome leans back at the top (raked windscreen): its centre rises as it closes
+        zc = zce + 0.35 * math.sin(th)
+        secs.append((xe + dome * math.sin(th), hwe * f, zc - hhe * f, zc + hhe * f * (1 - 0.25 * math.sin(th)), ne))
+    rings = []
+    for (x, hw, zb, zt, n) in secs:
+        zc, hh = (zb + zt) / 2, (zt - zb) / 2
+        ring = []
+        for j in range(NP):
+            a_ = 2 * math.pi * j / NP
+            c, s_ = math.cos(a_), math.sin(a_)
+            ring.append((x, hw * math.copysign(abs(c) ** (2 / n), c), zc + hh * math.copysign(abs(s_) ** (2 / n), s_)))
+        rings.append(ring)
+    me = bpy.data.meshes.new(name + "Nose")
+    bm = bmesh.new()
+    V_ = [[bm.verts.new(p) for p in r] for r in rings]
+    for i in range(len(rings) - 1):
+        for j in range(NP):
+            bm.faces.new((V_[i][j], V_[i][(j + 1) % NP], V_[i + 1][(j + 1) % NP], V_[i + 1][j]))
+    bm.faces.new(list(reversed(V_[-1])))
+    bmesh.ops.recalc_face_normals(bm, faces=bm.faces[:])
+    for f in bm.faces:
+        f.smooth = True
+    bm.to_mesh(me); bm.free()
+    me.materials.append(nose_mat(x0 + 0.38))
+    o = bpy.data.objects.new(name + "Nose", me)
+    sb.link_obj(o); o.parent = g
+    sd = o.modifiers.new("Sub", 'SUBSURF'); sd.levels = 1; sd.render_levels = 2
+    xt = xe + dome
+    led = sb.emit_mat("TramLED", (1.0, 0.97, 0.92), 30.0)
+    for sy in (-1, 1):
+        box(name + "Head%d" % sy, (xt - 0.2, sy * 0.72, 0.86), (0.06, 0.3, 0.06), led, parent=g, bev=0.02)
+    box(name + "Coupler", (xt - 0.05, 0, 0.42), (0.25, 0.4, 0.2), dark, parent=g, bev=0.04)
+
+
 def tram(name, M, length=32.0, sections=4):
     """Low-floor tram: white/graphite with a restrained amber line (same family as the s14 train), large windows with
     warm interior, articulated sections, pantograph on the roof. Returns root empty (tram runs along +X, origin at
@@ -271,11 +350,9 @@ def tram(name, M, length=32.0, sections=4):
         box(name + "Roof%d" % i, (x, 0, 3.35), (L - 1.0, 1.8, 0.3), white, parent=g, bev=0.08)
         if i < sections - 1:
             box(name + "Bellows%d" % i, (x - L / 2, 0, 1.75), (0.5, 2.4, 2.8), dark, parent=g, bev=0.08)
-    # rounded nose with a big windscreen
-    nose = sb.prim("sphere", name + "Nose", loc=(-0.6, 0, 1.9), radius=1.35, segments=32, ring_count=16, mat=white, parent=g)
-    nose.scale = (0.7, 0.98, 1.2)
-    ws = sb.prim("sphere", name + "Screen", loc=(-0.55, 0, 2.2), radius=1.3, segments=32, ring_count=16, mat=win, parent=g)
-    ws.scale = (0.68, 0.9, 0.62)
+    # cab: lofted nose (rounded superellipse sections tapering and raking forward into a big wrap-around
+    # windscreen), dark bumper, the amber line wrapping round, LED headlights, destination display, wiper
+    tram_nose(name, g, white, win, dark, amber)
     # pantograph
     p = V((-L * 1.5, 0, 3.55))
     rocket.rod(name + "Panto1", p, p + V((1.0, 0, 0.9)), 0.03, dark, parent=g)
