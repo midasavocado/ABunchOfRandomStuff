@@ -35,6 +35,8 @@ SHOT_STYLE = {
 # A->B line becomes a curved move with parallax. degrees of yaw across the shot per style (sign/size seeded per shot);
 # 0 for shots whose authored move is already the whole idea
 ARC_STYLE = {"steady": 7.0, "handheld": 4.0, "drone": 9.0, "macro": 6.0, "weightless": 8.0, "locked": 0.0}
+# shots whose focus distance is astronomical: positional float (scaled by focus) would throw the camera thousands of km
+NO_POS_FLOAT = {"s23e", "s23m"}
 ARC_NONE = {"s01", "s15", "s23e", "s23m", "s24c", "s25z", "s28", "s11", "s20", "s19b", "s14", "s12b"}
 # (trim_in, trim_out) as fractions of the authored move; 0 keeps an exact authored frame (first shot / title end)
 TRIM_DEFAULT = (0.06, 0.06)
@@ -149,7 +151,7 @@ def finish(sid, cam=None, style=None):
         p, q = operate(g, p, q, dist)
         R = q.to_matrix()
         right, up = R.col[0], R.col[1]
-        off = (right * nx(g) + up * ny(g) + R.col[2] * nz(g) * 0.5) * (amp * dist)
+        off = (right * nx(g) + up * ny(g) + R.col[2] * nz(g) * 0.5) * (0.0 if sid in NO_POS_FLOAT else amp * dist)
         qo = q @ Quaternion((0, 1, 0), math.radians(rdeg) * npn(g)) @ Quaternion((1, 0, 0), math.radians(rdeg * 0.7) * ntl(g)) \
             @ Quaternion((0, 0, 1), math.radians(rolldeg) * nrl(g))
         cam.location = p + off
