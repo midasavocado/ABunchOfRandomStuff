@@ -59,6 +59,14 @@ def satin(name, col, rough=0.42, sss=0.15, sheen=0.25, film=0.0):
     nb = sb.NB(m)
     n = nb.noise(nb.coord('Object'), scale=180, detail=2)
     nb.set('Normal', nb.bump(n.outputs['Fac'], strength=0.015, distance=0.001))
+    # translucent, lit-from-within edges (the look of premium molecular cinema, not grey clay): a cool fresnel
+    # glow at grazing angles + fuller subsurface
+    lw = nb.new('ShaderNodeLayerWeight'); lw.inputs['Blend'].default_value = 0.35
+    edge = nb.math('POWER', lw.outputs['Facing'], 2.2)
+    nb.set('Emission Color', (min(1, col[0] * 0.6 + 0.35), min(1, col[1] * 0.6 + 0.4), min(1, col[2] * 0.6 + 0.5), 1))
+    nb.set('Emission Strength', nb.math('MULTIPLY', edge, 0.55))
+    m.node_tree.nodes["Principled BSDF"].inputs['Subsurface Weight'].default_value = max(sss, 0.35)
+    m.node_tree.nodes["Principled BSDF"].inputs['Subsurface Scale'].default_value = 0.01
     return m
 
 
