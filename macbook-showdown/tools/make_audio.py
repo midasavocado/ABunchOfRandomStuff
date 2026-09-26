@@ -622,126 +622,308 @@ def fx_powerdown(ev, r):
     return (sine(f, n) * 0.5 + sq(f, n) * 0.1) * np.clip((0.7 - tt) / 0.7, 0, 1) * 0.5
 
 
-FX = {k[3:]: v for k, v in globals().items() if k.startswith('fx_')}
-
-
 # ---------------------------------------------------------------------------------------------
 # Music arrangement
 # ---------------------------------------------------------------------------------------------
-PROG = [  # (bass root, stab voicing, pad voicing)
-    (41, [65, 69, 72], [53, 57, 60, 65]),   # F
-    (38, [62, 65, 69], [50, 57, 62, 65]),   # Dm
-    (46, [62, 65, 70], [50, 58, 62, 65]),   # Bb
-    (36, [64, 67, 72], [52, 55, 60, 64]),   # C
+# ---------------------------------------------------------------------------------------------
+# Sampled instruments (MusyngKite General MIDI set; Tone.js / web-audio-samples drum kit)
+# ---------------------------------------------------------------------------------------------
+SAMPLES = {'gm': None, 'drums': None}
+_cache = {}
+NOTE = ['C', 'Db', 'D', 'Eb', 'E', 'F', 'Gb', 'G', 'Ab', 'A', 'Bb', 'B']
+
+
+def _load(path):
+    if path not in _cache:
+        x, sr = sf.read(path, dtype='float64')
+        if x.ndim > 1:
+            x = x.mean(1)
+        x = signal.resample_poly(x, SR // 100, sr // 100)
+        # trim the mp3 encoder's leading silence so notes land on the beat
+        on = np.where(np.abs(x) > 0.02 * np.max(np.abs(x)))[0]
+        x = x[max(0, on[0] - 16):] if len(on) else x
+        _cache[path] = x / (np.max(np.abs(x)) or 1)
+    return _cache[path]
+
+
+def note(inst, m, dur, vel=1.0, rel=0.08):
+    """One note of a sampled instrument, cut to dur seconds with a short release."""
+    x = _load(os.path.join(SAMPLES['gm'], f'{inst}-mp3', f'{NOTE[m % 12]}{m // 12 - 1}.mp3'))
+    n = min(len(x), int((dur + rel) * SR))
+    y = x[:n].copy()
+    r = min(n, int(rel * SR))
+    if n > int(dur * SR):
+        y[-r:] *= np.linspace(1, 0, r)
+    return y * vel
+
+
+def chord(inst, ms, dur, vel=1.0, rel=0.1, spread=0.0):
+    ys = [note(inst, m, dur, vel / len(ms) ** 0.5, rel) for m in ms]
+    out = np.zeros(max(len(y) for y in ys) + int(spread * len(ms) * SR))
+    for i, y in enumerate(ys):
+        o = int(i * spread * SR)
+        out[o:o + len(y)] += y
+    return out
+
+
+def drum(name, vel=1.0, kit='acoustic-kit'):
+    return _load(os.path.join(SAMPLES['drums'], kit, name + '.mp3')) * vel
+
+
+PROG = [  # (bass root, chord voicing)
+    (41, [65, 69, 72]),   # F
+    (38, [62, 65, 69]),   # Dm
+    (46, [62, 65, 70]),   # Bb
+    (36, [64, 67, 72]),   # C
 ]
-BASS_PAT = [0, None, 12, 0, None, 0, 12, 7]    # eighth notes
-STAB_STEPS = [2, 7, 10, 14]                    # sixteenth steps
+BASS_PAT = [(0, 0, 1.0), (3, 12, 0.7), (6, 0, 0.9), (8, 0, 0.8), (10, 12, 0.7), (11, 10, 0.6), (13, 7, 0.8), (14, 0, 0.7)]  # (16th step, interval, vel)
+STAB_STEPS = [2, 7, 10, 14]
+GTR_STEPS = [1, 3, 5, 6, 9, 11, 13, 15]
 
 
 def music(cues, events, total):
-    bus = {k: Bus(total) for k in ['drums', 'bass', 'keys', 'lead']}
+    bus = {k: Bus(total) for k in ['drums', 'bass', 'keys', 'brass', 'gtr', 'str']}
     sc = cues['scenes']
-    L = lambda i: cues['lines'][i]['start']
-    t_title, t_n15 = sc['title']['start'], L('n15')
-    t_fight_back = next(m['until'] for m in events['music'] if m['type'] == 'stop' and abs(m['t'] - (t_n15 - 0.08)) < 0.2)
-    t_verdict, t_win, t_end = sc['verdict']['start'], L('a08') - 0.1, sc['end']['start']
+    Lt = lambda i: cues['lines'][i]['start']
+    t_title, t_n15 = sc['title']['start'], Lt('n15')
+    t_back = min(m['until'] for m in events['music'] if m['type'] == 'stop' and m['t'] > t_n15 - 0.5)
+    t_verdict, t_win, t_end = sc['verdict']['start'], Lt('a08') - 0.1, sc['end']['start']
 
     def section(t):
-        if t < t_title:
-            return 'intro'
-        if t < t_n15 - 0.08:
-            return 'groove'
-        if t < t_fight_back:
-            return 'stop'
-        if t < t_verdict:
-            return 'groove2'
-        if t < t_win:
-            return 'tension'
-        if t < t_end:
-            return 'fanfare'
+        if t < t_title: return 'intro'
+        if t < t_n15 - 0.08: return 'groove'
+        if t < t_back: return 'stop'
+        if t < t_verdict: return 'groove2'
+        if t < t_win: return 'tension'
+        if t < t_end: return 'fanfare'
         return 'end'
 
-    nsteps = int(total / STEP) + 1
-    for s in range(nsteps):
+    for s in range(int(total / STEP) + 1):
         t = s * STEP
         sec = section(t)
         bar = int(t // (4 * BEAT))
         st = s % 16
-        root, stab, padv = PROG[bar % 4]
-        phraseB = (bar // 8) % 2 == 1
+        root, ch = PROG[bar % 4]
+        B = (bar // 4) % 2 == 1   # every other 4-bar phrase gets extra layers
         if sec == 'intro':
-            # tension: soft pulse on F, ticking hats, rising pad; builds over the intro
             k = t / t_title
-            if st in (0, 8):
-                bus['drums'].add(t, kick(0.35 + 0.4 * k))
-            if st % 2 == 0:
-                bus['drums'].add(t, hat(0.12 + 0.2 * k), pan=0.3)
-            if st % 4 == 0:
-                bus['bass'].add(t, bass_note(29, STEP * 3.5, 0.5 + 0.3 * k))
             if st == 0 and bar % 2 == 0:
-                bus['keys'].add(t, pad([53, 57, 60, 62] if bar % 4 == 0 else [50, 53, 57, 62], BEAT * 8, 0.35 + 0.3 * k))
-            if st in (0, 3, 6, 10, 12) and t > 2:
-                bus['keys'].add(t, pluck([77, 72, 74, 69, 72][[0, 3, 6, 10, 12].index(st)], 0.3, 0.12 + 0.12 * k), pan=-0.3 + 0.6 * (st % 2))
+                bus['str'].add(t, chord('string_ensemble_1', [50, 57, 62, 65] if bar % 4 == 0 else [46, 53, 58, 62], BEAT * 8, 0.5 + 0.4 * k, rel=0.6))
+            if st in (0, 8):
+                bus['drums'].add(t, note('timpani', 41 if st == 0 else 36, 0.8, 0.35 + 0.4 * k))
+            if st % 2 == 0 and t > 2:
+                bus['drums'].add(t, drum('hihat', 0.08 + 0.15 * k), pan=0.3)
+            if st % 4 == 2 and t > 2:
+                bus['keys'].add(t, note('pizzicato_strings', [77, 72, 74, 69][(st // 4) % 4] - 12, 0.3, 0.25 + 0.2 * k), pan=-0.3)
         elif sec in ('groove', 'groove2', 'fanfare'):
-            hot = sec != 'groove' or phraseB
+            hot = sec != 'groove' or B
             if st % 4 == 0:
-                bus['drums'].add(t, kick(0.95))
-            if sec == 'groove2' and st == 14:
-                bus['drums'].add(t, kick(0.5))
+                bus['drums'].add(t, drum('kick', 1.0))
+            if hot and st == 10:
+                bus['drums'].add(t, drum('kick', 0.6))
             if st in (4, 12):
-                bus['drums'].add(t, clap(0.75), pan=0.05)
+                bus['drums'].add(t, drum('snare', 0.9), pan=0.05)
+                bus['drums'].add(t, clap(0.35), pan=-0.1)
             if hot or st % 2 == 0:
-                v = 0.32 if st % 4 == 2 else 0.18
-                bus['drums'].add(t, hat(v, open_=(st == 14 and hot)), pan=0.35)
-            if st % 2 == 0:
-                off = BASS_PAT[st // 2]
-                if off is not None:
-                    bus['bass'].add(t, bass_note(root + off, STEP * 1.8, 0.9 if st == 0 else 0.75))
+                bus['drums'].add(t, drum('hihat', 0.45 if st % 4 == 2 else 0.25), pan=0.35)
+            for step, iv, v in BASS_PAT:
+                if st == step:
+                    bus['bass'].add(t, note('slap_bass_1', root + iv, STEP * 1.6, v, rel=0.04))
             if st in STAB_STEPS:
-                bus['keys'].add(t, brass(stab, STEP * 1.6, 0.55))
-            if hot and st == 0:
-                bus['keys'].add(t, pad(padv, BEAT * 4, 0.35))
-            if hot and sec != 'fanfare':
-                arp = [stab[0] + 12, stab[1] + 12, stab[2] + 12, stab[1] + 12]
-                bus['keys'].add(t, pluck(arp[st % 4], 0.2, 0.1), pan=0.5 if st % 2 else -0.5)
-            if st == 0 and bar % 8 == 0:
-                bus['drums'].add(t, crash(0.3))
-        elif sec == 'tension':
-            if st in (0, 3):
-                bus['drums'].add(t, kick(0.8))
-            if st % 4 == 0:
-                bus['bass'].add(t, bass_note(38, STEP * 3, 0.7))
+                bus['brass'].add(t, chord('brass_section', ch, STEP * 1.5, 0.9, rel=0.07), pan=0.0)
             if st == 0:
-                bus['keys'].add(t, pad([50, 57, 62, 65], BEAT * 4, 0.45))
-    # title: crash + brass fanfare on the hit
-    bus['drums'].add(t_title, crash(0.9, 2.5))
-    bus['drums'].add(t_title, kick(1.0))
-    for d, m, Ln in [(0, 65, 0.2), (0.25, 69, 0.2), (0.5, 72, 0.2), (0.75, 77, 1.2)]:
-        bus['lead'].add(t_title + d, brass([m, m + 4 if m != 77 else m - 5], Ln, 1.0, 5500), 0.9)
-    # fighters wipe: groove kicks in with a crash
-    bus['drums'].add(sc['fighters']['start'], crash(0.6))
-    # fanfare lead melody over the winner
+                bus['keys'].add(t, chord('electric_piano_1', [m - 12 for m in ch] + [ch[0]], BEAT * 3.6, 0.55, rel=0.3), pan=-0.15)
+            if hot and st in GTR_STEPS:
+                bus['gtr'].add(t, chord('electric_guitar_muted', [ch[0] - 12, ch[1] - 12, ch[2] - 12], STEP * 0.8, 0.5, rel=0.03), pan=0.45 if st % 4 == 1 else -0.45)
+            if st == 0 and bar % 8 == 0:
+                bus['drums'].add(t, crash(0.35))
+        elif sec == 'tension':
+            if st in (0, 3, 8, 11):
+                bus['drums'].add(t, note('timpani', 38, 0.6, 0.8 if st in (0, 8) else 0.5))
+            if st == 0:
+                bus['str'].add(t, chord('string_ensemble_1', [50, 57, 62, 65], BEAT * 4, 0.8, rel=0.3))
+            if st % 2 == 0:
+                bus['drums'].add(t, drum('hihat', 0.2), pan=0.3)
+    # title: an orchestra hit and a brass fanfare
+    bus['drums'].add(t_title, note('orchestra_hit', 65, 1.2, 0.9))
+    bus['drums'].add(t_title, crash(0.8, 2.5))
+    bus['drums'].add(t_title, note('timpani', 41, 1.5, 1.0))
+    for d, m, ln in [(0, 65, 0.22), (0.25, 69, 0.22), (0.5, 72, 0.22), (0.75, 77, 1.4)]:
+        bus['brass'].add(t_title + d, chord('brass_section', [m, m - 12], ln, 1.0, rel=0.25))
+    bus['drums'].add(sc['fighters']['start'], crash(0.5))
+    # the winner: trumpet melody over the groove
     mel = [(0, 77, 1), (1, 81, 1), (2, 84, 2), (4, 82, 1), (5, 81, 1), (6, 79, 2), (8, 77, 1), (9, 79, 1), (10, 81, 1), (11, 84, 1), (12, 82, 2), (14, 81, 1), (15, 79, 1)]
-    t0 = t_win + 0.35
     for b, m, d in mel:
-        tt = t0 + b * BEAT
+        tt = t_win + 0.35 + b * BEAT
         if tt < t_end:
-            bus['lead'].add(tt, lead(m, d * BEAT * 0.95, 0.5), pan=0.0)
-    bus['drums'].add(t_win, crash(0.9, 2.5))
-    # ending: big final hit that rings out
+            bus['brass'].add(tt, note('trumpet', m - 12, d * BEAT * 0.92, 0.7, rel=0.12), 0.9)
+    bus['drums'].add(t_win, note('orchestra_hit', 65, 1.0, 0.8))
+    bus['drums'].add(t_win, crash(0.8, 2.5))
+    # ending: a big final chord that rings out
+    bus['drums'].add(t_end, note('orchestra_hit', 65, 1.2, 1.0))
     bus['drums'].add(t_end, crash(1.0, 3.2))
-    bus['drums'].add(t_end, kick(1.0))
-    bus['bass'].add(t_end, bass_note(41, 2.4, 1.0))
-    bus['keys'].add(t_end, brass([65, 69, 72, 77], 2.6, 1.0, 5000) * env_adsr(int(2.6 * SR), 0.01, 0.2, 0.7, 1.6)[:, None], 1.3)
-    bus['keys'].add(t_end, pad([53, 57, 60, 65, 69], 3.3, 0.6))
+    bus['drums'].add(t_end, note('timpani', 41, 3.0, 1.0))
+    bus['bass'].add(t_end, note('slap_bass_1', 41, 2.0, 1.0, rel=0.8))
+    bus['brass'].add(t_end, chord('brass_section', [65, 69, 72, 77], 2.4, 1.2, rel=1.0))
+    bus['str'].add(t_end, chord('string_ensemble_1', [53, 57, 60, 65, 69], 2.8, 0.9, rel=0.8))
     return bus
+
+
+def fx_tick(ev, r):
+    m = int(0.02 * SR)
+    return (sine(2600, m) * 0.5 + hp(noise(m, r), 3000) * 0.5) * expdec(m, 0.004) * 0.5
+
+
+def fx_lightson(ev, r):
+    n = int(1.2 * SR)
+    thunk = fx_thud(ev, r) * 1.2
+    hum = (sine(60, n) * 0.4 + sine(120, n) * 0.25 + sine(180, n) * 0.1) * expdec(n, 0.5) * 0.4
+    out = hum.copy()
+    out[:len(thunk)] += thunk
+    return out
+
+
+def fx_lidopen(ev, r):
+    w = whoosh_core(r, 0.5, 300, 1500, 1.0) * 0.6
+    c = fx_click(ev, r) * 0.5
+    out = np.zeros(int(0.6 * SR))
+    out[:len(w)] += w
+    i = int(0.45 * SR)
+    out[i:i + len(c)] += c[:len(out) - i]
+    return out
+
+
+def fx_chime(ev, r):
+    n = int(1.6 * SR)
+    out = np.zeros(n)
+    for i, m in enumerate([77, 81, 84, 89]):
+        o = int(i * 0.06 * SR)
+        out[o:] += (sine(mtof(m), n - o) * 0.6 + sine(mtof(m) * 2, n - o) * 0.15) * expdec(n - o, 0.5)
+    return out * 0.25
+
+
+def fx_jet(ev, r):
+    n = int(1.6 * SR)
+    tt = t_(n)
+    roar = bp(noise(n, r), 400, 3000) * np.sin(np.pi * np.clip(tt / 1.6, 0, 1)) ** 2
+    whine = sine(1800 - 700 * tt / 1.6, n) * 0.05 * np.sin(np.pi * np.clip(tt / 1.6, 0, 1))
+    return (roar * 0.6 + whine) * 0.8
+
+
+def fx_screech(ev, r):
+    n = int(0.7 * SR)
+    tt = t_(n)
+    tone = sine(2400 + 300 * np.sin(2 * np.pi * 23 * tt), n) * 0.2 + bp(noise(n, r), 1800, 4000) * 0.3
+    return tone * env_adsr(n, 0.02, 0.05, 0.8, 0.25)
+
+
+def fx_lidslam(ev, r):
+    n = int(0.4 * SR)
+    smack = bp(noise(n, r), 600, 6000) * expdec(n, 0.01)
+    body = sine(90 * np.exp(-t_(n) / 0.1), n) * expdec(n, 0.08)
+    return np.tanh((smack + body) * 2.5) * 0.8
+
+
+def fx_buzzer(ev, r):
+    n = int(0.6 * SR)
+    return lp(sq(110, n) + sq(116, n), 2500) * env_adsr(n, 0.005, 0.02, 0.9, 0.08) * 0.25
+
+
+# sampled replacements where a real instrument sounds better than synthesis
+_synth = dict(crowd=fx_crowd, impact=fx_impact, riser=fx_riser, fanfare=fx_fanfare, tada=fx_tada, sadtrombone=fx_sadtrombone, drumroll=fx_drumroll)
+
+
+def fx_crowd(ev, r):
+    base = _synth['crowd'](ev, r) * 0.6
+    if not SAMPLES['gm']:
+        return base
+    dur = ev.get('dur', 2.0)
+    ap = note('applause', 60, dur + 0.5, 0.9, rel=0.6)
+    ap2 = note('applause', 64, dur + 0.5, 0.7, rel=0.6)
+    n = max(len(base), len(ap), len(ap2))
+    out = np.zeros((n, 2))
+    out[:len(base)] += base
+    out[:len(ap), 0] += ap
+    out[:len(ap2), 1] += ap2
+    e = np.clip(t_(n) / 0.2, 0, 1)
+    return out * e[:, None]
+
+
+def fx_impact(ev, r):
+    y = _synth['impact'](ev, r)
+    if SAMPLES['gm']:
+        h = note('orchestra_hit', 65, 1.0, 0.8)
+        y = y.copy(); y[:len(h)] += h[:len(y)]
+    return y
+
+
+def fx_riser(ev, r):
+    if not SAMPLES['gm']:
+        return _synth['riser'](ev, r)
+    dur = ev.get('dur', 2.0)
+    x = note('reverse_cymbal', 60, 6, 1.0)
+    on = np.argmax(np.abs(x) > 0.5)   # the swell peaks where the reversed cymbal hits
+    seg = x[max(0, on - int(dur * SR)):on]
+    return np.pad(seg, (int(dur * SR) - len(seg), 0)) * 0.9 + _synth['riser'](ev, r) * 0.4
+
+
+def fx_fanfare(ev, r):
+    if not SAMPLES['gm']:
+        return _synth['fanfare'](ev, r)
+    out = np.zeros(int(2.4 * SR))
+    for d, m, ln in [(0, 65, 0.13), (0.13, 69, 0.13), (0.26, 72, 0.13), (0.39, 77, 1.5)]:
+        y = chord('brass_section', [m, m - 12], ln, 1.0, rel=0.3)
+        i = int(d * SR); out[i:i + len(y)] += y[:len(out) - i]
+    return out * 0.8
+
+
+def fx_tada(ev, r):
+    if not SAMPLES['gm']:
+        return _synth['tada'](ev, r)
+    out = np.zeros(int(1.4 * SR))
+    a = chord('brass_section', [65, 69, 72, 77], 0.12, 1.0, rel=0.05)
+    b = chord('brass_section', [65, 69, 72, 77], 0.9, 1.0, rel=0.3)
+    out[:len(a)] += a
+    i = int(0.18 * SR); out[i:i + len(b)] += b[:len(out) - i]
+    return out * 0.8
+
+
+def fx_sadtrombone(ev, r):
+    if not SAMPLES['gm']:
+        return _synth['sadtrombone'](ev, r)
+    out = np.zeros(int(3.0 * SR))
+    for d, m, ln in [(0.0, 58, 0.38), (0.42, 57, 0.38), (0.84, 56, 0.38), (1.26, 55, 1.3)]:
+        y = note('trombone', m, ln, 1.0, rel=0.2)
+        if ln > 1:   # the last note wobbles
+            y = y * (1 + 0.25 * np.sin(2 * np.pi * 5.5 * t_(len(y))) * np.clip((t_(len(y)) - 0.3) / 0.3, 0, 1))
+        i = int(d * SR); out[i:i + len(y)] += y[:len(out) - i]
+    return out * 0.8
+
+
+def fx_drumroll(ev, r):
+    y = _synth['drumroll'](ev, r)
+    if SAMPLES['gm']:
+        dur = ev.get('dur', 2.0)
+        tim = np.zeros(len(y))
+        k = 0
+        while k / 14 < dur:
+            h = note('timpani', 41, 0.3, 0.2 + 0.6 * (k / 14 / dur) ** 1.5, rel=0.1)
+            i = int(k / 14 * SR); tim[i:i + len(h)] += h[:len(tim) - i]; k += 1
+        y = y + tim * 0.6
+    return y
+
+
+FX = {k[3:]: v for k, v in globals().items() if k.startswith('fx_')}
 
 
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--build', required=True)
     ap.add_argument('--stems', action='store_true')
+    ap.add_argument('--samples', help='MusyngKite folder (from gleitz/midi-js-soundfonts)')
+    ap.add_argument('--drums', help='drum-samples folder (from Tonejs/audio)')
     a = ap.parse_args()
+    SAMPLES['gm'], SAMPLES['drums'] = a.samples, a.drums
     cues = json.load(open(os.path.join(a.build, 'cues.json')))
     events = json.load(open(os.path.join(a.build, 'events.json')))
     total = cues['total']
@@ -774,7 +956,7 @@ def main():
 
     # --- music, with ducking under the voice and the page's stop/duck cues
     mb = music(cues, events, total)
-    mus = mb['drums'].x * 0.9 + mb['bass'].x * 0.55 + mb['keys'].x * 0.5 + mb['lead'].x * 0.45
+    mus = mb['drums'].x * 0.8 + mb['bass'].x * 0.7 + mb['keys'].x * 0.35 + mb['brass'].x * 0.42 + mb['gtr'].x * 0.22 + mb['str'].x * 0.4
     mus = mus + convolve_st(mus, reverb_ir(1.4, 0.35, seed=9)) * 0.1
     duck = signal.lfilter([1 - np.exp(-1 / (0.06 * SR))], [1, -np.exp(-1 / (0.06 * SR))], vo_env)
     duck = np.maximum(duck, signal.lfilter([1 - np.exp(-1 / (0.25 * SR))], [1, -np.exp(-1 / (0.25 * SR))], vo_env[::-1])[::-1] * 0.0)

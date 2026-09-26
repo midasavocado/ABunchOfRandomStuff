@@ -12,11 +12,12 @@ const PAGE = 'file://' + path.resolve(__dirname, '..', 'index.html') + '?render=
 const FFMPEG = process.env.FFMPEG || 'ffmpeg';
 
 async function open() {
-  const b = await chromium.launch({ args: ['--disable-gpu-vsync', '--force-color-profile=srgb', '--font-render-hinting=none'] });
+  const b = await chromium.launch({ args: ['--disable-gpu-vsync', '--force-color-profile=srgb', '--font-render-hinting=none', '--allow-file-access-from-files', '--enable-unsafe-swiftshader', '--ignore-gpu-blocklist'] });
   const p = await b.newPage({ viewport: { width: 1920, height: 1080 }, deviceScaleFactor: 1 });
   const errs = [];
   p.on('pageerror', e => errs.push(e.message));
   p.on('console', m => { if (m.type() === 'error') errs.push(m.text()); });
+  p.on('requestfailed', r => errs.push('failed: ' + r.url()));
   await p.goto(PAGE);
   await p.evaluate(() => window.ready);
   if (errs.length) console.error('page errors:', errs);

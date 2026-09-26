@@ -12,136 +12,111 @@
   @font-face { font-family: "Inter"; font-weight: 800; src: url(assets/fonts/inter-latin-800-normal.woff2) format("woff2"); }
   @font-face { font-family: "Inter"; font-weight: 900; src: url(assets/fonts/inter-latin-900-normal.woff2) format("woff2"); }
   @font-face { font-family: "Mono"; font-weight: 700; src: url(assets/fonts/jetbrains-mono-latin-700-normal.woff2) format("woff2"); }
-
   :root {
-    --ink: #0e0b1c;
-    --ink2: #1a1533;
-    --red: #ff4a5f;
-    --red2: #c21d3c;
-    --blue: #3f8cff;
-    --blue2: #1a4fd1;
-    --gold: #ffc93c;
-    --gold2: #ff9d2e;
-    --paper: #fff8ec;
-    --o: #16112a;
+    --ink: #07060d;
+    --red: #ff3b5c; --red2: #b3123a;
+    --blue: #3d8bff; --blue2: #1446c9;
+    --gold: #ffcc4d; --gold2: #ff9a2e;
+    --o: #0e0b19;
     --display: "Anton", Impact, sans-serif;
     --body: "Inter", system-ui, sans-serif;
     --hand: "Marker", "Comic Sans MS", cursive;
     --mono: "Mono", ui-monospace, monospace;
+    --goldtext: linear-gradient(180deg, #fff6c9 0%, #ffd766 38%, #f5a623 62%, #fff0a8 100%);
+    --chrome: linear-gradient(180deg, #ffffff 0%, #e9ecf5 42%, #9aa3b8 55%, #f4f6fb 100%);
   }
   html, body { margin: 0; height: 100%; background: #000; overflow: hidden; }
-  body { display: grid; place-items: center; font-family: var(--body); color: #fff; }
-  #viewport { position: relative; width: 1920px; height: 1080px; transform-origin: 0 0; }
+  body { font-family: var(--body); color: #fff; }
+  #viewport { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; transform-origin: 0 0; }
   #stage { position: absolute; inset: 0; overflow: hidden; background: var(--ink); }
-  .abs { position: absolute; left: 0; top: 0; }
-  .fill { position: absolute; inset: 0; }
-  .c { position: absolute; left: 0; top: 0; }
+  #gl { position: absolute; inset: 0; width: 1920px; height: 1080px; }
   #shake, #cam { position: absolute; inset: 0; }
+  .c { position: absolute; left: 0; top: 0; }
+  .fill { position: absolute; inset: 0; }
   .scene { position: absolute; inset: 0; visibility: hidden; }
-  .scene > *, .fill > *, .panel > * { position: absolute; }
-  img.emo { position: absolute; left: 0; top: 0; display: block; }
+  .scene > *, .fill > * { position: absolute; }
+  img.emo { position: absolute; left: 0; top: 0; display: block; filter: drop-shadow(0 18px 24px rgba(0,0,0,.45)); }
 
-  #bg {
-    background:
-      radial-gradient(1200px 700px at 50% 38%, #2a2257 0%, rgba(26,21,51,0) 70%),
-      radial-gradient(900px 900px at 50% 120%, #241a4a 0%, rgba(14,11,28,0) 70%),
-      var(--ink);
-  }
-  .glowL { background: radial-gradient(900px 900px at 0% 50%, rgba(255,74,95,.45), rgba(255,74,95,0) 70%); opacity: 0; }
-  .glowR { background: radial-gradient(900px 900px at 100% 50%, rgba(63,140,255,.45), rgba(63,140,255,0) 70%); opacity: 0; }
-  .spot {
-    position: absolute; top: -200px; width: 900px; height: 1500px; left: 510px;
-    background: conic-gradient(from 180deg at 50% 0%, rgba(255,255,255,0) 168deg, rgba(255,247,220,.16) 180deg, rgba(255,255,255,0) 192deg);
-    transform-origin: 50% 0%; mix-blend-mode: screen; opacity: 0;
-  }
-  #dust { position: absolute; inset: 0; }
-  #grain { position: absolute; inset: -60px; opacity: .06; pointer-events: none; mix-blend-mode: overlay;
-    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>"); }
-  #vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 55%, rgba(0,0,0,.55) 100%); }
+  .bg2d { background: radial-gradient(1100px 700px at 50% 40%, #221b45 0%, #0b0917 60%, #05040a 100%); }
+  .rays { width: 2800px; height: 2800px; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255,204,77,.16) 0deg 7deg, rgba(255,204,77,0) 7deg 14deg); }
+
+  .big { font-family: var(--display); text-transform: uppercase; line-height: .9; white-space: nowrap; letter-spacing: .005em; }
+  .gold { background: var(--goldtext); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 6px 0 #7a3f06) drop-shadow(0 18px 30px rgba(0,0,0,.6)); }
+  .chrome { background: var(--chrome); -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 5px 0 #2a2f45) drop-shadow(0 16px 28px rgba(0,0,0,.6)); }
+  .white { color: #fff; text-shadow: 0 6px 0 rgba(0,0,0,.35), 0 18px 40px rgba(0,0,0,.55); }
+  .word { display: inline-block; }
+  .hand { font-family: var(--hand); white-space: nowrap; text-shadow: 0 4px 0 rgba(0,0,0,.45), 0 10px 24px rgba(0,0,0,.5); }
+  .eyebrow { font: 900 24px/1 var(--body); letter-spacing: .34em; text-transform: uppercase; white-space: nowrap; }
+  .sub { font: 600 32px/1.2 var(--body); white-space: nowrap; }
+  .fine { font: 600 21px/1.45 var(--body); color: rgba(255,255,255,.6); }
+  .glass { background: linear-gradient(180deg, rgba(40,36,70,.78), rgba(14,12,28,.84)); border: 1.5px solid rgba(255,255,255,.18); border-radius: 22px;
+           box-shadow: 0 30px 60px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.18); }
+  .pill { display: inline-flex; align-items: center; gap: 12px; padding: 14px 26px; border-radius: 999px; font: 800 34px/1 var(--body); white-space: nowrap; }
+  .pill.red { background: linear-gradient(180deg, #ff5a75, #d81e45); box-shadow: 0 10px 30px rgba(255,59,92,.35), inset 0 1px 0 rgba(255,255,255,.35); }
+  .pill.blue { background: linear-gradient(180deg, #5aa2ff, #1f5fe0); box-shadow: 0 10px 30px rgba(61,139,255,.35), inset 0 1px 0 rgba(255,255,255,.35); }
+  .pill.gold { background: linear-gradient(180deg, #ffe07a, #f5a623); color: #2a1600; box-shadow: 0 10px 30px rgba(255,204,77,.35), inset 0 1px 0 rgba(255,255,255,.5); }
+  .pill.dark { background: rgba(10,8,20,.78); border: 1.5px solid rgba(255,255,255,.22); }
+  .stamp { position: absolute; font: 400 110px/1 var(--display); color: #ff3355; border: 11px solid #ff3355; border-radius: 20px; padding: 6px 28px 12px;
+           letter-spacing: .04em; white-space: nowrap; background: rgba(20,4,10,.6); box-shadow: 0 0 40px rgba(255,51,85,.35); }
+  .stamp.green { color: #3ee08a; border-color: #3ee08a; box-shadow: 0 0 40px rgba(62,224,138,.35); background: rgba(4,20,12,.6); }
+
+  .callout { position: absolute; left: 0; top: 0; }
+  .callout .lab { position: absolute; padding: 16px 24px 18px; white-space: nowrap; }
+  .callout .lab .k { font: 900 18px/1 var(--body); letter-spacing: .26em; text-transform: uppercase; opacity: .7; }
+  .callout .lab .v { font: 800 40px/1.05 var(--body); margin-top: 8px; }
+  svg.lines { position: absolute; left: 0; top: 0; overflow: visible; pointer-events: none; }
+
+  #hud { position: absolute; left: 960px; top: 30px; display: flex; align-items: stretch; border-radius: 20px; overflow: hidden;
+         box-shadow: 0 20px 40px rgba(0,0,0,.5), 0 0 0 1.5px rgba(255,255,255,.2); font: 800 26px/1 var(--body); }
+  #hud .team { display: flex; align-items: center; padding: 14px 22px; letter-spacing: .02em; }
+  #hud .red { background: linear-gradient(180deg, #ff5a75, #c9173d); }
+  #hud .blue { background: linear-gradient(180deg, #5aa2ff, #1a55d6); }
+  #hud .score { font: 400 50px/1 var(--display); padding: 6px 20px; background: linear-gradient(180deg, #fff, #dfe3ee); color: var(--o); min-width: 52px; display: flex; align-items: center; justify-content: center; }
+  #hud .mid { background: rgba(8,6,16,.92); padding: 14px 22px; font: 900 20px/1 var(--body); letter-spacing: .24em; display: flex; align-items: center; color: var(--gold); }
+
+  .rc { position: absolute; inset: 0; visibility: hidden; overflow: hidden; }
+  .rc .bgc { position: absolute; inset: 0; background: radial-gradient(1000px 700px at 50% 50%, #3a2a08 0%, #120c02 55%, #050300 100%); }
+  .rc .n { font: 400 300px/.85 var(--display); }
+  .rc .t { font: 400 130px/1 var(--display); letter-spacing: .02em; }
+
+  #wipe { position: absolute; inset: 0; pointer-events: none; }
+  #wipe div { position: absolute; top: -10%; height: 120%; width: 150%; left: -25%; }
   #flash { position: absolute; inset: 0; background: #fff; opacity: 0; pointer-events: none; }
   #black { position: absolute; inset: 0; background: #000; opacity: 0; pointer-events: none; }
   #fxcanvas { position: absolute; inset: 0; pointer-events: none; }
-
-  /* type */
-  .big { font-family: var(--display); text-transform: uppercase; line-height: .92; letter-spacing: .005em; white-space: nowrap;
-         text-shadow: 0 8px 0 rgba(0,0,0,.35); }
-  .word { display: inline-block; }
-  .hand { font-family: var(--hand); white-space: nowrap; }
-  .eyebrow { font: 900 26px/1 var(--body); letter-spacing: .32em; text-transform: uppercase; white-space: nowrap; }
-  .sub { font: 600 34px/1.2 var(--body); white-space: nowrap; }
-  .chip { position: absolute; display: inline-flex; align-items: center; gap: 0; padding: 16px 28px; border-radius: 999px;
-          font: 800 38px/1 var(--body); white-space: nowrap; color: #fff; background: rgba(8,6,20,.72);
-          border: 4px solid rgba(255,255,255,.9); box-shadow: 0 10px 0 rgba(0,0,0,.35); }
-  .chip.red { border-color: var(--red); }
-  .chip.blue { border-color: var(--blue); }
-  .chip b { font-weight: 900; }
-  .chip img { width: 44px; height: 44px; margin-left: 12px; }
-  .tag { font: 900 30px/1 var(--body); letter-spacing: .12em; text-transform: uppercase; padding: 10px 18px; border-radius: 10px; white-space: nowrap; }
-  .tag.red { background: var(--red); } .tag.blue { background: var(--blue); } .tag.gold { background: var(--gold); color: var(--o); }
-
-  /* HUD scoreboard */
-  #hud { position: absolute; left: 960px; top: 34px; display: flex; align-items: stretch;
-         font: 800 30px/1 var(--body); border-radius: 22px; overflow: hidden; box-shadow: 0 10px 0 rgba(0,0,0,.35); border: 4px solid var(--o); }
-  #hud .team { display: flex; align-items: center; gap: 12px; padding: 14px 22px; }
-  #hud .red { background: var(--red); } #hud .blue { background: var(--blue); }
-  #hud .score { font: 400 52px/1 var(--display); padding: 8px 22px; background: #fff; color: var(--o); min-width: 54px; text-align: center; display: flex; align-items: center; justify-content: center; }
-  #hud .mid { background: var(--o); padding: 14px 22px; font: 900 22px/1 var(--body); letter-spacing: .2em; display: flex; align-items: center; color: var(--gold); }
-
-  /* wipes */
-  #wipe { position: absolute; inset: 0; pointer-events: none; }
-  #wipe div { position: absolute; top: -10%; height: 120%; width: 150%; left: -25%; }
-
-  /* round card */
-  .rc { position: absolute; inset: 0; visibility: hidden; }
-  .rc .dim { position: absolute; inset: 0; background: radial-gradient(circle at 50% 50%, rgba(255,201,60,.35), rgba(14,11,28,.9) 70%); }
-  .rc .card { position: absolute; left: 960px; top: 540px; width: 980px; height: 520px; margin: -260px 0 0 -490px;
-              background: var(--gold); border: 10px solid var(--o); border-radius: 36px; box-shadow: 0 26px 0 rgba(0,0,0,.4);
-              display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--o); }
-  .rc .card .n { font: 400 230px/0.9 var(--display); letter-spacing: .01em; }
-  .rc .card .t { font: 400 110px/1 var(--display); color: #fff; -webkit-text-stroke: 8px var(--o); paint-order: stroke fill; margin-top: 10px; }
-  .rc .card .bolt { position: absolute; width: 26px; height: 26px; border-radius: 50%; background: var(--o); }
-
-  /* misc components */
-  .panel { position: absolute; inset: 0; }
-  .card2 { position: absolute; background: var(--paper); color: var(--o); border: 8px solid var(--o); border-radius: 28px; box-shadow: 0 16px 0 rgba(0,0,0,.35); }
-  .touchbar { position: absolute; border-radius: 26px; background: linear-gradient(#0b0b12, #17151f); border: 6px solid #2c2a36; overflow: hidden;
-              box-shadow: 0 0 0 6px var(--o), 0 0 80px rgba(160,120,255,.45), inset 0 0 30px rgba(120,160,255,.25); }
-  .touchbar .track { position: absolute; left: 0; top: 0; height: 100%; display: flex; align-items: center; gap: 34px; padding-left: 40px; }
-  .touchbar .track img { flex: none; }
-  .screenbox { position: absolute; background: #0a0a10; border: 8px solid var(--o); border-radius: 34px; box-shadow: 0 18px 0 rgba(0,0,0,.35); overflow: hidden; }
-  .screenbox .glass { position: absolute; overflow: hidden; border-radius: 12px; }
-  .feedcard { position: absolute; left: 30px; right: 30px; height: 150px; border-radius: 20px; }
-  .window { position: absolute; background: #1d1b29; border: 8px solid var(--o); border-radius: 26px; overflow: hidden; box-shadow: 0 16px 0 rgba(0,0,0,.35); }
-  .window .bar { height: 54px; background: #2b2839; display: flex; align-items: center; gap: 12px; padding: 0 20px; font: 800 24px/1 var(--body); color: #cfc9e6; }
-  .window .bar i { width: 18px; height: 18px; border-radius: 50%; display: inline-block; }
-  .receipt { position: absolute; background: #fffdf7; color: #222; font: 700 31px/1 var(--mono); box-shadow: 0 20px 0 rgba(0,0,0,.3); }
+  #grain { position: absolute; inset: -60px; opacity: .05; pointer-events: none; mix-blend-mode: overlay;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='300' height='300' filter='url(%23n)'/></svg>"); }
+  #vignette { position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0) 58%, rgba(0,0,0,.5) 100%); }
+  .bubble { position: absolute; background: #fff; color: var(--o); border-radius: 30px; padding: 18px 30px; font: 400 46px/1 var(--hand); white-space: nowrap; box-shadow: 0 20px 40px rgba(0,0,0,.4); }
+  .receipt { position: absolute; background: linear-gradient(180deg, #fffdf6, #f6f1e4); color: #222; font: 700 30px/1 var(--mono); box-shadow: 0 40px 70px rgba(0,0,0,.55); }
   .receipt .row { display: flex; justify-content: space-between; padding: 0 44px; height: 54px; align-items: center; white-space: nowrap; }
-  .receipt .row .ck { color: #1aa35a; margin-right: 14px; }
-  .receipt hr { border: 0; border-top: 4px dashed #bbb; margin: 12px 44px; }
-  .stamp { position: absolute; font: 400 120px/1 var(--display); color: #e02843; border: 12px solid #e02843; border-radius: 22px; padding: 6px 30px 14px; letter-spacing: .04em; mix-blend-mode: multiply; white-space: nowrap; }
-  .bubble { position: absolute; background: #fff; color: var(--o); border: 6px solid var(--o); border-radius: 30px; padding: 18px 30px; font: 400 44px/1 var(--hand); white-space: nowrap; }
-  .fine { font: 600 22px/1.4 var(--body); color: rgba(255,255,255,.55); }
-  .bar3 { position: absolute; height: 70px; border-radius: 16px; border: 6px solid var(--o); }
+  .receipt .row .ck { color: #13a35a; margin-right: 14px; }
+  .receipt hr { border: 0; border-top: 4px dashed #c9c2b0; margin: 12px 44px; }
 </style>
 </head>
 <body>
 <div id="viewport">
   <div id="stage">
-    <div id="bg" class="fill"></div>
-    <div id="glowL" class="fill glowL"></div>
-    <div id="glowR" class="fill glowR"></div>
-    <div id="spot1" class="spot"></div>
-    <div id="spot2" class="spot"></div>
-    <canvas id="dust" width="1920" height="1080"></canvas>
+    <div id="bg" class="fill">
+      <div class="fill" style="background:radial-gradient(1400px 800px at 50% 30%, #1d1838 0%, #0c0a18 55%, #05040a 100%)"></div>
+      <div id="glowL" class="fill" style="opacity:0;background:radial-gradient(900px 760px at 8% 38%, rgba(255,45,85,.55), rgba(255,45,85,0) 70%)"></div>
+      <div id="glowR" class="fill" style="opacity:0;background:radial-gradient(900px 760px at 92% 38%, rgba(47,123,255,.6), rgba(47,123,255,0) 70%)"></div>
+      <div id="glowC" class="fill" style="opacity:0;background:radial-gradient(1000px 700px at 50% 30%, rgba(255,201,60,.45), rgba(255,201,60,0) 70%)"></div>
+      <div id="spotlight" class="fill" style="opacity:0;background:conic-gradient(from 180deg at 50% -10%, rgba(255,255,255,0) 160deg, rgba(255,246,220,.14) 180deg, rgba(255,255,255,0) 200deg)"></div>
+      <div class="fill" style="top:58%;background:linear-gradient(180deg, rgba(0,0,0,0), rgba(3,2,8,.55) 30%, rgba(3,2,8,.85))"></div>
+    </div>
+    <canvas id="gl" width="1920" height="1080"></canvas>
+    <div id="xdr" class="c" style="width:1500px;height:1100px;border-radius:50%;opacity:0;pointer-events:none;background:radial-gradient(closest-side, rgba(235,244,255,1), rgba(170,205,255,.55) 38%, rgba(90,140,255,.18) 65%, rgba(0,0,0,0));mix-blend-mode:screen"></div>
     <div id="shake"><div id="cam"></div></div>
+    <div id="lines" class="fill" style="pointer-events:none"></div>
     <canvas id="fxcanvas" width="1920" height="1080"></canvas>
     <div id="hud">
       <div class="team red">13″ M1</div><div class="score" id="scR">0</div>
       <div class="mid" id="rnd">ROUND 1</div>
-      <div class="score" id="scB">0</div><div class="team blue">M1 Pro 14″</div>
+      <div class="score" id="scB">0</div><div class="team blue">M1 PRO 14″</div>
     </div>
     <div id="pluslayer" class="fill" style="pointer-events:none"></div>
-    <div id="wipe"><div style="background:var(--red)"></div><div style="background:var(--gold)"></div><div style="background:var(--blue)"></div></div>
+    <div id="wipe"><div style="background:linear-gradient(90deg,#ff3b5c,#ff7a8f)"></div><div style="background:linear-gradient(90deg,#ffcc4d,#fff0a8)"></div><div style="background:linear-gradient(90deg,#3d8bff,#8ab8ff)"></div></div>
     <div id="flash"></div>
     <div id="grain"></div>
     <div id="vignette"></div>
@@ -149,14 +124,14 @@
   </div>
 </div>
 <script src="assets/js/gsap.min.js"></script>
+<script src="assets/js/stage.js"></script>
 <script src="cues.js"></script>
 <script>
 "use strict";
 window.READY = [];
-// ---------------------------------------------------------------------------------------------
-// Timing: everything is placed on one paused GSAP timeline and rendered with renderAt(t), so any
-// frame can be drawn exactly (the video renderer steps through it frame by frame).
-// ---------------------------------------------------------------------------------------------
+// =============================================================================================
+// Timing. One paused GSAP timeline holds every move; renderAt(t) draws any moment exactly.
+// =============================================================================================
 const C = window.CUES;
 const tl = gsap.timeline({ paused: true });
 const PROCS = [], SFX = [], MUSIC = [];
@@ -164,23 +139,19 @@ const proc = f => PROCS.push(f);
 const sfx = (name, t, gain = 1, opt = {}) => SFX.push({ name, t: +t.toFixed(4), gain, ...opt });
 const L = id => C.lines[id].start, D = id => C.lines[id].dur, E = id => L(id) + D(id);
 const S = id => C.scenes[id].start, SE = id => C.scenes[id].end;
-const P = (id, f) => L(id) + D(id) * f;
-// Time a word is spoken: spread the text's characters over the speech segments (pauses skipped).
+// when a word is spoken: characters are spread over the speech segments, breaks snapped to punctuation
 function W(id, word, k = 0) {
   const ln = C.lines[id], txt = ln.text;
   const re = new RegExp('\\b' + word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '\\b', 'g');
   let idx = -1, m; for (let i = 0; i <= k; i++) { m = re.exec(txt); idx = m ? m.index : -1; }
   if (idx < 0) throw new Error('word ' + word + ' not in ' + id);
-  // Give each speech segment a run of characters: boundaries go where the speech time says,
-  // snapped to the nearest punctuation break (pauses happen at commas and full stops).
   const total = ln.segs.reduce((s, [a, b]) => s + b - a, 0);
   const breaks = [0]; txt.replace(/[,.?!]\s+/g, (m, o) => { breaks.push(o + m.length); return m; }); breaks.push(txt.length);
   const bounds = [0]; let acc = 0;
   for (let i = 0; i < ln.segs.length - 1; i++) {
     acc += ln.segs[i][1] - ln.segs[i][0];
     const want = txt.length * acc / total;
-    const snap = breaks.filter(b => b > bounds[bounds.length - 1]).reduce((a, b) => Math.abs(b - want) < Math.abs(a - want) ? b : a, txt.length);
-    bounds.push(snap);
+    bounds.push(breaks.filter(b => b > bounds[bounds.length - 1]).reduce((a, b) => Math.abs(b - want) < Math.abs(a - want) ? b : a, txt.length));
   }
   bounds.push(txt.length);
   for (let i = 0; i < ln.segs.length; i++) {
@@ -194,9 +165,9 @@ function W(id, word, k = 0) {
 const sceneIds = Object.keys(C.scenes);
 const nextStart = id => { const i = sceneIds.indexOf(id); return i + 1 < sceneIds.length ? S(sceneIds[i + 1]) : C.total + 1; };
 
-// ---------------------------------------------------------------------------------------------
+// =============================================================================================
 // DOM helpers
-// ---------------------------------------------------------------------------------------------
+// =============================================================================================
 const $ = s => document.querySelector(s);
 const cam = $('#cam');
 function el(tag, cls, parent, html) {
@@ -206,52 +177,48 @@ function el(tag, cls, parent, html) {
   (parent || cam).appendChild(e);
   return e;
 }
-// centre an element on (x, y) using GSAP transforms
 function at(e, x, y, extra = {}) { if (getComputedStyle(e).position === 'static') e.style.position = 'absolute'; gsap.set(e, { left: x, top: y, xPercent: -50, yPercent: -50, ...extra }); return e; }
-function emo(code, size, parent, x, y) {
-  const i = el('img', 'emo', parent); i.src = `assets/emoji/${code}.svg`; i.width = i.height = size;
+const FL = n => n.includes('/') ? n : `assets/fluent/${n}_3d.png`;
+function emo(name, size, parent, x, y) {
+  const i = el('img', 'emo', parent); i.src = FL(name); i.width = i.height = size;
   at(i, x, y); return i;
 }
-function scene(id) {
+const G = { on: 1 };
+function scene(id, { gl = true } = {}) {
   const s = el('div', 'scene', cam); s.id = 's-' + id;
   tl.set(s, { visibility: 'visible' }, S(id));
   tl.set(s, { visibility: 'hidden' }, nextStart(id));
+  tl.set(G, { on: gl ? 1 : 0 }, S(id));
   return s;
 }
 function mulberry(a) { return () => { a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
-
-// pop an element in / out
 function popIn(e, t, o = {}) {
   tl.fromTo(e, { scale: o.from ?? 0.2, opacity: 0, rotation: o.rot ?? 0, y: o.y ?? 0 },
     { scale: o.to ?? 1, opacity: 1, rotation: o.rotTo ?? 0, y: 0, duration: o.dur ?? 0.45, ease: o.ease ?? 'back.out(2.2)' }, t);
-  if (o.sfx !== false) sfx(o.sfx || 'pop', t, o.gain ?? 0.7);
+  if (o.sfx !== false) sfx(o.sfx || 'pop', t, o.gain ?? 0.6);
 }
-function popOut(e, t, o = {}) {
-  tl.to(e, { scale: o.scale ?? 0.4, opacity: 0, y: o.y ?? 0, x: o.x ?? 0, duration: o.dur ?? 0.3, ease: 'power2.in' }, t);
-}
+function fadeOut(els, t, o = {}) { tl.to(els, { opacity: 0, y: o.y ?? -30, duration: o.dur ?? 0.3, ease: 'power2.in', stagger: o.stagger ?? 0 }, t); }
 function slideIn(e, t, dx, dy, o = {}) {
   tl.fromTo(e, { x: dx, y: dy, opacity: o.fade ? 0 : 1 }, { x: 0, y: 0, opacity: 1, duration: o.dur ?? 0.55, ease: o.ease ?? 'power3.out' }, t);
-  if (o.sfx !== false) sfx(o.sfx || 'whoosh', t - 0.05, o.gain ?? 0.6);
+  if (o.sfx !== false) sfx(o.sfx || 'whoosh', t - 0.05, o.gain ?? 0.5);
 }
 function slam(e, t, o = {}) {
-  tl.fromTo(e, { scale: o.from ?? 2.6, opacity: 0, rotation: o.rot ?? 0 },
-    { scale: 1, opacity: 1, rotation: o.rotTo ?? 0, duration: o.dur ?? 0.22, ease: 'power4.in' }, t);
-  shake(t + (o.dur ?? 0.22), o.amp ?? 16, 0.45);
-  if (o.sfx !== false) sfx(o.sfx || 'slam', t + (o.dur ?? 0.22) - 0.02, o.gain ?? 0.9);
+  const d = o.dur ?? 0.22;
+  tl.fromTo(e, { scale: o.from ?? 2.6, opacity: 0, rotation: o.rot ?? 0 }, { scale: 1, opacity: 1, rotation: o.rotTo ?? 0, duration: d, ease: 'power4.in' }, t);
+  shake(t + d, o.amp ?? 16, 0.45);
+  if (o.sfx !== false) sfx(o.sfx || 'slam', t + d - 0.02, o.gain ?? 0.8);
 }
-// words that pop one by one, spread across a spoken line
-function wordsLine(parent, text, x, y, size, color, o = {}) {
-  const box = el('div', 'big', parent);
-  box.style.fontSize = size + 'px'; box.style.color = color; box.style.textAlign = 'center';
-  const words = text.split(' ').map(w => { const s = el('span', 'word', box, w); s.style.marginRight = '0.22em'; return s; });
-  words[words.length - 1].style.marginRight = 0;
-  at(box, x, y);
-  return { box, words };
+function words(parent, text, x, y, size, cls = 'white') {
+  const box = el('div', 'big ' + cls, parent); box.style.fontSize = size + 'px'; box.style.textAlign = 'center';
+  const ws = text.split(' ').map((w, i, a) => { const s = el('span', 'word', box, w); if (i < a.length - 1) s.style.marginRight = '0.2em'; return s; });
+  at(box, x, y); return { box, ws };
+}
+function counter(e, from, to, t, dur, fmt = v => Math.round(v).toLocaleString('en-US')) {
+  const o = { v: from }; tl.to(o, { v: to, duration: dur, ease: 'power2.out' }, t);
+  proc(() => { const s = fmt(o.v); if (e.textContent !== s) e.textContent = s; });
 }
 
-// ---------------------------------------------------------------------------------------------
-// Camera shake (summed decaying noise), set by a proc
-// ---------------------------------------------------------------------------------------------
+// camera shake (applies to the DOM layer and the 3D canvas)
 const SHAKES = [];
 function shake(t, amp = 14, dur = 0.4) { SHAKES.push({ t, amp, dur }); }
 proc(t => {
@@ -262,21 +229,20 @@ proc(t => {
     x += k * Math.sin(d * 71 + s.t * 13); y += k * Math.sin(d * 57 + 1.7 + s.t * 7); r += k * 0.04 * Math.sin(d * 43);
   }
   $('#shake').style.transform = `translate(${x}px,${y}px) rotate(${r}deg)`;
+  $('#gl').style.transform = x || y ? `translate(${x * 0.7}px,${y * 0.7}px) rotate(${r * 0.7}deg) scale(1.015)` : '';
 });
+proc(t => { $('#grain').style.transform = `translate(${(Math.floor(t * 24) * 37) % 60 - 30}px,${(Math.floor(t * 24) * 53) % 60 - 30}px)`; });
 
-// ---------------------------------------------------------------------------------------------
-// Particles on a canvas: bursts and emitters, all computed from t (no state)
-// ---------------------------------------------------------------------------------------------
+// particles (bursts and emitters), all computed from t
 const fx = $('#fxcanvas').getContext('2d');
-const BURSTS = [];
-const CONFETTI = ['#ff4a5f', '#3f8cff', '#ffc93c', '#ffffff', '#35d07f', '#b36bff'];
+const BURSTS = [], EMITTERS = [];
+const CONFETTI = ['#ff3b5c', '#3d8bff', '#ffcc4d', '#ffffff', '#35d07f', '#b36bff'];
 function burst(o) { BURSTS.push(Object.assign({ n: 40, speed: 900, spread: Math.PI * 2, angle: -Math.PI / 2, g: 1400, life: 1.4, size: 16, colors: CONFETTI, seed: BURSTS.length * 97 + 11, shape: 'rect', drag: 0.9 }, o)); }
-// emitter: particles born at a steady rate between t0 and t1
-const EMITTERS = [];
 function emitter(o) { EMITTERS.push(Object.assign({ rate: 60, life: 0.6, speed: 300, spread: 0.6, angle: Math.PI / 2, g: 0, size: 18, colors: ['#ffd23f', '#ff8a1f', '#ff4a1f'], shape: 'circle', seed: 7 + EMITTERS.length * 31 }, o)); }
 function drawParticle(p, x, y, a, rot, size, color) {
-  fx.globalAlpha = a; fx.fillStyle = color;
+  fx.globalAlpha = Math.max(0, a); fx.fillStyle = color;
   if (p.shape === 'circle') { fx.beginPath(); fx.arc(x, y, size / 2, 0, Math.PI * 2); fx.fill(); }
+  else if (p.shape === 'glow') { const g = fx.createRadialGradient(x, y, 0, x, y, size); g.addColorStop(0, color); g.addColorStop(1, 'rgba(0,0,0,0)'); fx.fillStyle = g; fx.fillRect(x - size, y - size, size * 2, size * 2); }
   else if (p.shape === 'star') { fx.save(); fx.translate(x, y); fx.rotate(rot); fx.beginPath(); for (let i = 0; i < 10; i++) { const r = i % 2 ? size * 0.22 : size * 0.55, an = i * Math.PI / 5; fx.lineTo(Math.cos(an) * r, Math.sin(an) * r); } fx.fill(); fx.restore(); }
   else { fx.save(); fx.translate(x, y); fx.rotate(rot); fx.scale(1, Math.abs(Math.cos(rot * 1.7)) * 0.8 + 0.2); fx.fillRect(-size / 2, -size / 3, size, size * 0.66); fx.restore(); }
 }
@@ -287,15 +253,15 @@ proc(t => {
     const r = mulberry(b.seed);
     for (let i = 0; i < b.n; i++) {
       const an = b.angle + (r() - 0.5) * b.spread, sp = b.speed * (0.35 + r() * 0.65);
-      const k = (1 - Math.pow(b.drag, d * 10)) / (1 - b.drag) / 10;  // drag-integrated distance
+      const k = (1 - Math.pow(b.drag, d * 10)) / (1 - b.drag) / 10;
       const x = b.x + Math.cos(an) * sp * k, y = b.y + Math.sin(an) * sp * k + 0.5 * b.g * d * d;
       const rot = r() * 6 + d * (r() - 0.5) * 18, size = b.size * (0.6 + r() * 0.8), col = b.colors[Math.floor(r() * b.colors.length)];
-      const a = d > b.life * 0.7 ? 1 - (d - b.life * 0.7) / (b.life * 0.3) : 1;
-      drawParticle(b, x, y, a, rot, size, col);
+      drawParticle(b, x, y, d > b.life * 0.7 ? 1 - (d - b.life * 0.7) / (b.life * 0.3) : 1, rot, size, col);
     }
   }
   for (const e of EMITTERS) {
     if (t < e.t0 || t > e.t1 + e.life) continue;
+    if (e.add) fx.globalCompositeOperation = 'lighter';
     const first = Math.max(0, Math.ceil((t - e.life - e.t0) * e.rate)), last = Math.floor((Math.min(t, e.t1) - e.t0) * e.rate);
     const pos = typeof e.pos === 'function' ? e.pos : () => e.pos;
     for (let i = first; i <= last; i++) {
@@ -306,546 +272,556 @@ proc(t => {
       const f = d / e.life, size = e.size * (e.shrink === false ? 1 : 1 - f * 0.8) * (0.6 + r() * 0.6);
       drawParticle(e, x, y, (1 - f) * (e.alpha ?? 1), r() * 6 + d * 8, size, e.colors[Math.floor(r() * e.colors.length)]);
     }
+    fx.globalCompositeOperation = 'source-over';
   }
   fx.globalAlpha = 1;
 });
 
-// floating dust in the light
-(() => {
-  const c = $('#dust').getContext('2d'), r = mulberry(5), P = [];
-  for (let i = 0; i < 70; i++) P.push({ x: r() * 1920, y: r() * 1080, s: 1 + r() * 3, v: 6 + r() * 16, p: r() * 6 });
+// =============================================================================================
+// The 3D stage
+// =============================================================================================
+const ST = window.STAGE_CREATE($('#gl'), JSON.parse(new URLSearchParams(location.search).get('o') || '{}'));
+const LAP = ST.laptops, THREE = ST.THREE;
+const V = (x, y, z) => ({ x, y, z });
+function shot(t, dur, pos, target, o = {}) {
+  const ease = o.ease || 'power2.inOut';
+  tl.to(ST.cam.pos, { ...V(...pos), duration: dur, ease }, t);
+  tl.to(ST.cam.target, { ...V(...target), duration: dur, ease }, t);
+  if (o.fov) tl.to(ST.cam, { fov: o.fov, duration: dur, ease }, t);
+  if (o.roll != null) tl.to(ST.cam, { roll: o.roll, duration: dur, ease }, t);
+}
+function cut(t, pos, target, o = {}) {
+  tl.set(ST.cam.pos, V(...pos), t); tl.set(ST.cam.target, V(...target), t);
+  tl.set(ST.cam, { fov: o.fov ?? 28, roll: o.roll ?? 0, float: o.float ?? 1 }, t);
+}
+function place(t, k, pos, rotY = 0, o = {}) {
+  const g = LAP[k].group;
+  tl.set(g.position, V(...pos), t); tl.set(g.rotation, { x: o.rx ?? 0, y: rotY, z: o.rz ?? 0 }, t);
+  tl.set(g, { visible: o.visible ?? true }, t);
+  if (o.lid != null) tl.set(LAP[k].st, { lid: o.lid }, t);
+}
+function move(t, dur, k, pos, rotY, o = {}) {
+  const g = LAP[k].group;
+  if (pos) tl.to(g.position, { ...V(...pos), duration: dur, ease: o.ease || 'power2.inOut' }, t);
+  if (rotY != null) tl.to(g.rotation, { y: rotY, duration: dur, ease: o.ease || 'power2.inOut' }, t);
+}
+function lights(t, dur, o) {
+  const tw = (obj, props) => tl.to(obj, { ...props, duration: dur, ease: 'power1.inOut' }, t);
+  if (o.key != null) tw(ST.key, { intensity: o.key });
+  if (o.rimL != null) tw(ST.rimL, { intensity: o.rimL });
+  if (o.rimR != null) tw(ST.rimR, { intensity: o.rimR });
+  if (o.top != null) tw(ST.top, { intensity: o.top });
+  if (o.top != null) tw('#spotlight', { opacity: Math.min(1, o.top / 150) });
+  if (o.env != null) tw(ST.scene, { environmentIntensity: o.env });
+  if (o.gL != null) tw('#glowL', { opacity: Math.min(1, o.gL) });
+  if (o.gR != null) tw('#glowR', { opacity: Math.min(1, o.gR) });
+  if (o.gC != null) tw('#glowC', { opacity: Math.min(1, o.gC) });
+  if (o.spot != null) tw('#spotlight', { opacity: o.spot });
+}
+const anchorOf = (k, a) => typeof a === 'string' ? LAP[k].anchors[a] : a;
+// a DOM element pinned to a 3D anchor
+function follow(e, k, anchor, dx = 0, dy = 0, when) {
   proc(t => {
-    c.clearRect(0, 0, 1920, 1080); c.fillStyle = '#fff';
-    for (const p of P) { const y = (p.y - t * p.v) % 1080, yy = y < 0 ? y + 1080 : y; c.globalAlpha = 0.12 + 0.1 * Math.sin(t * 1.3 + p.p); c.beginPath(); c.arc(p.x + 20 * Math.sin(t * 0.3 + p.p), yy, p.s, 0, 7); c.fill(); }
+    if (when && (t < when[0] || t > when[1])) return;
+    const p = ST.project(anchorOf(k, anchor));
+    e.style.left = (p.x + dx) + 'px'; e.style.top = (p.y + dy) + 'px';
   });
-})();
-proc(t => { $('#grain').style.transform = `translate(${(Math.floor(t * 24) * 37) % 60 - 30}px,${(Math.floor(t * 24) * 53) % 60 - 30}px)`; });
-// swinging spotlights
-proc(t => {
-  $('#spot1').style.transform = `rotate(${18 + 9 * Math.sin(t * 0.7)}deg)`;
-  $('#spot2').style.transform = `rotate(${-18 + 9 * Math.sin(t * 0.63 + 2)}deg)`;
-});
+}
+// callout: a pulsing dot on a 3D feature, an elbow leader line, and a glass label
+function callout(k, anchor, key, val, t0, t1, o = {}) {
+  const dx = o.dx ?? 260, dy = o.dy ?? -140, col = o.color || (k === '13' ? '#ff5a75' : '#5aa2ff');
+  const wrap = el('div', 'callout', $('#lines'));
+  wrap.innerHTML = `<svg class="lines" width="1920" height="1080"><path d="" stroke="${col}" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle r="11" fill="${col}"/><circle r="22" fill="none" stroke="${col}" stroke-width="3"/></svg>
+    <div class="lab glass" style="border-color:${col}aa"><div class="k">${key}</div><div class="v">${val}</div></div>`;
+  const path = wrap.querySelector('path'), dots = wrap.querySelectorAll('circle'), lab = wrap.querySelector('.lab');
+  const st = { draw: 0, a: 0 };
+  tl.set(st, { a: 1 }, t0);
+  tl.to(st, { draw: 1, duration: 0.4, ease: 'power2.out' }, t0);
+  tl.fromTo(lab, { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(2)' }, t0 + 0.25);
+  if (t1) { tl.to(lab, { opacity: 0, duration: 0.2 }, t1); tl.to(st, { draw: 0, duration: 0.2 }, t1); tl.set(st, { a: 0 }, t1 + 0.22); }
+  sfx('tick', t0, 0.5); sfx('pop2', t0 + 0.25, 0.3);
+  proc(t => {
+    wrap.style.display = st.a ? 'block' : 'none'; if (!st.a) return;
+    const a = typeof anchor === 'function' ? anchor() : ST.project(anchorOf(k, anchor), o.offset);
+    const bx = a.x + dx, by = a.y + dy, e = st.draw;
+    // elbow: diagonal to the label's height, then horizontal
+    const ex = a.x + dx * 0.35, len1 = Math.hypot(ex - a.x, by - a.y), len2 = Math.abs(bx - ex), tot = len1 + len2, d = e * tot;
+    let pts = `M${a.x},${a.y}`;
+    if (d <= len1) pts += ` L${a.x + (ex - a.x) * d / len1},${a.y + (by - a.y) * d / len1}`;
+    else pts += ` L${ex},${by} L${ex + (bx - ex) * (d - len1) / len2},${by}`;
+    path.setAttribute('d', pts);
+    const ph = (t * 1.2) % 1;
+    dots[0].setAttribute('cx', a.x); dots[0].setAttribute('cy', a.y);
+    dots[1].setAttribute('cx', a.x); dots[1].setAttribute('cy', a.y); dots[1].setAttribute('r', 12 + 18 * ph); dots[1].setAttribute('opacity', 0.8 * (1 - ph));
+    lab.style.left = (dx > 0 ? bx : bx - lab.offsetWidth) + 'px'; lab.style.top = (by - lab.offsetHeight / 2) + 'px';
+  });
+  return lab;
+}
 
-// ---------------------------------------------------------------------------------------------
-// The two fighters: SVG laptops with faces and boxing gloves
-// ---------------------------------------------------------------------------------------------
-let UID = 0;
-const O = '#16112a';
-const EXPR = {
-  happy: { mouth: 'smile', brow: [0, 0, 0] },
-  grin: { mouth: 'grin', brow: [0, 0, -6] },
-  shock: { mouth: 'o', brow: [0, 0, -16] },
-  angry: { mouth: 'grit', brow: [16, -16, 6] },
-  smug: { mouth: 'smirk', brow: [-6, 10, 0], lids: 0.45 },
-  sad: { mouth: 'frown', brow: [-14, 14, -6] },
-  worried: { mouth: 'wavy', brow: [-14, 14, -10] },
-  ko: { mouth: 'wavy', brow: [0, 0, 0], ko: true },
-  joy: { mouth: 'grin', brow: [0, 0, -10], closed: true },
-  flat: { mouth: 'flat', brow: [0, 0, 0] },
-};
-function laptop(kind, parent, x, y, scale = 1) {
-  const is14 = kind === '14', id = 'L' + (++UID);
-  const acc = is14 ? '#3f8cff' : '#ff4a5f';
-  const alu = is14 ? ['#a3a8b3', '#6f7580'] : ['#f1f3f7', '#c4c9d2'];
-  const scr = is14 ? { x: 96, y: 32, w: 368, h: 236 } : { x: 106, y: 44, w: 348, h: 214 };
-  // keyboard deck: map (u, v) inside the deck quad
-  const d = { tl: [74, 292], tr: [486, 292], bl: [14, 414], br: [546, 414] };
-  const pt = (u, v) => { const a = [d.tl[0] + (d.tr[0] - d.tl[0]) * u, d.tl[1]], b = [d.bl[0] + (d.br[0] - d.bl[0]) * u, d.bl[1]]; return [a[0] + (b[0] - a[0]) * v, a[1] + (b[1] - a[1]) * v]; };
-  const quad = (u0, u1, v0, v1) => [pt(u0, v0), pt(u1, v0), pt(u1, v1), pt(u0, v1)].map(p => p.map(n => n.toFixed(1)).join(',')).join(' ');
-  let keys = '';
-  const rows = [0.08, 0.17, 0.26, 0.35, 0.44, 0.53], rh = 0.075, U0 = 0.13, U1 = 0.87, g = 0.004;
-  // row 0: Esc + (Touch Bar | function keys) + Touch ID
-  const kw = (U1 - U0) / 14;
-  keys += `<polygon points="${quad(U0 + g, U0 + kw - g, rows[0], rows[0] + rh * 0.8)}" fill="#1c1b24"/>`;
-  if (is14) for (let i = 1; i < 13; i++) keys += `<polygon points="${quad(U0 + i * kw + g, U0 + (i + 1) * kw - g, rows[0], rows[0] + rh * 0.8)}" fill="#1c1b24"/>`;
-  else keys += `<polygon class="tbar" points="${quad(U0 + kw + g * 2, U1 - kw - g * 2, rows[0] + 0.005, rows[0] + rh * 0.75)}" fill="url(#${id}tb)"/>`;
-  keys += `<polygon points="${quad(U1 - kw + g, U1 - g, rows[0], rows[0] + rh * 0.8)}" fill="#1c1b24"/>`;
-  const layouts = [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.4], [1.4, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1], [1.7, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1.7], [2.2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 2.2], [1, 1, 1, 1.3, 5.2, 1.3, 1, 1, 1]];
-  layouts.forEach((lay, r) => {
-    const tot = lay.reduce((a, b) => a + b, 0); let u = U0;
-    lay.forEach(w => { const u1 = u + (U1 - U0) * w / tot; keys += `<polygon points="${quad(u + g, u1 - g, rows[r + 1], rows[r + 1] + rh)}" fill="#1c1b24"/>`; u = u1; });
-  });
-  const ex = [220, 340], ey = scr.y + scr.h * 0.43, my = scr.y + scr.h * 0.76;
-  const eye = side => `
-    <g class="eye" transform="translate(${ex[side]},${ey})"><g class="blink">
-      <ellipse rx="31" ry="37" fill="#fff"/>
-      <g class="pupil"><circle r="17" fill="${acc}"/><circle r="10" fill="#0b0b14"/><circle cx="6" cy="-7" r="5" fill="#fff"/></g>
-      <rect class="eyelid" x="-36" y="-44" width="72" height="40" fill="#141a33" transform="scale(1,0)"/>
-    </g></g>
-    <path class="happyeye" d="M${ex[side] - 26},${ey + 8} Q${ex[side]},${ey - 26} ${ex[side] + 26},${ey + 8}" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round" opacity="0"/>
-    <g class="xeye" opacity="0" stroke="#fff" stroke-width="10" stroke-linecap="round"><path d="M${ex[side] - 22},${ey - 22} L${ex[side] + 22},${ey + 22} M${ex[side] + 22},${ey - 22} L${ex[side] - 22},${ey + 22}"/></g>`;
-  const cx = 280;
-  const svg = `
-  <svg viewBox="-40 -60 640 520" width="${640}" height="${520}" style="overflow:visible;display:block">
-    <defs>
-      <linearGradient id="${id}alu" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${alu[0]}"/><stop offset="1" stop-color="${alu[1]}"/></linearGradient>
-      <linearGradient id="${id}deck" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${alu[1]}"/><stop offset="1" stop-color="${alu[0]}"/></linearGradient>
-      <radialGradient id="${id}scr" cx="50%" cy="40%" r="75%"><stop offset="0" stop-color="${is14 ? '#1f3570' : '#3a1d3e'}"/><stop offset="1" stop-color="#0c1022"/></radialGradient>
-      <linearGradient id="${id}tb" x1="0" x2="1"><stop offset="0" stop-color="#ff5ea8"/><stop offset=".5" stop-color="#8b6cff"/><stop offset="1" stop-color="#28d3ff"/></linearGradient>
-      <linearGradient id="${id}gl" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${is14 ? '#6fb0ff' : '#ff7a88'}"/><stop offset="1" stop-color="${is14 ? '#1f5fe0' : '#d2203f'}"/></linearGradient>
-    </defs>
-    <g class="body">
-      <polygon points="${d.tl.join(',')} ${d.tr.join(',')} ${d.br.join(',')} ${d.bl.join(',')}" fill="url(#${id}deck)" stroke="${O}" stroke-width="6" stroke-linejoin="round"/>
-      <polygon points="${quad(0.11, 0.89, 0.05, 0.63)}" fill="${is14 ? '#26242e' : '#9ea3ad'}" opacity="${is14 ? 0.9 : 0.35}"/>
-      ${keys}
-      <polygon points="${quad(0.33, 0.67, 0.68, 0.95)}" fill="${alu[1]}" stroke="${O}" stroke-width="3" stroke-linejoin="round" opacity=".9"/>
-      <rect x="6" y="410" width="548" height="22" rx="10" fill="${alu[1]}" stroke="${O}" stroke-width="6"/>
-      <path d="M250,410 Q280,424 310,410" fill="none" stroke="${O}" stroke-width="4"/>
-    </g>
-    <rect x="92" y="284" width="376" height="12" rx="4" fill="#2a2733" stroke="${O}" stroke-width="4"/>
-    <g class="lid">
-      <rect x="80" y="16" width="400" height="274" rx="24" fill="url(#${id}alu)" stroke="${O}" stroke-width="6"/>
-      <rect x="88" y="24" width="384" height="258" rx="17" fill="#07070b"/>
-      <rect class="screen" x="${scr.x}" y="${scr.y}" width="${scr.w}" height="${scr.h}" rx="7" fill="url(#${id}scr)"/>
-      ${is14 ? `<path d="M${cx - 34},${scr.y - 1} h68 v10 a8,8 0 0 1 -8,8 h-52 a8,8 0 0 1 -8,-8 z" fill="#07070b"/><circle cx="${cx}" cy="${scr.y + 7}" r="3" fill="#1d2a4a"/>`
-      : `<circle cx="${cx}" cy="34" r="3.5" fill="#1d2a4a"/>`}
-      <g class="face">
-        <g class="brows" fill="#fff">
-          <rect class="brow" x="${ex[0] - 28}" y="${ey - 62}" width="56" height="11" rx="5.5"/>
-          <rect class="brow" x="${ex[1] - 28}" y="${ey - 62}" width="56" height="11" rx="5.5"/>
-        </g>
-        ${eye(0)}${eye(1)}
-        <g class="mouths" transform="translate(${cx},${my})">
-          <path data-m="smile" d="M-42,-6 Q0,34 42,-6" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round"/>
-          <path data-m="grin" d="M-48,-12 Q0,-4 48,-12 Q44,44 0,44 Q-44,44 -48,-12 Z" fill="#fff" stroke="#fff" stroke-width="4" stroke-linejoin="round"/>
-          <ellipse data-m="o" rx="17" ry="22" fill="#0b0b14" stroke="#fff" stroke-width="9"/>
-          <path data-m="flat" d="M-30,6 L30,6" stroke="#fff" stroke-width="10" stroke-linecap="round"/>
-          <path data-m="frown" d="M-36,18 Q0,-14 36,18" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round"/>
-          <path data-m="smirk" d="M-34,8 Q8,22 40,-8" stroke="#fff" stroke-width="10" fill="none" stroke-linecap="round"/>
-          <path data-m="wavy" d="M-44,8 q11,-12 22,0 t22,0 t22,0 t22,0" stroke="#fff" stroke-width="9" fill="none" stroke-linecap="round"/>
-          <g data-m="grit"><rect x="-40" y="-8" width="80" height="30" rx="10" fill="#fff"/><path d="M-20,-8 v30 M0,-8 v30 M20,-8 v30 M-40,7 h80" stroke="#141a33" stroke-width="3"/></g>
-        </g>
-      </g>
-      <polygon points="${scr.x + scr.w * 0.55},${scr.y} ${scr.x + scr.w * 0.72},${scr.y} ${scr.x + scr.w * 0.38},${scr.y + scr.h} ${scr.x + scr.w * 0.21},${scr.y + scr.h}" fill="#fff" opacity=".05"/>
-    </g>
-    ${[0, 1].map(s => `<g transform="translate(${s ? 540 : 20},250)"><g class="glove g${s}" opacity="0"><g class="gin"><g transform="scale(${s ? -1 : 1},1)">
-      <path d="M-8,-70 C32,-72 60,-44 60,-6 C60,30 40,52 8,54 L-30,54 C-52,52 -62,30 -60,6 C-74,2 -78,-22 -62,-30 C-58,-56 -36,-70 -8,-70 Z" fill="url(#${id}gl)" stroke="${O}" stroke-width="6" stroke-linejoin="round"/>
-      <path d="M-60,-6 C-46,-12 -38,0 -42,14" stroke="${O}" stroke-width="5" fill="none" stroke-linecap="round"/>
-      <path d="M-22,-46 C-2,-56 24,-52 38,-36" stroke="#fff" opacity=".5" stroke-width="9" fill="none" stroke-linecap="round"/>
-      <rect x="-38" y="46" width="80" height="46" rx="12" fill="#fff" stroke="${O}" stroke-width="6"/>
-      <rect x="-36" y="58" width="76" height="10" fill="${acc}"/>
-    </g></g></g></g>`).join('')}
-  </svg>`;
-  const root = el('div', 'c', parent); root.style.width = '640px'; root.style.height = '520px';
-  const bob = el('div', 'c', root, svg);
-  at(root, x, y, { scale });
-  const q = s => root.querySelectorAll(s);
-  const ch = {
-    kind, root, bob, acc,
-    lid: root.querySelector('.lid'), face: root.querySelector('.face'), screen: root.querySelector('.screen'),
-    pupils: q('.pupil'), blinks: q('.blink'), lids: q('.eyelid'), brows: q('.brow'), happy: q('.happyeye'), xeyes: q('.xeye'), eyes: q('.eye'),
-    mouths: q('[data-m]'), gloves: q('.glove'), gin: q('.gin'), tbar: root.querySelector('.tbar'),
-    st: { bob: 0, bobAmp: 10, blinkPhase: is14 ? 1.3 : 0 },
+// screens: each laptop shows whatever drawing function is scheduled for the current time
+const IMGS = {};
+function img(name) { if (!IMGS[name]) { const i = new Image(); i.src = FL(name); IMGS[name] = i; window.READY.push(i.decode().catch(() => { })); } return IMGS[name]; }
+const SCR = { '13': [], '14': [], tb: [] };
+function screen(k, t, fn) { SCR[k].push({ t, fn }); SCR[k].sort((a, b) => a.t - b.t); }
+function touchbar(t, fn) { SCR.tb.push({ t, fn }); SCR.tb.sort((a, b) => a.t - b.t); }
+function wall(c, w, h, k, t) {
+  const is14 = k === '14';
+  const g = c.createLinearGradient(0, 0, w, h);
+  if (is14) { g.addColorStop(0, '#0b1a4a'); g.addColorStop(0.5, '#2a4fd6'); g.addColorStop(1, '#8f5bff'); }
+  else { g.addColorStop(0, '#3a0d24'); g.addColorStop(0.5, '#b0284a'); g.addColorStop(1, '#ff8a5b'); }
+  c.fillStyle = g; c.fillRect(0, 0, w, h);
+  for (let i = 0; i < 4; i++) {
+    const x = w * (0.2 + 0.25 * i) + Math.sin(t * 0.4 + i * 1.7) * 80, y = h * (0.35 + 0.3 * Math.sin(i * 2.1 + t * 0.3));
+    const rg = c.createRadialGradient(x, y, 0, x, y, w * 0.45);
+    rg.addColorStop(0, is14 ? 'rgba(120,200,255,.35)' : 'rgba(255,200,120,.30)'); rg.addColorStop(1, 'rgba(0,0,0,0)');
+    c.fillStyle = rg; c.fillRect(0, 0, w, h);
+  }
+}
+function menubar(c, w, h, k) {
+  c.fillStyle = 'rgba(0,0,0,.22)'; c.fillRect(0, 0, w, 34);
+  c.fillStyle = 'rgba(255,255,255,.92)'; c.font = '600 20px Inter'; c.textBaseline = 'middle';
+  c.fillText('Finder    File    Edit    View    Go', 24, 17);
+  c.textAlign = 'right'; c.fillText('Tue 9:41 AM', w - 24, 17); c.textAlign = 'left';
+  if (k === '14') { c.fillStyle = '#000'; c.beginPath(); c.roundRect(w / 2 - 40, -12, 80, 44, 12); c.fill(); }
+}
+const faceScreen = (name, o = {}) => (img(name), (c, w, h, dt, t, k) => {
+  wall(c, w, h, k, t); menubar(c, w, h, k);
+  const s = h * (o.size || 0.6), bob = Math.sin(t * 4) * 8 * (o.bob ?? 1);
+  const pop = Math.min(1, dt / 0.3), sc = o.noPop ? 1 : 0.6 + 0.4 * gsap.parseEase('back.out(2.5)')(pop);
+  c.save(); c.shadowColor = 'rgba(0,0,0,.35)'; c.shadowBlur = 40; c.shadowOffsetY = 20;
+  c.drawImage(img(name), w / 2 - s * sc / 2, h * 0.53 - s * sc / 2 + bob, s * sc, s * sc); c.restore();
+});
+function feed(c, w, h, dt, t, k, after) {
+  const vivid = k === '14';
+  wall(c, w, h, k, t); menubar(c, w, h, k);
+  const x0 = 90, y0 = 70, ww = w - 180, hh = h - 120;
+  c.save(); c.beginPath(); c.roundRect(x0, y0, ww, hh, 22); c.clip();
+  c.fillStyle = vivid ? '#0f1330' : '#1b1d27'; c.fillRect(x0, y0, ww, hh);
+  const cols = vivid ? ['#ff3b5c', '#ffcc4d', '#35d07f', '#3d8bff', '#b36bff', '#ff8a1f'] : ['#8a5a63', '#8a7c53', '#4f7a63', '#52678a', '#6d5b88', '#8a6a4f'];
+  let y = -((dt * 260) % (190 * 6));
+  if (!vivid) y = Math.round(y / 38) * 38;   // 60 Hz, dramatized
+  for (let i = 0; i < 12; i++) {
+    const yy = y0 + 30 + i * 190 + y; if (yy > y0 + hh || yy < y0 - 190) continue;
+    c.fillStyle = vivid ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.05)'; c.beginPath(); c.roundRect(x0 + 30, yy, ww - 60, 160, 18); c.fill();
+    c.fillStyle = cols[i % 6]; c.beginPath(); c.arc(x0 + 80, yy + 50, 30, 0, 7); c.fill();
+    c.fillStyle = vivid ? 'rgba(255,255,255,.75)' : 'rgba(255,255,255,.4)'; c.beginPath(); c.roundRect(x0 + 130, yy + 30, 220 + (i * 53) % 220, 18, 9); c.fill();
+    c.fillStyle = vivid ? 'rgba(255,255,255,.4)' : 'rgba(255,255,255,.22)'; c.beginPath(); c.roundRect(x0 + 130, yy + 62, 320 + (i * 71) % 200, 14, 7); c.fill();
+    c.fillStyle = cols[(i + 2) % 6]; c.globalAlpha = vivid ? 0.95 : 0.55; c.beginPath(); c.roundRect(x0 + 50, yy + 100, ww - 100, 36, 10); c.fill(); c.globalAlpha = 1;
+  }
+  c.restore();
+  if (after) after(c, w, h);
+}
+proc(t => {
+  if (!G.on) return;
+  for (const k of ['13', '14']) {
+    const Lp = LAP[k]; if (!Lp.group.visible) continue;
+    let cur = null; for (const s of SCR[k]) if (s.t <= t) cur = s;
+    if (!cur) continue;
+    cur.fn(Lp.ctx, Lp.canvas.width, Lp.canvas.height, t - cur.t, t, k);
+    Lp.tex.needsUpdate = true;
+  }
+  const tb = LAP['13'].touchBar; let cur = null; for (const s of SCR.tb) if (s.t <= t) cur = s;
+  if (cur && LAP['13'].group.visible) { cur.fn(tb.ctx, tb.canvas.width, tb.canvas.height, t - cur.t, t); tb.tex.needsUpdate = true; }
+});
+const TB_EMO = ['face_with_tears_of_joy', 'partying_face', 'unicorn', 'pizza', 'ghost', 'fire', 'guitar', 'rainbow', 'hundred_points', 'star-struck', 'clown_face', 'beer_mug', 'zany_face', 'sparkles'];
+TB_EMO.forEach(img); ['skull', 'cooking', 'butter', 'potato', 'star-struck'].forEach(img);
+function tbEmoji(xAt) {
+  return (c, w, h, dt, t) => {
+    c.fillStyle = '#000'; c.fillRect(0, 0, w, h);
+    const x = -((xAt ? xAt(t) : dt * 160) % (TB_EMO.length * 76));
+    for (let i = 0; i < TB_EMO.length * 2 + 2; i++) c.drawImage(img(TB_EMO[i % TB_EMO.length]), x + i * 76 + 10, 4, 56, 56);
   };
-  gsap.set(ch.brows, { transformOrigin: '50% 50%' });
-  gsap.set(ch.lids, { transformOrigin: '50% 0%' });
-  gsap.set(ch.lid, { transformOrigin: '50% 100%' });
-  gsap.set(ch.gloves, { transformOrigin: '50% 50%' });
-  // idle bounce (fighting stance) + blinking
-  proc(t => {
-    const b = ch.st.bob;
-    const ph = t * Math.PI * 2 * 2;  // two bounces per second (the song is 120 BPM)
-    bob.style.transform = b ? `translateY(${-Math.abs(Math.sin(ph / 2)) * ch.st.bobAmp * b}px)` : '';
-    ch.gin.forEach((gi, i) => gi.setAttribute('transform', b ? `translate(0,${Math.sin(ph / 2 + i * Math.PI) * 10 * b})` : ''));
-    const bl = (t + ch.st.blinkPhase) % 3.7, s = bl < 0.14 ? Math.max(0.08, Math.abs(bl - 0.07) / 0.07) : 1;
-    ch.blinks.forEach(e => e.setAttribute('transform', `scale(1,${s})`));
+}
+function tbGradient(c, w, h) {
+  const g = c.createLinearGradient(0, 0, w, 0);
+  g.addColorStop(0, '#ff4d9d'); g.addColorStop(0.5, '#7a5cff'); g.addColorStop(1, '#28d3ff');
+  c.fillStyle = '#000'; c.fillRect(0, 0, w, h); c.globalAlpha = 0.85; c.fillStyle = g; c.beginPath(); c.roundRect(8, 10, w - 16, h - 20, 12); c.fill(); c.globalAlpha = 1;
+  c.fillStyle = '#fff'; c.font = '700 30px Inter'; c.textBaseline = 'middle'; c.textAlign = 'center';
+  c.fillText('✦  Touch Bar  ✦', w / 2, h / 2 + 1); c.textAlign = 'left';
+}
+const tbSkull = (c, w, h) => { c.fillStyle = '#000'; c.fillRect(0, 0, w, h); c.drawImage(img('skull'), w / 2 - 28, 4, 56, 56); };
+
+// boxing gloves: 3D-emoji sprites next to each laptop
+const GLOVES = {};
+const blueGlove = (() => {
+  const cv = document.createElement('canvas'); cv.width = cv.height = 256;
+  const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace;
+  const im = img('boxing_glove');
+  window.READY.push(im.decode().then(() => { const c = cv.getContext('2d'); c.filter = 'hue-rotate(250deg) saturate(1.25)'; c.drawImage(im, 0, 0, 256, 256); tex.needsUpdate = true; }));
+  return tex;
+})();
+for (const k of ['13', '14']) {
+  GLOVES[k] = [0, 1].map(i => {
+    const s = ST.sprite(k === '14' ? blueGlove : FL('boxing_glove'), 0.95);
+    s.material.opacity = 0; LAP[k].group.add(s);
+    s.position.set(i ? 1.85 : -1.85, 0.75, 0.35);
+    s.scale.x = (i ? 1 : -1) * 0.95;
+    return s;
   });
-  ch.expr = (name, t, dur = 0.15) => setExpr(ch, name, t, dur);
-  ch.look = (dx, dy, t, dur = 0.2) => tl.to(ch.pupils, { x: dx, y: dy, duration: dur, ease: 'power2.out' }, t);
-  ch.glovesOn = t => { tl.fromTo(ch.gloves, { opacity: 0, scale: 0.2 }, { opacity: 1, scale: 1, duration: 0.4, ease: 'back.out(2.5)', stagger: 0.08 }, t); sfx('pop2', t, 0.8); sfx('pop2', t + 0.08, 0.6); };
-  ch.setExprNow = name => { const E = EXPR[name]; ch.mouths.forEach(m => gsap.set(m, { opacity: m.dataset.m === E.mouth ? 1 : 0 })); };
-  ch.setExprNow('happy');
-  return ch;
 }
-function setExpr(ch, name, t, dur) {
-  const E = EXPR[name];
-  ch.mouths.forEach(m => tl.set(m, { opacity: m.dataset.m === E.mouth ? 1 : 0 }, t));
-  tl.to(ch.brows[0], { rotation: E.brow[0], y: E.brow[2], duration: dur }, t);
-  tl.to(ch.brows[1], { rotation: E.brow[1], y: E.brow[2], duration: dur }, t);
-  tl.to(ch.lids, { scaleY: E.lids || 0, duration: dur }, t);
-  tl.set(ch.eyes, { opacity: E.ko || E.closed ? 0 : 1 }, t);
-  tl.set(ch.xeyes, { opacity: E.ko ? 1 : 0 }, t);
-  tl.set(ch.happy, { opacity: E.closed ? 1 : 0 }, t);
-  tl.set(ch.brows, { opacity: E.ko ? 0 : 1 }, t);
+function glovesOn(k, t) {
+  GLOVES[k].forEach((s, i) => {
+    tl.to(s.material, { opacity: 1, duration: 0.15 }, t + i * 0.08);
+    tl.fromTo(s.position, { y: 2.6 }, { y: 0.75, duration: 0.5, ease: 'bounce.out', immediateRender: false }, t + i * 0.08);
+  });
+  sfx('pop2', t, 0.6); sfx('thud', t + 0.35, 0.5);
 }
-function punch(ch, side, t, dist = 200) {
-  const gl = ch.gloves[side];
-  tl.to(gl, { x: dist, scale: 1.35, duration: 0.1, ease: 'power3.in' }, t)
-    .to(gl, { x: 0, scale: 1, duration: 0.3, ease: 'power2.out' }, t + 0.16);
+function glovesOff(k, t) { GLOVES[k].forEach(s => tl.to(s.material, { opacity: 0, duration: 0.2 }, t)); }
+proc(t => { for (const k of ['13', '14']) GLOVES[k].forEach((s, i) => { s.center.set(0.5, 0.5 + Math.sin(t * 6.28 + i * Math.PI) * 0.05); }); });
+function punch(k, i, t, dx) {
+  const s = GLOVES[k][i];
+  tl.to(s.position, { x: `+=${dx}`, z: '+=0.4', duration: 0.1, ease: 'power3.in' }, t)
+    .to(s.position, { x: `-=${dx}`, z: '-=0.4', duration: 0.3, ease: 'power2.out' }, t + 0.16);
   sfx('swish', t - 0.02, 0.5);
 }
 
-// ---------------------------------------------------------------------------------------------
-// Shared components: wipe transition, round cards, scoreboard
-// ---------------------------------------------------------------------------------------------
+// =============================================================================================
+// Shared pieces: wipes, round cards, scoreboard
+// =============================================================================================
 gsap.set('#wipe div', { skewX: -18, xPercent: -130 });
 function wipe(tc) {
-  const bars = document.querySelectorAll('#wipe div');
-  bars.forEach((b, i) => tl.fromTo(b, { xPercent: -130 }, { xPercent: 130, duration: 0.62, ease: 'power2.inOut', immediateRender: false }, tc - 0.36 + i * 0.05));
-  sfx('whooshBig', tc - 0.34, 0.7);
+  document.querySelectorAll('#wipe div').forEach((b, i) => tl.fromTo(b, { xPercent: -130 }, { xPercent: 130, duration: 0.6, ease: 'power2.inOut', immediateRender: false }, tc - 0.35 + i * 0.05));
+  sfx('whooshBig', tc - 0.33, 0.6);
 }
+const SCORE = [], ROUNDS = [];
 function roundCard(n, title, t, color) {
   const rc = el('div', 'rc', cam);
-  const dim = el('div', 'dim', rc);
-  const card = el('div', 'card', rc, `<div class="n">ROUND ${n}</div><div class="t">${title}</div>`);
-  [[30, 30], [30, 'r'], ['b', 30], ['b', 'r']].forEach(([a, b]) => { const s = el('div', 'bolt', card); s.style[a === 'b' ? 'bottom' : 'top'] = '26px'; s.style[b === 'r' ? 'right' : 'left'] = '26px'; });
-  card.querySelector('.t').style.color = color;
+  el('div', 'bgc', rc);
+  const rays = el('div', 'rays', rc); at(rays, 960, 540);
+  proc(tt => { rays.style.transform = `translate(-50%,-50%) rotate(${tt * 14}deg)`; });
+  const num = el('div', 'n big gold', rc, `ROUND ${n}`); at(num, 960, 450);
+  const tt = el('div', 't big white', rc, title); tt.style.color = color; at(tt, 960, 700);
   tl.set(rc, { visibility: 'visible' }, t);
-  tl.fromTo(dim, { opacity: 0 }, { opacity: 1, duration: 0.2 }, t);
-  tl.fromTo(card, { y: 900, rotation: -24 }, { y: 0, rotation: -4, duration: 0.5, ease: 'back.out(1.6)' }, t);
-  tl.to(card, { rotation: 3, duration: 0.9, ease: 'sine.inOut' }, t + 0.5);
+  tl.set(G, { on: 0 }, t + 0.36);
+  tl.fromTo(rc, { clipPath: 'circle(0% at 50% 50%)' }, { clipPath: 'circle(75% at 50% 50%)', duration: 0.35, ease: 'power2.out' }, t);
+  tl.fromTo(num, { scale: 3, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.25, ease: 'power4.in' }, t + 0.05);
+  tl.fromTo(tt, { y: 80, opacity: 0 }, { y: 0, opacity: 1, duration: 0.35, ease: 'back.out(2)' }, t + 0.35);
+  tl.to([num, tt], { scale: 1.06, duration: 1.2, ease: 'none' }, t + 0.35);
+  shake(t + 0.3, 16, 0.4);
   const out = t + 1.55;
-  tl.to(card, { y: -1000, rotation: 14, duration: 0.4, ease: 'power3.in' }, out);
-  tl.to(dim, { opacity: 0, duration: 0.3 }, out + 0.1);
-  tl.set(rc, { visibility: 'hidden' }, out + 0.45);
-  sfx('bell', t + 0.05, 0.8); sfx('whooshUp', t, 0.4); sfx('crowd', t + 0.1, 0.18, { dur: 1.4 });
-  burst({ t: t + 0.4, x: 960, y: 560, n: 50, speed: 1500, size: 20, life: 1.3 });
+  tl.set(G, { on: 1 }, out - 0.02);
+  tl.fromTo(rc, { clipPath: 'circle(75% at 50% 50%)' }, { clipPath: 'circle(0% at 50% 50%)', duration: 0.35, ease: 'power2.in', immediateRender: false }, out);
+  tl.set(rc, { visibility: 'hidden' }, out + 0.36);
+  sfx('bell', t + 0.05, 0.8); sfx('slam', t + 0.28, 0.5); sfx('crowd', t + 0.1, 0.18, { dur: 1.4 });
+  burst({ t: t + 0.3, x: 960, y: 450, n: 60, speed: 1700, size: 20, life: 1.3 });
   ROUNDS.push([t + 0.4, n]);
-  return out + 0.35;  // content can start here
+  return out + 0.3;
 }
-const SCORE = [];  // [t, side, delta]
-const ROUNDS = [];
 proc(t => { let n = 1; for (const [ts, k] of ROUNDS) if (t >= ts) n = k; const s = 'ROUND ' + n; if ($('#rnd').textContent !== s) $('#rnd').textContent = s; });
 function point(side, t, d = 1, label) {
   SCORE.push([t, side, d]);
   const e = side === 'R' ? $('#scR') : $('#scB');
-  tl.fromTo(e, { scale: 1.9, backgroundColor: '#ffc93c' }, { scale: 1, backgroundColor: '#ffffff', duration: 0.6, ease: 'elastic.out(1,0.4)', immediateRender: false }, t);
-  const plus = el('div', 'big', $('#pluslayer'), label || '+' + (d === 0.5 ? '½' : d));
-  plus.style.fontSize = '80px'; plus.style.color = side === 'R' ? '#ff4a5f' : '#3f8cff';
-  plus.style.webkitTextStroke = '6px #16112a'; plus.style.paintOrder = 'stroke fill';
-  at(plus, side === 'R' ? 870 : 1050, 150, { opacity: 0 });
-  plus.style.left = (side === 'R' ? 850 - 60 : 1070 + 60) + 'px';
-  tl.fromTo(plus, { y: 30, opacity: 0, scale: 0.5 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(3)' }, t)
+  tl.fromTo(e, { scale: 1.9 }, { scale: 1, duration: 0.6, ease: 'elastic.out(1,0.4)', immediateRender: false }, t);
+  const plus = el('div', 'big', $('#pluslayer'), label || '+' + d);
+  plus.style.cssText += `;font-size:76px;color:${side === 'R' ? '#ff5a75' : '#5aa2ff'};text-shadow:0 6px 0 rgba(0,0,0,.4)`;
+  at(plus, side === 'R' ? 800 : 1120, 150, { opacity: 0 });
+  tl.fromTo(plus, { y: 30, opacity: 0, scale: 0.5 }, { y: 0, opacity: 1, scale: 1, duration: 0.35, ease: 'back.out(3)', immediateRender: false }, t)
     .to(plus, { y: -40, opacity: 0, duration: 0.4, ease: 'power2.in' }, t + 1.1);
-  sfx('point', t, 0.8);
+  sfx('point', t, 0.7);
 }
 proc(t => {
   let r = 0, b = 0;
   for (const [ts, s, d] of SCORE) if (t >= ts) { if (s === 'R') r += d; else b += d; }
-  const f = v => (v % 1 ? Math.floor(v) + '½' : '' + v).replace(/^0½/, '½');
-  const R = $('#scR'), B = $('#scB');
-  if (R.textContent !== f(r)) R.textContent = f(r);
-  if (B.textContent !== f(b)) B.textContent = f(b);
+  if ($('#scR').textContent !== '' + r) $('#scR').textContent = r;
+  if ($('#scB').textContent !== '' + b) $('#scB').textContent = b;
 });
-function hudShow(t, show = true) {
-  tl.to('#hud', { y: show ? 0 : -160, duration: 0.5, ease: show ? 'back.out(1.7)' : 'power2.in' }, t);
-}
-gsap.set('#hud', { xPercent: -50, y: -160 });
-function glow(side, a, t, dur = 0.6) { tl.to(side === 'L' ? '#glowL' : '#glowR', { opacity: a, duration: dur }, t); }
-function spots(a, t, dur = 0.6) { tl.to('.spot', { opacity: a, duration: dur }, t); }
-gsap.set('#spot1', { left: 150 }); gsap.set('#spot2', { left: 870 });
+gsap.set('#hud', { xPercent: -50, y: -170 });
+function hud(t, show = true) { tl.to('#hud', { y: show ? 0 : -170, duration: 0.5, ease: show ? 'back.out(1.7)' : 'power2.in' }, t); }
 function flash(t, a = 0.9, dur = 0.35) { tl.fromTo('#flash', { opacity: a }, { opacity: 0, duration: dur, ease: 'power2.out', immediateRender: false }, t); }
-// numeric counters: tween obj.v, a proc writes the text
-function counter(e, from, to, t, dur, fmt = v => Math.round(v).toLocaleString('en-US')) {
-  const o = { v: from }; tl.to(o, { v: to, duration: dur, ease: 'power2.out' }, t);
-  proc(() => { const s = fmt(o.v); if (e.textContent !== s) e.textContent = s; });
-}
+
+// the stage at t = 0: dark, lids shut
+ST.key.intensity = 0; ST.rimL.intensity = 0; ST.rimR.intensity = 0; ST.top.intensity = 0; ST.scene.environmentIntensity = 0.12;
+for (const k of ['13', '14']) { LAP[k].st.lid = 0; LAP[k].st.glow = 0; }
+cut(0, [0, 3.2, 12.5], [0, 0.6, 0]);
 
 // =============================================================================================
-// SCENE: intro
+// INTRO: Dylan has a problem
 // =============================================================================================
 (() => {
   const s = scene('intro');
-  spots(1, 0.2, 1.2);
-  // "YOUR BUDDY / HAS A PROBLEM."
-  const l1 = wordsLine(s, 'YOUR BUDDY', 960, 400, 190, '#fff');
-  const l2 = wordsLine(s, 'HAS A PROBLEM.', 960, 610, 190, '#fff');
-  l2.words[2].style.color = 'var(--gold)';
-  const words = [...l1.words, ...l2.words];
-  ['Your', 'buddy', 'has', 'a', 'problem'].forEach((w, i) => {
-    const t = W('n01', w) - 0.04;
-    if (i < 4) popIn(words[i], t, { rot: (i % 2 ? 8 : -8), dur: 0.35, gain: 0.5 });
-    else slam(words[i], t - 0.12, { from: 3, amp: 22 });
+  place(0, '13', [-2.05, 0, 0], 0.18, { lid: 0 }); place(0, '14', [2.05, 0, 0], -0.18, { lid: 0 });
+  tl.set(LAP['13'].st, { glow: 0 }, 0); tl.set(LAP['14'].st, { glow: 0 }, 0);
+  screen('13', 0, faceScreen('nerd_face', { size: 0.5 }));
+  screen('14', 0, faceScreen('smiling_face_with_sunglasses', { size: 0.5 }));
+  touchbar(0, tbGradient);
+  const l1 = words(s, 'DYLAN', 960, 390, 280, 'gold');
+  const l2 = words(s, 'HAS A PROBLEM.', 960, 640, 170, 'white');
+  slam(l1.ws[0], L('n01') - 0.1, { from: 2.6, amp: 20 });
+  ['has', 'a', 'problem'].forEach((w, i) => { const t = W('n01', w) - 0.05; if (i < 2) popIn(l2.ws[i], t, { dur: 0.3, gain: 0.4 }); else slam(l2.ws[2], t - 0.1, { from: 2.4, amp: 14, gain: 0.6 }); });
+  fadeOut([l1.box, l2.box], L('n02a') - 0.3, { y: -60 });
+  // lights up on two closed laptops; lids open, screens wake
+  const tA = L('n02a') - 0.2;
+  lights(tA, 0.6, { key: 170, env: 0.9, top: 60 });
+  sfx('lightson', tA, 0.7);
+  shot(tA, 3.2, [0, 2.3, 10.2], [0, 0.75, 0], { ease: 'power2.out' });
+  ['13', '14'].forEach((k, i) => {
+    tl.to(LAP[k].st, { lid: 106, duration: 0.9, ease: 'back.out(1.1)' }, tA + 0.15 + i * 0.25);
+    tl.to(LAP[k].st, { glow: 0.85, duration: 0.5 }, tA + 0.7 + i * 0.25);
+    sfx('lidopen', tA + 0.15 + i * 0.25, 0.5);
   });
-  const out1 = L('n02a') - 0.3;
-  words.forEach((w, i) => tl.to(w, { y: -140, opacity: 0, duration: 0.3, ease: 'power2.in' }, out1 + i * 0.03));
-
-  // the two laptops arrive
-  const a = laptop('13', s, 560, 560, 0.86), b = laptop('14', s, 1360, 560, 0.86);
-  tl.fromTo(a.root, { x: -1300, rotation: -20 }, { x: 0, rotation: 0, duration: 0.6, ease: 'back.out(1.2)' }, L('n02a') - 0.1);
-  tl.fromTo(b.root, { x: 1300, rotation: 20 }, { x: 0, rotation: 0, duration: 0.6, ease: 'back.out(1.2)' }, L('n02a') + 0.25);
-  sfx('whoosh', L('n02a') - 0.12, 0.7); sfx('whoosh', L('n02a') + 0.22, 0.7);
-  sfx('thud', L('n02a') + 0.4, 0.6); sfx('thud', L('n02a') + 0.75, 0.6);
-  const la = el('div', 'tag red', s, '13″ · M1'), lb = el('div', 'tag blue', s, '14″ · M1 Pro');
-  at(la, 560, 830); at(lb, 1360, 830);
-  popIn(la, L('n02a') + 0.35); popIn(lb, L('n02a') + 0.7);
-
-  // $125 price tag swinging between them
-  const tagWrap = el('div', 'c', s);
-  gsap.set(tagWrap, { left: 960, top: 40, xPercent: -50, transformOrigin: '50% 0%', width: 300, height: 360 });
-  tagWrap.innerHTML = `<svg width="300" height="360" viewBox="0 0 300 360" style="overflow:visible">
-    <line x1="150" y1="-400" x2="150" y2="120" stroke="#fff" stroke-width="4"/>
-    <path d="M150,100 L250,160 L250,330 Q250,350 230,350 L70,350 Q50,350 50,330 L50,160 Z" fill="#ffc93c" stroke="${O}" stroke-width="8" stroke-linejoin="round"/>
-    <circle cx="150" cy="150" r="14" fill="${O}"/>
-    <text x="150" y="275" text-anchor="middle" font-family="Anton" font-size="96" fill="${O}">$125</text>
-    <text x="150" y="325" text-anchor="middle" font-family="Inter" font-weight="900" font-size="26" letter-spacing="5" fill="${O}">APART</text></svg>`;
-  tl.fromTo(tagWrap, { y: -700 }, { y: 0, duration: 0.55, ease: 'bounce.out' }, L('n02b') - 0.05);
-  tl.fromTo(tagWrap, { rotation: 16 }, { rotation: 0, duration: 2.2, ease: 'elastic.out(1.4,0.18)' }, L('n02b') + 0.3);
-  sfx('cashier', W('n02b', 'twenty'), 0.8);
-  // double arrow
-  const arr = el('div', 'c', s, `<svg width="400" height="43" viewBox="0 0 560 60"><path d="M30,30 H530 M60,6 L24,30 L60,54 M500,6 L536,30 L500,54" stroke="#fff" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
-  at(arr, 960, 640);
-  tl.fromTo(arr, { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.45, ease: 'power3.out' }, W('n02b', 'apart') - 0.1);
-  sfx('stretch', W('n02b', 'apart') - 0.1, 0.5);
-
-  // "And he can't. Decide." — eyes dart back and forth
-  [a, b].forEach((ch, i) => {
-    let t = L('n02c') - 0.1;
-    for (let k = 0; k < 7; k++) { ch.look(k % 2 ? -14 : 14, 0, t, 0.1); t += 0.2; }
-    ch.look(0, 0, t, 0.15);
-    ch.expr('worried', L('n02c'));
+  sfx('chime', tA + 0.8, 0.35);
+  const labs = [['13', '13″ · M1', 'red'], ['14', '14″ · M1 Pro', 'blue']].map(([k, h, c], i) => {
+    const e = el('div', 'pill ' + c, s, h); e.style.fontSize = '32px'; at(e, 0, 0); follow(e, k, LAP[k].group, 0, 70);
+    popIn(e, tA + 0.8 + i * 0.25, { from: 0.5, sfx: false }); return e;
   });
-  const cant = el('div', 'big', s, "HE CAN'T."); cant.style.fontSize = '130px'; at(cant, 760, 960);
-  const dec = el('div', 'big', s, 'DECIDE.'); dec.style.fontSize = '130px'; dec.style.color = 'var(--gold)'; at(dec, 1230, 960);
-  popIn(cant, W('n02c', 'he') - 0.05, { dur: 0.3, rot: -4 });
-  slam(dec, L('n02d') - 0.2, { from: 2.4, rot: -6, rotTo: -3, gain: 0.55 });
-  sfx('boing', L('n02c') + 0.1, 0.35);
-  // clear the clutter for the gloves
-  const clr = L('n03') + 0.1;
-  [cant, dec, arr, la, lb].forEach((e, i) => tl.to(e, { opacity: 0, y: 40, duration: 0.25 }, clr + i * 0.04));
-  tl.to(tagWrap, { y: -800, duration: 0.5, ease: 'power2.in' }, clr);
-  // "The only way we know how": gloves on, angry, facing each other
+  // $125 apart: a price tag drops between them
+  const tag = el('div', 'c', s);
+  tag.innerHTML = `<svg width="320" height="560" viewBox="0 -240 320 560" style="overflow:visible">
+    <defs><linearGradient id="tg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffe58a"/><stop offset="1" stop-color="#f2a21e"/></linearGradient></defs>
+    <line x1="160" y1="-600" x2="160" y2="92" stroke="rgba(255,255,255,.8)" stroke-width="3"/>
+    <path d="M160,70 L270,140 L270,300 Q270,320 250,320 L70,320 Q50,320 50,300 L50,140 Z" fill="url(#tg)" stroke="#6b3a00" stroke-width="4" stroke-linejoin="round"/>
+    <circle cx="160" cy="125" r="13" fill="#3a1f00"/>
+    <text x="160" y="248" text-anchor="middle" font-family="Anton" font-size="92" fill="#2a1600">$125</text>
+    <text x="160" y="292" text-anchor="middle" font-family="Inter" font-weight="900" font-size="24" letter-spacing="6" fill="#2a1600">APART</text></svg>`;
+  gsap.set(tag, { left: 960, top: -40, xPercent: -50, width: 320, height: 560, transformOrigin: '50% 0%', y: -800 });
+  tag.style.filter = 'drop-shadow(0 30px 40px rgba(0,0,0,.6))';
+  tl.fromTo(tag, { y: -800 }, { y: 0, duration: 0.6, ease: 'bounce.out', immediateRender: false }, L('n02b') - 0.05);
+  tl.fromTo(tag, { rotation: 14 }, { rotation: 0, duration: 2.0, ease: 'elastic.out(1.4,0.16)' }, L('n02b') + 0.35);
+  sfx('cashier', W('n02b', 'twenty') - 0.05, 0.7);
+  // "And Dylan can't. Decide." The camera can't decide either.
+  const tc = L('n02c') - 0.1;
+  tl.to(tag, { y: -800, duration: 0.45, ease: 'power2.in' }, tc);
+  [[-2.05, 0.8, 0], [2.05, 0.8, 0], [-2.05, 0.8, 0], [2.05, 0.8, 0], [0, 0.8, 0]].forEach((tg, i) => {
+    shot(tc + i * 0.34, 0.24, [tg[0] * 0.55, 1.9, 7.2], tg, { ease: 'power3.inOut' }); sfx('swish', tc + i * 0.34, 0.4);
+  });
+  labs.forEach(e => tl.to(e, { opacity: 0, duration: 0.2 }, tc));
+  screen('13', tc, faceScreen('anxious_face_with_sweat', { size: 0.55 }));
+  screen('14', tc, faceScreen('face_with_monocle', { size: 0.55 }));
+  const cant = el('div', 'big white', s, "DYLAN CAN'T."); cant.style.fontSize = '120px'; at(cant, 960, 900);
+  const dec = el('div', 'big gold', s, 'DECIDE.'); dec.style.fontSize = '160px'; at(dec, 960, 890);
+  popIn(cant, W('n02c', 'Dylan') - 0.05, { from: 0.6, dur: 0.3 });
+  tl.to(cant, { opacity: 0, duration: 0.12 }, L('n02d') - 0.18);
+  slam(dec, L('n02d') - 0.2, { from: 2.4, rot: -6, rotTo: -3, gain: 0.5 });
+  // "The only way we know how": lights go red and blue, gloves on
   const g = W('n03', 'only');
-  a.glovesOn(g); b.glovesOn(g + 0.15);
-  a.expr('angry', g + 0.3); b.expr('angry', g + 0.35);
-  a.look(14, 4, g + 0.3); b.look(-14, 4, g + 0.35);
-  tl.to(a.st, { bob: 1, duration: 0.3 }, g + 0.4); tl.to(b.st, { bob: 1, duration: 0.3 }, g + 0.4);
-  tl.to(a.root, { x: 60, duration: 1.2, ease: 'power1.inOut' }, g + 0.3);
-  tl.to(b.root, { x: -60, duration: 1.2, ease: 'power1.inOut' }, g + 0.3);
-  glow('L', 1, g); glow('R', 1, g);
-  sfx('drumroll', L('n03') + 0.2, 0.55, { dur: S('title') - L('n03') - 0.2 });
-  sfx('riser', S('title') - 2.0, 0.6, { dur: 2.0 });
+  fadeOut(dec, L('n03') + 0.1);
+  shot(L('n03'), 2.7, [0, 1.25, 8.3], [0, 0.85, 0], { ease: 'power1.inOut' });
+  lights(g - 0.3, 0.8, { key: 60, top: 0, rimL: 70, rimR: 70, gL: 0.8, gR: 0.8, env: 0.6 });
+  move(g, 0.6, '13', [-1.95, 0, 0], 0.42); move(g, 0.6, '14', [1.95, 0, 0], -0.42);
+  glovesOn('13', g); glovesOn('14', g + 0.15);
+  screen('13', g + 0.2, faceScreen('face_with_steam_from_nose', { size: 0.62 }));
+  screen('14', g + 0.25, faceScreen('face_with_steam_from_nose', { size: 0.62 }));
+  sfx('drumroll', L('n03') + 0.2, 0.5, { dur: S('title') - L('n03') - 0.2 });
+  sfx('riser', S('title') - 2.0, 0.55, { dur: 2.0 });
 })();
 
 // =============================================================================================
-// SCENE: title
+// TITLE
 // =============================================================================================
 (() => {
   const s = scene('title'), t = S('title');
   flash(t, 1, 0.5);
-  const rays = el('div', 'c', s);
-  rays.style.cssText = 'width:2600px;height:2600px;border-radius:50%;background:repeating-conic-gradient(from 0deg, rgba(255,201,60,.22) 0deg 9deg, rgba(255,201,60,0) 9deg 18deg);';
-  at(rays, 960, 540);
-  proc(tt => { rays.style.transform = `translate(-50%,-50%) rotate(${tt * 12}deg)`; });
-  tl.fromTo(rays, { opacity: 0 }, { opacity: 1, duration: 0.4 }, t);
-  const m = el('div', 'big', s, 'MACBOOK'); m.style.cssText += ';font-size:260px;color:var(--gold);text-shadow:0 6px 0 #d9731f,0 12px 0 #b4541a,0 18px 0 #16112a,0 30px 30px rgba(0,0,0,.5)';
-  at(m, 960, 370);
-  const sd = el('div', 'big', s, 'SHOWDOWN'); sd.style.cssText += ';font-size:260px;color:#fff;-webkit-text-stroke:0;text-shadow:-6px 6px 0 var(--red),6px 12px 0 var(--blue),0 18px 0 #16112a,0 30px 30px rgba(0,0,0,.5)';
-  at(sd, 960, 610);
-  slam(m, t - 0.1, { from: 3.2, rot: -8, rotTo: -2, amp: 26 });
-  slam(sd, t + 0.3, { from: 3.2, rot: 6, rotTo: 1, amp: 30 });
-  burst({ t: t + 0.12, x: 960, y: 370, n: 70, speed: 2000, size: 18, life: 1.6, colors: ['#ffc93c', '#ff9d2e', '#fff'] });
+  cut(t, [0, 0.55, 6.6], [0, 0.95, 0], { fov: 34 });
+  shot(t, 2.5, [0, 0.9, 7.6], [0, 1.0, 0], { ease: 'power1.out' });
+  place(t, '13', [-1.7, 0, 0], 0.62); place(t, '14', [1.7, 0, 0], -0.62);
+  lights(t, 0.2, { rimL: 110, rimR: 110, gL: 1, gR: 1, gC: 0.6, key: 40, bloom: 0.6 });
+  const shade = el('div', 'fill', s); shade.style.background = 'radial-gradient(1000px 520px at 50% 50%, rgba(0,0,0,.6), rgba(0,0,0,0) 72%)';
+  const m = el('div', 'big gold', s, 'MACBOOK'); m.style.fontSize = '250px'; at(m, 960, 380);
+  const sd = el('div', 'big chrome', s, 'SHOWDOWN'); sd.style.fontSize = '250px'; at(sd, 960, 610);
+  slam(m, t - 0.1, { from: 3.2, rot: -6, rotTo: -2, amp: 26 });
+  slam(sd, t + 0.3, { from: 3.2, rot: 5, rotTo: 1, amp: 30 });
+  [m, sd].forEach((e, i) => {
+    const sh = el('div', '', e); sh.style.cssText = 'position:absolute;inset:-20px -40px;background:linear-gradient(105deg,rgba(255,255,255,0) 42%,rgba(255,255,255,.9) 50%,rgba(255,255,255,0) 58%);background-size:300% 100%;mix-blend-mode:overlay';
+    tl.fromTo(sh, { backgroundPosition: '100% 0' }, { backgroundPosition: '-100% 0', duration: 0.9, ease: 'power2.inOut' }, t + 0.7 + i * 0.15);
+  });
+  burst({ t: t + 0.12, x: 960, y: 380, n: 70, speed: 2000, size: 18, life: 1.6, colors: ['#ffcc4d', '#ff9a2e', '#fff'] });
   burst({ t: t + 0.52, x: 960, y: 610, n: 90, speed: 2200, size: 20, life: 1.8 });
-  const rib = el('div', 'c', s, `<div style="display:flex;align-items:center;gap:26px;font:900 42px/1 var(--body);letter-spacing:.06em">
-    <span class="tag red" style="font-size:40px">13″ M1</span><span style="font-family:var(--display);font-size:60px;font-weight:400;color:var(--gold)">VS</span><span class="tag blue" style="font-size:40px">14″ M1 PRO</span></div>`);
-  at(rib, 960, 830);
-  popIn(rib, t + 0.85, { from: 0.4 });
-  const q = el('div', 'hand', s, 'the $125 question'); q.style.cssText += ';font-size:52px;color:#fff'; at(q, 960, 925);
+  const rib = el('div', 'c', s, `<div style="display:flex;align-items:center;gap:24px"><span class="pill red">13″ M1</span><span class="big gold" style="font-size:64px">VS</span><span class="pill blue">14″ M1 PRO</span></div>`);
+  at(rib, 960, 830); popIn(rib, t + 0.85, { from: 0.4 });
+  const q = el('div', 'hand', s, "the $125 question"); q.style.cssText += ';font-size:50px;color:#fff'; at(q, 960, 930, { rotation: -3 });
   popIn(q, t + 1.2, { rot: -6, rotTo: -3, sfx: 'pop2' });
-  sfx('bell3', t + 0.05, 0.9); sfx('crowd', t + 0.2, 0.7, { dur: 2.6 }); sfx('impact', t - 0.02, 1);
-  tl.to(s, { scale: 1.06, duration: 2.5, ease: 'none' }, t);
-  // wipe out into the fighters
+  sfx('bell3', t + 0.05, 0.85); sfx('crowd', t + 0.2, 0.6, { dur: 2.6 }); sfx('impact', t - 0.02, 0.9);
   wipe(S('fighters'));
 })();
 
 // =============================================================================================
-// SCENE: fighter introductions
+// FIGHTERS
 // =============================================================================================
-let F13, F14;
 (() => {
   const s = scene('fighters'), t0 = S('fighters');
-  glow('L', 0, t0, 0.01); glow('R', 0, t0, 0.01);
-  const red = el('div', 'panel', s); red.style.cssText += ';background:linear-gradient(120deg,#ff5a6c,#b3163a);clip-path:polygon(0 0,56% 0,44% 100%,0 100%)';
-  const blue = el('div', 'panel', s); blue.style.cssText += ';background:linear-gradient(240deg,#4f9bff,#173fc0);clip-path:polygon(56% 0,100% 0,100% 100%,44% 100%)';
-  // stripes texture on both
-  [red, blue].forEach(p => { const st = el('div', 'fill', p); st.style.background = 'repeating-linear-gradient(115deg, rgba(255,255,255,.07) 0 40px, rgba(255,255,255,0) 40px 80px)'; });
-  const seam = el('div', 'c', s); seam.style.cssText = 'width:14px;height:1300px;background:var(--gold);box-shadow:0 0 30px var(--gold)'; at(seam, 960, 540, { rotation: Math.atan2(230, 1080) * 180 / Math.PI });
-  tl.fromTo(red, { xPercent: -100 }, { xPercent: 0, duration: 0.5, ease: 'power3.out' }, t0);
-  tl.fromTo(blue, { xPercent: 100 }, { xPercent: 0, duration: 0.5, ease: 'power3.out' }, L('a02') - 0.45);
-  tl.fromTo(seam, { scaleY: 0 }, { scaleY: 1, duration: 0.4 }, L('a02') - 0.2);
-  sfx('whooshBig', L('a02') - 0.5, 0.6);
-
-  // red corner
-  const hdrR = el('div', 'c', s, `<div class="eyebrow" style="color:rgba(255,255,255,.85)">In the red corner</div>
-    <div class="big" style="font-size:118px;margin-top:14px">THE TOUCH BAR KID</div>
-    <div class="sub" style="margin-top:14px">13″ MacBook Pro · M1</div>`);
-  gsap.set(hdrR, { left: 90, top: 90 });
-  const a = F13 = laptop('13', s, 330, 650, 0.8);
-  a.expr('grin', t0);
-  gsap.set(a.gloves, { opacity: 1 });
-  tl.fromTo(a.root, { y: 700 }, { y: 0, duration: 0.6, ease: 'back.out(1.3)' }, L('a01') + 0.3);
-  tl.set(a.st, { bob: 1 }, L('a01') + 0.6);
-  slideIn(hdrR, L('a01') - 0.05, -700, 0, { dur: 0.5 });
-  sfx('crowd', L('a01') + 1.2, 0.3, { dur: 2.2 });
-  // specs
-  const chipsR = ['<b>8</b>-core CPU', '<b>8</b>-core GPU', 'Touch Bar ✨'].map((h, i) => {
-    const c = el('div', 'chip red', s, h); gsap.set(c, { left: 90, top: 0 }); return c;
-  });
-  // stack chips to the right of the laptop
-  chipsR.forEach((c, i) => { c.style.fontSize = '34px'; gsap.set(c, { left: 620 - i * 20, top: 470 + i * 118 }); });
-  popIn(chipsR[0], W('n04', 'Eight') - 0.05, { from: 0.4 });
-  popIn(chipsR[1], W('n04', 'Eight', 1) - 0.05, { from: 0.4 });
-  popIn(chipsR[2], W('n04', 'Touch') - 0.1, { from: 0.4, sfx: 'sparkle' });
-  // touch bar callout: glowing strip over the keyboard
-  const tb = el('div', 'touchbar', s); gsap.set(tb, { left: 330 - 250, top: 694, width: 500, height: 56 });
-  const tr = el('div', 'track', tb);
-  ['1f602', '1f973', '1f984', '1f355', '1f47b', '1f525', '1f3b8', '1f308', '1f4af', '1f60d', '1f929', '1f602', '1f973'].forEach(c => { const i = el('img', '', tr); i.src = `assets/emoji/${c}.svg`; i.width = i.height = 40; });
-  proc(tt => { tr.style.transform = `translateX(${-((tt * 90) % 440)}px)`; });
-  tl.fromTo(tb, { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.4, ease: 'back.out(2)' }, W('n04', 'Touch') - 0.05);
-  a.expr('smug', W('n04', 'Touch'));
-  const shiny = el('div', 'hand', s, 'ooh, shiny'); shiny.style.cssText += ';font-size:46px;color:var(--gold)'; at(shiny, 330, 900);
-  popIn(shiny, E('n04') - 0.3, { rot: -8, rotTo: -5, sfx: false });
-
-  // blue corner
-  const hdrB = el('div', 'c', s, `<div class="eyebrow" style="color:rgba(255,255,255,.85);text-align:right">In the blue corner</div>
-    <div class="big" style="font-size:118px;margin-top:14px;text-align:right">THE NOTCH</div>
-    <div class="sub" style="margin-top:14px;text-align:right">14″ MacBook Pro · M1 Pro</div>`);
-  gsap.set(hdrB, { right: 90, top: 90, left: 'auto' });
-  const b = F14 = laptop('14', s, 1590, 650, 0.8);
-  b.expr('smug', t0);
-  gsap.set(b.gloves, { opacity: 1 });
-  tl.fromTo(b.root, { y: 700 }, { y: 0, duration: 0.6, ease: 'back.out(1.3)' }, L('a02') + 0.3);
-  tl.set(b.st, { bob: 1 }, L('a02') + 0.6);
-  slideIn(hdrB, L('a02') - 0.05, 700, 0, { dur: 0.5 });
-  sfx('crowd', L('a02') + 1.2, 0.3, { dur: 2.2 });
-  const chipsB = ['<b>10</b>-core CPU', '<b>16</b>-core GPU', 'A notch'].map((h, i) => { const c = el('div', 'chip blue', s, h); c.style.fontSize = '34px'; gsap.set(c, { left: 1010 - i * 20, top: 470 + i * 118 }); return c; });
-  popIn(chipsB[0], W('n05', 'Ten') - 0.05, { from: 0.4 });
-  popIn(chipsB[1], W('n05', 'Sixteen') - 0.05, { from: 0.4 });
-  popIn(chipsB[2], W('n05', 'notch') - 0.25, { from: 0.4 });
-  // the notch: arrow + b looks up at it
-  const arrow = el('div', 'c', s, `<svg width="220" height="150" viewBox="0 0 220 150" style="overflow:visible"><path class="ap" d="M0,10 C90,0 170,40 200,130" stroke="#ffc93c" stroke-width="9" fill="none" stroke-linecap="round"/><path class="ah" d="M168,112 L201,134 L214,96" stroke="#ffc93c" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>`);
-  gsap.set(arrow, { left: 1370, top: 355 });
-  const ap = arrow.querySelector('.ap'); const len = 330; ap.style.strokeDasharray = len;
-  tl.fromTo(ap, { strokeDashoffset: len }, { strokeDashoffset: 0, duration: 0.35 }, W('n05', 'notch') - 0.1);
-  tl.fromTo(arrow.querySelector('.ah'), { opacity: 0 }, { opacity: 1, duration: 0.1 }, W('n05', 'notch') + 0.2);
-  const nlab = el('div', 'hand', s, '(you stop noticing)'); nlab.style.cssText += ';font-size:38px;color:var(--gold)'; at(nlab, 1200, 372, { rotation: -3 });
-  popIn(nlab, E('n05') - 0.2, { rot: -5, rotTo: -3, sfx: false });
-  b.look(0, -14, W('n05', 'notch'), 0.25); b.expr('worried', W('n05', 'notch'));
-  b.look(0, 0, E('n05') + 0.4); b.expr('smug', E('n05') + 0.4);
-
-  // "Both packing 16 GB / 512 GB" — a tie card in the middle
-  const tie = el('div', 'card2', s, `
-    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:18px 26px;align-items:center;padding:38px 46px;font:900 50px/1 var(--body)">
-      <div style="text-align:right;color:var(--red2)">16GB</div><div style="font:400 60px/1 var(--display)">=</div><div style="color:var(--blue2)">16GB</div>
-      <div style="grid-column:1/4;text-align:center;font:800 22px/1 var(--body);letter-spacing:.2em;color:#777;margin:-6px 0 8px">MEMORY</div>
-      <div style="text-align:right;color:var(--red2)">512GB</div><div style="font:400 60px/1 var(--display)">=</div><div style="color:var(--blue2)">512GB</div>
-      <div style="grid-column:1/4;text-align:center;font:800 22px/1 var(--body);letter-spacing:.2em;color:#777;margin-top:-6px">STORAGE</div>
+  lights(t0, 0.01, { gC: 0, bloom: 0.4, gR: 0, gL: 1.1, rimL: 130, rimR: 0, key: 150, env: 0.9, top: 0 });
+  place(t0, '13', [0, 0, 0], 0.5, { lid: 106 }); place(t0, '14', [0, 0, -30], 0, { visible: false });
+  GLOVES['13'].concat(GLOVES['14']).forEach(g => tl.set(g.material, { opacity: 0 }, t0));
+  cut(t0, [-1.6, 1.4, 6.6], [0.9, 0.75, 0], { fov: 30 });
+  shot(t0, 3.4, [-1.0, 1.25, 6.0], [0.95, 0.75, 0], { ease: 'power1.out' });
+  screen('13', t0, faceScreen('smirking_face', { size: 0.62 }));
+  touchbar(t0, tbGradient);
+  const hR = el('div', 'c', s, `<div class="eyebrow" style="color:#ff8fa3">In the red corner</div>
+    <div class="big white" style="font-size:128px;margin-top:16px">THE TOUCH BAR KID</div>
+    <div class="sub" style="margin-top:16px;color:rgba(255,255,255,.85)">13″ MacBook Pro · M1 chip</div>`);
+  gsap.set(hR, { left: 880, top: 150 });
+  slideIn(hR, L('a01') + 0.1, 200, 0, { fade: true, dur: 0.6 });
+  const est = el('div', 'pill dark', s, '<span style="opacity:.7;font-weight:600">design vintage:</span>&nbsp;2016'); est.style.fontSize = '28px'; gsap.set(est, { left: 885, top: 440 });
+  popIn(est, E('a01') - 0.3, { from: 0.5, rot: -4, rotTo: -2 });
+  sfx('crowd', L('a01') + 0.4, 0.3, { dur: 2.4 });
+  callout('13', 'keyboard', 'CPU', '8-core', W('n04', 'Eight') - 0.1, L('a02') - 0.6, { dx: 560, dy: 20, offset: new THREE.Vector3(0.5, 0, 0.2) });
+  callout('13', 'keyboard', 'Graphics', '8-core GPU', W('n04', 'Eight', 1) - 0.1, L('a02') - 0.6, { dx: 560, dy: 160, offset: new THREE.Vector3(0.8, 0, 0.55) });
+  const tbT = W('n04', 'Touch') - 0.15;
+  shot(tbT - 0.2, 1.0, [-0.45, 1.9, 3.6], [0.35, 0.3, -0.4], { ease: 'power2.inOut' });
+  touchbar(tbT, tbEmoji());
+  callout('13', 'touchBar', 'The famous', 'Touch Bar ✨', tbT, L('a02') - 0.6, { dx: 380, dy: -260 });
+  screen('13', tbT, faceScreen('star-struck', { size: 0.62 }));
+  const killed = el('div', 'stamp', s, 'DISCONTINUED'); killed.style.fontSize = '84px'; at(killed, 1320, 320, { rotation: -8 });
+  slam(killed, W('n04', 'killed') - 0.15, { from: 2.4, rot: -16, rotTo: -8, sfx: 'stamp', gain: 0.9, amp: 12 });
+  screen('13', W('n04', 'killed'), faceScreen('grimacing_face', { size: 0.62 }));
+  touchbar(W('n04', 'killed'), tbSkull);
+  fadeOut([hR, est, killed], L('a02') - 0.55);
+  // whip over to the blue corner
+  const t1 = L('a02') - 0.45;
+  tl.to(ST.cam.target, { x: 6, duration: 0.3, ease: 'power3.in' }, t1);
+  sfx('whooshBig', t1, 0.6);
+  place(t1 + 0.3, '13', [0, 0, -30], 0, { visible: false }); place(t1 + 0.3, '14', [0, 0, 0], -0.5, { lid: 106 });
+  tl.set(LAP['14'].st, { glow: 0.85 }, t1 + 0.3);
+  cut(t1 + 0.3, [1.6, 1.4, 6.6], [-0.9, 0.75, 0], { fov: 30 });
+  shot(t1 + 0.3, 3.2, [1.0, 1.25, 6.0], [-0.95, 0.75, 0], { ease: 'power2.out' });
+  lights(t1 + 0.3, 0.01, { gL: 0, gR: 1.1, rimL: 0, rimR: 130 });
+  screen('14', t1, faceScreen('smiling_face_with_sunglasses', { size: 0.62 }));
+  const hB = el('div', 'c', s, `<div class="eyebrow" style="color:#8ab8ff;text-align:right">In the blue corner</div>
+    <div class="big gold" style="font-size:128px;margin-top:16px;text-align:right">THE HEAVYWEIGHT</div>
+    <div class="sub" style="margin-top:16px;text-align:right;color:rgba(255,255,255,.85)">14″ MacBook Pro · M1 Pro chip</div>`);
+  gsap.set(hB, { left: 'auto', right: 880, top: 150 });
+  slideIn(hB, L('a02') + 0.1, -200, 0, { fade: true, dur: 0.6 });
+  const champ = el('div', 'pill gold', s, 'undisputed. obviously.'); champ.style.fontSize = '28px'; gsap.set(champ, { left: 'auto', right: 885, top: 440 });
+  popIn(champ, E('a02') - 0.3, { from: 0.5, rot: 4, rotTo: 2 });
+  sfx('crowd', L('a02') + 0.5, 0.45, { dur: 2.4 });
+  callout('14', 'keyboard', 'CPU', '10-core', W('n05', 'Ten') - 0.1, W('n05', 'notch') - 0.45, { dx: -560, dy: 20, offset: new THREE.Vector3(-0.5, 0, 0.2) });
+  callout('14', 'keyboard', 'Graphics', '16-core GPU', W('n05', 'Sixteen') - 0.1, W('n05', 'notch') - 0.45, { dx: -560, dy: 160, offset: new THREE.Vector3(-0.8, 0, 0.55) });
+  const nT = W('n05', 'notch') - 0.3;
+  shot(nT - 0.1, 0.8, [0.35, 2.05, 3.9], [0.0, 2.0, -0.35], { ease: 'power2.inOut' });
+  callout('14', 'notch', 'Top of the screen', 'A notch', nT + 0.2, L('n06') - 0.35, { dx: -330, dy: -170 });
+  const live = el('div', 'hand', s, "you'll live."); live.style.cssText += ';font-size:66px;color:var(--gold)'; at(live, 700, 600, { rotation: -6 });
+  popIn(live, W('n05', 'live') - 0.1, { rot: -10, rotTo: -6, sfx: 'pop2' });
+  fadeOut([hB, champ, live], L('n06') - 0.35);
+  // both, side by side: same memory, same storage
+  const t2 = L('n06') - 0.35;
+  place(t2, '13', [-1.95, 0, 0], 0.25); place(t2, '14', [1.95, 0, 0], -0.25);
+  cut(t2, [0, 1.9, 9.8], [0, 1.25, 0], { fov: 28 });
+  shot(t2, 2.6, [0, 1.6, 9.0], [0, 1.2, 0]);
+  lights(t2, 0.01, { gL: 0.8, gR: 0.8, rimL: 80, rimR: 80 });
+  screen('13', t2, faceScreen('smirking_face', { size: 0.62 })); screen('14', t2, faceScreen('smiling_face_with_sunglasses', { size: 0.62 }));
+  touchbar(t2, tbGradient);
+  const tie = el('div', 'glass', s, `
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:14px 26px;align-items:center;padding:34px 46px;font:900 54px/1 var(--body)">
+      <div style="text-align:right;color:#ff8fa3">16GB</div><div class="big" style="font-size:56px;color:#fff">=</div><div style="color:#8ab8ff">16GB</div>
+      <div style="grid-column:1/4;text-align:center;font:800 18px/1 var(--body);letter-spacing:.3em;color:rgba(255,255,255,.55);margin:-4px 0 8px">MEMORY</div>
+      <div style="text-align:right;color:#ff8fa3">512GB</div><div class="big" style="font-size:56px;color:#fff">=</div><div style="color:#8ab8ff">512GB</div>
+      <div style="grid-column:1/4;text-align:center;font:800 18px/1 var(--body);letter-spacing:.3em;color:rgba(255,255,255,.55);margin-top:-4px">STORAGE</div>
     </div>`);
-  at(tie, 960, 560);
-  popIn(tie, L('n06') + 0.1, { from: 0.3, rot: -10, rotTo: -2 });
-  const tst = el('div', 'stamp', tie, 'SAME'); gsap.set(tst, { right: -70, top: -60, rotation: 14 });
-  tl.fromTo(tst, { scale: 2.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.2, ease: 'power4.in' }, W('n06', 'SSD') + 0.05);
-  sfx('stamp', W('n06', 'SSD') + 0.23, 0.9);
-  [...chipsR, ...chipsB, tb, shiny, nlab, arrow].forEach(e => tl.to(e, { opacity: 0, duration: 0.3 }, L('n06')));
-  [hdrR, hdrB].forEach(e => tl.to(e, { opacity: 0.25, duration: 0.3 }, L('n06')));
-  a.expr('happy', L('n06')); b.expr('happy', L('n06'));
-  // "Now, fight!"
+  at(tie, 960, 165, { scale: 0.85 });
+  popIn(tie, L('n06') + 0.1, { from: 0.5 });
+  const same = el('div', 'stamp green', tie, 'TIE'); same.style.fontSize = '80px'; gsap.set(same, { right: -60, top: -50, rotation: 12, opacity: 0 });
+  tl.fromTo(same, { scale: 2.5, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.2, ease: 'power4.in', immediateRender: false }, W('n06', 'SSD') + 0.05);
+  sfx('stamp', W('n06', 'SSD') + 0.23, 0.8);
   const tf = W('n06', 'fight') - 0.12;
-  popOut(tie, tf - 0.25);
-  const fight = el('div', 'big', s, 'FIGHT!'); fight.style.cssText += ';font-size:300px;color:#fff;-webkit-text-stroke:12px #16112a;paint-order:stroke fill';
-  at(fight, 960, 520);
+  tl.to(tie, { opacity: 0, scale: 0.8, duration: 0.2 }, tf - 0.25);
+  const fight = el('div', 'big gold', s, 'FIGHT!'); fight.style.fontSize = '330px'; at(fight, 960, 470);
   slam(fight, tf - 0.05, { from: 3.5, rot: -10, rotTo: -4, amp: 34 });
-  sfx('bell', tf, 0.8); sfx('crowd', tf + 0.1, 0.8, { dur: 2.2 });
-  a.expr('angry', tf); b.expr('angry', tf);
-  tl.to(a.root, { x: 180, duration: 0.3, ease: 'power2.out' }, tf); tl.to(b.root, { x: -180, duration: 0.3, ease: 'power2.out' }, tf);
-  punch(a, 1, tf + 0.3, 160); punch(b, 0, tf + 0.45, -160);
-  sfx('punch', tf + 0.4, 0.8); sfx('punch', tf + 0.55, 0.8);
+  sfx('bell', tf, 0.8); sfx('crowd', tf + 0.1, 0.7, { dur: 2.2 });
+  glovesOn('13', t2); glovesOn('14', t2 + 0.1);
+  screen('13', tf, faceScreen('face_with_steam_from_nose', { size: 0.62 })); screen('14', tf, faceScreen('face_with_steam_from_nose', { size: 0.62 }));
+  move(tf, 0.35, '13', [-1.35, 0, 0], 0.55, { ease: 'power3.out' }); move(tf, 0.35, '14', [1.35, 0, 0], -0.55, { ease: 'power3.out' });
+  shot(tf, 0.5, [0, 1.1, 7.2], [0, 0.9, 0], { ease: 'power3.out' });
+  punch('13', 1, tf + 0.35, 0.9); punch('14', 0, tf + 0.5, -0.9);
+  sfx('punch', tf + 0.45, 0.8); sfx('punch', tf + 0.6, 0.8);
   flash(tf + 0.2, 0.5);
   wipe(S('r1'));
 })();
 
 // =============================================================================================
-// ROUND 1: brains
+// ROUND 1: brains (2D: the two chips)
 // =============================================================================================
 (() => {
   const s = scene('r1');
-  const t = roundCard(1, 'BRAINS', S('r1') + 0.05, '#ff9ecb');
-  hudShow(t - 0.2);
-  glow('L', 0.7, S('r1')); glow('R', 0.7, S('r1'));
-  const colX = [500, 1420];
-  const heads = [['13″ · M1', 'red'], ['14″ · M1 Pro', 'blue']].map(([h, c], i) => { const e = el('div', 'tag ' + c, s, h); e.style.fontSize = '36px'; at(e, colX[i], 200); return e; });
-  heads.forEach((h, i) => popIn(h, t + i * 0.1, { from: 0.5 }));
-  const rows = [
-    { y: 350, label: 'CPU CORES' }, { y: 560, label: 'GPU CORES' }, { y: 780, label: 'MEMORY BANDWIDTH' },
-  ];
-  const labels = rows.map(r => { const e = el('div', 'eyebrow', s, r.label); e.style.color = 'rgba(255,255,255,.6)'; e.style.fontSize = '22px'; at(e, 960, r.y - 108); return e; });
-  // cores as tiles
-  function tiles(n, perf, x, y, color, t0, cols) {
+  const t = roundCard(1, 'BRAINS', S('r1') + 0.05, '#ffffff');
+  tl.set(G, { on: 0 }, t - 0.33);
+  glovesOff('13', S('r1')); glovesOff('14', S('r1'));
+  hud(t - 0.2);
+  const bg = el('div', 'fill bg2d', s);
+  // stylised chip dies. The M1 Pro die really is about twice the M1's size.
+  function die(x, y, w, h, o) {
+    const d = el('div', 'c', s);
+    d.style.cssText = `width:${w}px;height:${h}px;border-radius:26px;background:linear-gradient(145deg,#2b2f3d,#12141c);box-shadow:0 0 0 3px ${o.col}66,0 30px 80px rgba(0,0,0,.6),0 0 110px ${o.col}40;`;
+    at(d, x, y);
+    const inner = el('div', 'c', d); inner.style.cssText = 'left:18px;top:18px;right:18px;bottom:18px;border-radius:14px;background:repeating-linear-gradient(0deg,rgba(255,255,255,.025) 0 2px,transparent 2px 6px),linear-gradient(160deg,#1a1d29,#0d0f15)';
+    const lab = el('div', 'c', d, `<div style="font:900 20px/1 var(--body);letter-spacing:.3em;color:rgba(255,255,255,.55)">${o.name}</div>`); gsap.set(lab, { left: 40, top: h - 56 });
+    return d;
+  }
+  const A = die(500, 590, 520, 600, { col: '#ff3b5c', name: 'APPLE M1' });
+  const B = die(1390, 590, 740, 740, { col: '#3d8bff', name: 'APPLE M1 PRO' });
+  const tc = t + 0.1;
+  tl.fromTo(A, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: 'back.out(1.5)' }, tc);
+  tl.fromTo(B, { scale: 0.6, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.6, ease: 'back.out(1.5)' }, tc + 0.12);
+  sfx('whooshUp', tc, 0.5);
+  const tagA = el('div', 'pill red', s, '13″ · M1'); at(tagA, 500, 250); popIn(tagA, tc + 0.1, { sfx: false });
+  const tagB = el('div', 'pill blue', s, '14″ · M1 Pro'); at(tagB, 1390, 180); popIn(tagB, tc + 0.2, { sfx: false });
+  function cores(die, n, perf, x0, y0, cols, sz, col, t0, label) {
     const out = [];
-    const sz = 58, gap = 14; cols = cols || n;
-    const rowsN = Math.ceil(n / cols), w = cols * sz + (cols - 1) * gap;
     for (let i = 0; i < n; i++) {
-      const c = i % cols, r = Math.floor(i / cols), isP = i < perf;
-      const e = el('div', 'c', s); const k = isP ? 1 : 0.72;
-      e.style.cssText = `width:${sz * k}px;height:${sz * k}px;border-radius:12px;background:${isP ? color : 'transparent'};border:5px solid ${color};box-sizing:border-box`;
-      at(e, x - w / 2 + c * (sz + gap) + sz / 2, y + (r - (rowsN - 1) / 2) * (sz + gap));
-      tl.fromTo(e, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(3)' }, t0 + i * 0.035);
+      const c = i % cols, r = Math.floor(i / cols), isP = i < perf, k = isP ? 1 : 0.72;
+      const e = el('div', 'c', die);
+      e.style.cssText = `width:${sz * k}px;height:${sz * k}px;border-radius:9px;background:${isP ? `linear-gradient(145deg,${col},${col}88)` : 'transparent'};border:3px solid ${col};box-shadow:0 0 18px ${col}88;box-sizing:border-box`;
+      gsap.set(e, { left: x0 + c * (sz + 10) + (sz - sz * k) / 2, top: y0 + r * (sz + 10) + (sz - sz * k) / 2 });
+      tl.fromTo(e, { scale: 0, opacity: 0 }, { scale: 1, opacity: 1, duration: 0.3, ease: 'back.out(3)' }, t0 + i * 0.03);
       out.push(e);
     }
-    sfx('ticks', t0, 0.35, { n: Math.min(n, 10), gap: 0.035 });
+    const l = el('div', 'c', die, label); l.style.cssText = 'font:800 22px/1 var(--body);color:rgba(255,255,255,.85);white-space:nowrap'; gsap.set(l, { left: x0, top: y0 - 36 });
+    tl.fromTo(l, { opacity: 0 }, { opacity: 1, duration: 0.3 }, t0);
+    sfx('ticks', t0, 0.3, { n: Math.min(n, 10), gap: 0.03 });
     return out;
   }
-  const tc = t + 0.25;
-  tiles(8, 4, colX[0], rows[0].y - 20, '#ff4a5f', tc);
-  tiles(10, 8, colX[1], rows[0].y - 20, '#3f8cff', tc + 0.15);
-  labels.forEach((e, i) => popIn(e, tc + i * 0.5, { sfx: false }));
-  const lg = el('div', 'fine', s, '■ performance   □ efficiency'); at(lg, 960, rows[0].y + 38); popIn(lg, tc + 0.3, { sfx: false });
-  const tg = W('n07', 'double') - 0.3;
-  tiles(8, 8, colX[0], rows[1].y - 20, '#ff7a88', tc + 0.6, 8);
-  const g16 = tiles(16, 16, colX[1], rows[1].y - 20, '#6fb0ff', tc + 0.75, 8);
-  const x2 = el('div', 'stamp', s, '2×'); x2.style.cssText += ';font-size:88px;color:#ffc93c;border-color:#ffc93c;mix-blend-mode:normal;background:rgba(14,11,28,.8)'; at(x2, 960, rows[1].y, { rotation: 10 });
-  slam(x2, W('n07', 'graphics') - 0.1, { from: 2.5, rot: 20, rotTo: 10, amp: 12, sfx: 'stamp' });
-  tl.fromTo(g16, { filter: 'brightness(1)' }, { filter: 'brightness(1.8)', duration: 0.15, yoyo: true, repeat: 3, stagger: 0.01 }, W('n07', 'graphics') - 0.1);
-  // bandwidth bars
-  const bw = [[68, '#ff4a5f', colX[0]], [200, '#3f8cff', colX[1]]].map(([v, c, x], i) => {
-    const w = v * 3.0;
-    const bar = el('div', 'bar3', s); bar.style.background = c; gsap.set(bar, { left: x - 330, top: rows[2].y - 55, width: w, transformOrigin: '0% 50%' });
-    const lab = el('div', 'big', s, ''); lab.style.fontSize = '64px'; gsap.set(lab, { left: x - 330 + w + 22, top: rows[2].y - 58 });
-    const unit = el('div', 'sub', s, 'GB/s'); unit.style.fontSize = '28px'; unit.style.color = 'rgba(255,255,255,.7)';
-    const tb = W('n07', 'three') - 0.9 + i * 0.12;
-    tl.fromTo(bar, { scaleX: 0 }, { scaleX: 1, duration: 1.0, ease: 'power3.out' }, tb);
-    tl.fromTo(lab, { opacity: 0 }, { opacity: 1, duration: 0.2 }, tb);
-    counter(lab, 0, v, tb, 1.0);
-    gsap.set(unit, { left: x - 330 + w + 24, top: rows[2].y + 10 });
-    tl.fromTo(unit, { opacity: 0 }, { opacity: 1, duration: 0.2 }, tb + 0.5);
-    sfx('rise', tb, 0.35 + i * 0.1, { dur: 1.0, f0: 300 + i * 100, f1: 600 + i * 400 });
-    return bar;
-  });
-  const x3 = el('div', 'stamp', s, '≈3×'); x3.style.cssText += ';font-size:88px;color:#ffc93c;border-color:#ffc93c;mix-blend-mode:normal;background:rgba(14,11,28,.8)'; at(x3, 925, rows[2].y - 10, { rotation: -8 });
-  slam(x3, W('n07', 'three') + 0.05, { from: 2.5, rot: -20, rotTo: -8, amp: 12, sfx: 'stamp' });
-
+  cores(A, 8, 4, 50, 90, 4, 64, '#ff5a75', tc + 0.4, 'CPU · 4 performance + 4 efficiency');
+  cores(A, 8, 8, 50, 300, 4, 50, '#ff9fb0', tc + 0.6, 'GPU · 8 cores');
+  cores(B, 10, 8, 60, 100, 5, 72, '#5aa2ff', tc + 0.5, 'CPU · 8 performance + 2 efficiency');
+  const g16 = cores(B, 16, 16, 60, 340, 8, 62, '#9fc6ff', tc + 0.75, 'GPU · 16 cores');
+  const tg = W('n07', 'graphics') - 0.1;
+  tl.to(g16, { filter: 'brightness(2.2)', duration: 0.12, yoyo: true, repeat: 3, stagger: 0.01 }, tg);
+  const x2 = el('div', 'stamp', s, '2× GPU'); x2.style.cssText += ';font-size:76px;color:#ffcc4d;border-color:#ffcc4d;background:rgba(20,14,0,.8);box-shadow:0 0 40px rgba(255,204,77,.4)'; at(x2, 1660, 500, { rotation: 8 });
+  slam(x2, tg, { from: 2.4, rot: 18, rotTo: 8, amp: 10, sfx: 'stamp' });
+  // memory bandwidth: lanes of data, about three times as fast on the right
+  function lanes(die, n, speed, col, t0, w, top) {
+    const box = el('div', 'c', die); box.style.cssText = `left:36px;height:${n * 14}px;overflow:hidden;border-radius:6px;width:${w}px;top:${top}px`;
+    for (let i = 0; i < n; i++) { const ln = el('div', 'c', box); ln.style.cssText = `left:0;width:${w}px;height:6px;top:${i * 14 + 4}px;background:repeating-linear-gradient(90deg,${col} 0 26px,transparent 26px 46px);box-shadow:0 0 12px ${col}`; proc(tt => { if (tt > t0) ln.style.backgroundPosition = `${((tt - t0) * speed * (1 + i * 0.03)) % 460}px 0`; }); }
+    tl.fromTo(box, { clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0% 0 0)', duration: 0.6, ease: 'power2.out' }, t0);
+    const l = el('div', 'c', die, 'MEMORY BANDWIDTH'); l.style.cssText = `font:800 20px/1 var(--body);letter-spacing:.2em;color:rgba(255,255,255,.6);white-space:nowrap;left:36px;top:${top - 32}px`;
+    tl.fromTo(l, { opacity: 0 }, { opacity: 1, duration: 0.3 }, t0);
+  }
+  const tb = W('n07', 'three') - 0.6;
+  lanes(A, 2, 120, '#ff5a75', tb, 440, 480);
+  lanes(B, 6, 360, '#5aa2ff', tb + 0.1, 660, 580);
+  const bwA = el('div', 'big white', s, '68 <span style="font-size:32px">GB/s</span>'); bwA.style.fontSize = '64px'; at(bwA, 500, 950);
+  const bwB = el('div', 'big gold', s, '200 <span style="font-size:40px">GB/s</span>'); bwB.style.fontSize = '80px'; at(bwB, 1390, 1010);
+  popIn(bwA, tb + 0.2, { from: 0.5 }); popIn(bwB, tb + 0.3, { from: 0.5 });
+  sfx('rise', tb, 0.4, { dur: 1.0, f0: 300, f1: 1400 });
+  const x3 = el('div', 'stamp', s, '≈3× FASTER MEMORY'); x3.style.cssText += ';font-size:58px;color:#ffcc4d;border-color:#ffcc4d;background:rgba(20,14,0,.8);box-shadow:0 0 40px rgba(255,204,77,.4)'; at(x3, 930, 150, { rotation: -5 });
+  slam(x3, W('n07', 'bandwidth') - 0.25, { from: 2.4, rot: -14, rotTo: -5, amp: 10, sfx: 'stamp' });
   // golden retrievers
   const clr = L('n08a') - 0.35;
-  [...s.children].forEach((e, i) => tl.to(e, { opacity: 0, y: -60, duration: 0.3, ease: 'power2.in' }, clr + (i % 12) * 0.012));
+  [...s.children].forEach((e, i) => { if (e !== bg) tl.to(e, { opacity: 0, y: -50, duration: 0.3, ease: 'power2.in' }, clr + (i % 8) * 0.015); });
   const dogs = el('div', 'fill', s);
-  const circ = (x, c) => { const e = el('div', 'c', dogs); e.style.cssText = `width:520px;height:520px;border-radius:50%;background:radial-gradient(circle,${c},rgba(0,0,0,0) 70%)`; at(e, x, 560); return e; };
-  circ(520, 'rgba(255,74,95,.45)'); circ(1400, 'rgba(63,140,255,.45)');
-  const d1 = emo('1f415', 380, dogs, 520, 560);
-  const cap1 = el('div', 'hand', dogs, 'good boy.'); cap1.style.cssText += ';font-size:64px;color:#fff'; at(cap1, 520, 850);
-  const tag1 = el('div', 'tag red', dogs, '13″'); at(tag1, 520, 290);
-  tl.fromTo(dogs.children[0], { scale: 0 }, { scale: 1, duration: 0.4 }, L('n08a'));
-  tl.fromTo(dogs.children[1], { scale: 0 }, { scale: 1, duration: 0.4 }, L('n08b'));
-  popIn(d1, W('n08a', 'golden') - 0.2, { sfx: 'boing', from: 0.1 });
-  popIn(tag1, L('n08a'), { sfx: false });
-  popIn(cap1, E('n08a') - 0.2, { rot: -6, rotTo: -3, sfx: false });
-  proc(tt => { d1.style.rotate = (Math.sin(tt * 9) * 3) + 'deg'; });
-  // jetpack dog
-  const jet = el('div', 'c', dogs); gsap.set(jet, { left: 1400, top: 560, width: 1, height: 1 });
-  const d2 = emo('1f415', 380, jet, 0, 0);
-  const rk = emo('1f680', 170, jet, 105, -10); gsap.set(rk, { rotation: -45 });
-  const cap2 = el('div', 'hand', dogs, 'good boy. FAST.'); cap2.style.cssText += ';font-size:64px;color:var(--gold)'; at(cap2, 1400, 850);
-  const tag2 = el('div', 'tag blue', dogs, '14″'); at(tag2, 1400, 290);
-  popIn(d2, W('n08b', 'golden') - 0.2, { sfx: 'boing', from: 0.1 });
+  const glowC = (x, c) => { const e = el('div', 'c', dogs); e.style.cssText = `width:760px;height:760px;border-radius:50%;background:radial-gradient(circle,${c},rgba(0,0,0,0) 65%)`; at(e, x, 570); return e; };
+  const gA = glowC(520, 'rgba(255,59,92,.5)'), gB = glowC(1400, 'rgba(61,139,255,.55)');
+  tl.fromTo(gA, { opacity: 0 }, { opacity: 1, duration: 0.4 }, L('n08a')); tl.fromTo(gB, { opacity: 0 }, { opacity: 1, duration: 0.4 }, L('n08b'));
+  const d1 = emo('dog', 420, dogs, 520, 580);
+  const c1 = el('div', 'hand', dogs, 'good boy.'); c1.style.cssText += ';font-size:68px;color:#fff'; at(c1, 520, 880, { rotation: -3 });
+  const tag1 = el('div', 'pill red', dogs, '13″ M1'); at(tag1, 520, 290);
+  popIn(d1, W('n08a', 'golden') - 0.25, { sfx: 'boing', from: 0.1 });
+  popIn(tag1, L('n08a'), { sfx: false }); popIn(c1, E('n08a') - 0.2, { rot: -6, rotTo: -3, sfx: false });
+  proc(tt => { d1.style.rotate = (Math.sin(tt * 9) * 2.5) + 'deg'; });
+  const jet = el('div', 'c', dogs); gsap.set(jet, { left: 1400, top: 580, width: 1, height: 1 });
+  const d2 = emo('dog', 420, jet, 0, 0);
+  const rk = emo('rocket', 230, jet, 120, -30); gsap.set(rk, { rotation: -45 });
+  const c2 = el('div', 'hand', dogs, 'good boy. FAST.'); c2.style.cssText += ';font-size:68px;color:var(--gold)'; at(c2, 1400, 880, { rotation: -3 });
+  const tag2 = el('div', 'pill blue', dogs, '14″ M1 Pro'); at(tag2, 1400, 290);
+  popIn(d2, W('n08b', 'golden') - 0.25, { sfx: 'boing', from: 0.1 });
   popIn(tag2, L('n08b'), { sfx: false });
-  tl.fromTo(rk, { opacity: 0, x: 60, y: -40 }, { opacity: 1, x: 0, y: 0, duration: 0.3, ease: 'back.out(3)' }, W('n08b', 'jetpack') - 0.15);
+  tl.fromTo(rk, { opacity: 0, x: 80, y: -60, scale: 0.4 }, { opacity: 1, x: 0, y: 0, scale: 1, duration: 0.35, ease: 'back.out(3)' }, W('n08b', 'jetpack') - 0.2);
   sfx('clank', W('n08b', 'jetpack') - 0.05, 0.6);
-  const ign = W('n08b', 'jetpack') + 0.35;
-  emitter({ t0: ign, t1: SE('r1') + 1, rate: 90, life: 0.5, speed: 700, angle: Math.PI / 2, spread: 0.5, size: 34, pos: tt => [1505 + gsap.getProperty(jet, 'x'), 560 + 70 + gsap.getProperty(jet, 'y')] });
+  const ign = W('n08b', 'jetpack') + 0.3;
+  emitter({ t0: ign, t1: SE('r1') + 1, rate: 110, life: 0.55, speed: 720, angle: Math.PI / 2 + 0.25, spread: 0.45, size: 46, add: true, shape: 'glow', colors: ['#ffd23f', '#ff8a1f', '#ff4a1f', '#fff1b0'], pos: () => [1470 + gsap.getProperty(jet, 'x'), 660 + gsap.getProperty(jet, 'y')] });
   tl.to(jet, { y: -12, duration: 0.05, repeat: 5, yoyo: true }, ign);
-  tl.to(jet, { y: -1300, x: 120, rotation: 12, duration: 1.1, ease: 'power3.in' }, ign + 0.35);
-  sfx('rocket', ign, 0.8, { dur: 1.6 });
-  shake(ign + 0.3, 10, 1.0);
-  popIn(cap2, ign + 0.6, { rot: -6, rotTo: -3, sfx: false });
+  tl.to(jet, { y: -1300, x: 160, rotation: 14, duration: 1.1, ease: 'power3.in' }, ign + 0.35);
+  sfx('rocket', ign, 0.75, { dur: 1.6 }); shake(ign + 0.3, 10, 1.0);
+  popIn(c2, ign + 0.5, { rot: -6, rotTo: -3, sfx: false });
   point('B', E('n08b') + 0.05);
   wipe(S('r2'));
 })();
@@ -856,71 +832,69 @@ let F13, F14;
 (() => {
   const s = scene('r2');
   const t = roundCard(2, 'THE SCREEN', S('r2') + 0.05, '#9fe3ff');
-  const W1 = 760, H1 = 480;
-  function screenbox(x, y, notch, vivid) {
-    const box = el('div', 'screenbox', s); gsap.set(box, { left: x - W1 / 2, top: y - H1 / 2, width: W1, height: H1 });
-    const glass = el('div', 'glass', box); gsap.set(glass, { left: notch ? 14 : 28, top: notch ? 14 : 28, right: notch ? 14 : 28, bottom: notch ? 14 : 28 });
-    glass.style.background = vivid ? 'linear-gradient(160deg,#10214d,#1b0f3a)' : '#1e2230';
-    const feed = el('div', 'c', glass); feed.style.width = '100%';
-    const cols = vivid ? ['#ff4a5f', '#ffc93c', '#35d07f', '#3f8cff', '#b36bff', '#ff8a1f'] : ['#9a6b73', '#9a8c63', '#5f8a73', '#62779a', '#7d6b98', '#9a7a5f'];
-    for (let i = 0; i < 16; i++) {
-      const c = el('div', 'feedcard', feed); c.style.top = (i * 180 + 20) + 'px';
-      c.style.background = vivid ? 'rgba(255,255,255,.08)' : 'rgba(255,255,255,.06)';
-      c.innerHTML = `<div style="position:absolute;left:22px;top:22px;width:66px;height:66px;border-radius:50%;background:${cols[i % 6]}"></div>
-        <div style="position:absolute;left:110px;top:30px;width:${200 + (i * 53) % 200}px;height:18px;border-radius:9px;background:rgba(255,255,255,${vivid ? .55 : .35})"></div>
-        <div style="position:absolute;left:110px;top:64px;width:${280 + (i * 71) % 160}px;height:14px;border-radius:7px;background:rgba(255,255,255,${vivid ? .3 : .2})"></div>
-        <div style="position:absolute;left:22px;right:22px;top:104px;height:26px;border-radius:8px;background:${cols[(i + 2) % 6]};opacity:${vivid ? .9 : .5}"></div>`;
-    }
-    if (notch) { const n = el('div', 'c', box); n.style.cssText = 'width:120px;height:30px;background:#0a0a10;border-radius:0 0 14px 14px'; gsap.set(n, { left: W1 / 2 - 60 - 8, top: 0 }); }
-    return { box, glass, feed };
-  }
-  const A = screenbox(500, 560, false, false), B = screenbox(1420, 560, true, true);
-  const scrollT0 = L('n09') - 0.4;
-  proc(tt => {
-    const d = Math.max(0, tt - scrollT0);
-    const y = -((d * 260) % (180 * 8));
-    A.feed.style.transform = `translateY(${Math.round(y / 45) * 45}px)`;  // choppy (dramatized)
-    B.feed.style.transform = `translateY(${y}px)`;
+  place(S('r2'), '13', [-1.85, 0, 0], 0.12, { lid: 104 }); place(S('r2'), '14', [1.85, 0, 0], -0.12, { lid: 104 });
+  tl.set(LAP['13'].st, { glow: 0.8 }, S('r2')); tl.set(LAP['14'].st, { glow: 0.85 }, S('r2'));
+  lights(S('r2'), 0.01, { gL: 0.5, gR: 0.5, rimL: 40, rimR: 40, key: 150, env: 0.9, bloom: 0.4, gC: 0, top: 0 });
+  cut(t - 0.3, [0, 1.7, 8.7], [0, 1.0, 0], { fov: 28 });
+  shot(t - 0.3, 2.2, [-1.2, 1.55, 6.1], [-1.75, 1.0, 0], { ease: 'power2.inOut' });
+  screen('13', S('r2'), (c, w, h, dt, tt, k) => feed(c, w, h, dt, tt, k));
+  screen('14', S('r2'), (c, w, h, dt, tt, k) => feed(c, w, h, dt, tt, k));
+  touchbar(S('r2'), tbGradient);
+  callout('13', 'screenTop', '13″ display', '60Hz LCD', W('n09', 'sixty') - 0.2, L('n10a') - 0.3, { dx: 440, dy: -110, offset: new THREE.Vector3(0.9, 0, -0.25) });
+  const dram = el('div', 'fine', s, '*choppiness dramatized'); at(dram, 960, 1040); popIn(dram, W('n09', 'LCD'), { sfx: false });
+  // "bezels you could land a plane on"
+  const tb = W('n09', 'bezels') - 0.15;
+  shot(tb - 0.1, 0.9, [-1.8, 2.3, 3.9], [-1.8, 1.9, 0], { ease: 'power2.inOut' });
+  const plane = emo('airplane', 200, s, 0, 0);
+  const pl = { p: 0 };
+  const tland = W('n09', 'land') - 0.45;
+  tl.to(pl, { p: 1, duration: 1.3, ease: 'power2.out' }, tland);
+  gsap.set(plane, { opacity: 0 });
+  tl.to(plane, { opacity: 1, duration: 0.1 }, tland);
+  proc(() => {
+    const a = ST.project(LAP['13'].anchors.bezelTop);
+    const p = pl.p, x = a.x + 760 * (1 - p) - 80 * p, y = a.y - 50 - 320 * Math.pow(1 - p, 2);
+    plane.style.left = x + 'px'; plane.style.top = y + 'px'; plane.style.rotate = (-205 + 12 * (1 - p)) + 'deg'; plane.style.scale = '1 -1';
   });
-  tl.fromTo(A.box, { y: 800, rotation: -8 }, { y: 0, rotation: 0, duration: 0.6, ease: 'back.out(1.3)' }, L('n09') - 0.3);
-  sfx('whoosh', L('n09') - 0.35, 0.6);
-  const la = el('div', 'c', s, `<div style="display:flex;gap:14px;align-items:center"><span class="tag red">13″</span><span class="sub" style="font-weight:800">60Hz LCD</span></div>`); at(la, 500, 250);
-  popIn(la, L('n09') + 0.2, { from: 0.5 });
-  const nice = el('div', 'hand', s, 'perfectly nice.'); nice.style.cssText += ';font-size:54px;color:#fff'; at(nice, 500, 860);
-  popIn(nice, W('n09', 'perfectly') - 0.1, { rot: -6, rotTo: -3, sfx: 'pop2' });
-  const dram = el('div', 'fine', s, '*choppiness dramatized'); at(dram, 500, 925); popIn(dram, W('n09', 'LCD'), { sfx: false });
-  tl.fromTo(B.box, { y: 800, rotation: 8 }, { y: 0, rotation: 0, duration: 0.6, ease: 'back.out(1.3)' }, L('n10a') - 0.3);
-  sfx('whoosh', L('n10a') - 0.35, 0.6);
-  const lb = el('div', 'c', s, `<div style="display:flex;gap:14px;align-items:center"><span class="tag blue">14″</span><span class="sub" style="font-weight:800">mini-LED XDR</span></div>`); at(lb, 1420, 250);
-  popIn(lb, W('n10a', 'mini'), { from: 0.5, sfx: 'sparkle' });
-  // 120Hz + brightness
-  const hz = el('div', 'tag gold', s, '120Hz ProMotion'); at(hz, 1420, 860); hz.style.fontSize = '34px';
-  popIn(hz, W('n10b', 'hundred') - 0.2, { from: 0.4 });
-  const nitsBox = el('div', 'c', s, `<div style="display:flex;align-items:baseline;gap:12px"><span class="big" id="nits" style="font-size:88px;color:#fff">500</span><span class="sub" style="font-weight:800">nits peak</span></div>`); at(nitsBox, 1420, 950);
+  sfx('jet', tland - 0.1, 0.6); sfx('screech', tland + 1.0, 0.5);
+  const lol = el('div', 'hand', s, 'plenty of runway.'); lol.style.cssText += ';font-size:58px;color:var(--gold)'; at(lol, 1300, 760, { rotation: -4 });
+  popIn(lol, E('n09') - 0.3, { rot: -8, rotTo: -4, sfx: false });
+  fadeOut([lol, dram, plane], L('n10a') - 0.35);
+  // the 14": XDR
+  shot(L('n10a') - 0.35, 0.9, [1.2, 1.55, 6.1], [1.75, 1.0, 0]);
+  callout('14', 'screenTop', '14″ display', 'Liquid Retina XDR', W('n10a', 'mini') - 0.1, W('n10b', 'sixteen') - 0.4, { dx: -470, dy: -110, offset: new THREE.Vector3(-0.9, 0, -0.25) });
   const tn = W('n10b', 'sixteen') - 0.25;
+  shot(W('n10b', 'hundred') - 0.2, 1.4, [0, 1.8, 9.4], [0, 1.05, 0]);
+  const hz = el('div', 'pill gold', s, '120Hz ProMotion'); at(hz, 1400, 890); popIn(hz, W('n10b', 'hundred') - 0.15, { from: 0.4 });
+  const nitsBox = el('div', 'c', s, `<div style="display:flex;align-items:baseline;gap:14px"><span class="big gold" id="nits" style="font-size:96px">500</span><span class="sub" style="font-weight:800">nits peak (HDR)</span></div>`); at(nitsBox, 1400, 1000);
   popIn(nitsBox, tn - 0.2, { from: 0.5, sfx: false });
   counter(nitsBox.querySelector('#nits'), 500, 1600, tn, 1.1);
   sfx('rise', tn, 0.5, { dur: 1.1, f0: 400, f1: 1600 });
-  tl.to(B.box, { boxShadow: '0 0 0 8px #fff, 0 0 180px 60px rgba(160,210,255,.85)', duration: 0.8 }, tn + 0.2);
-  tl.to(B.glass, { filter: 'brightness(1.6) saturate(1.3)', duration: 0.8 }, tn + 0.2);
-  glow('R', 1, tn + 0.2, 0.6);
-  const shades = emo('1f60e', 170, s, 500, 560);
-  tl.fromTo(shades, { y: -700, rotation: -30 }, { y: 0, rotation: 8, duration: 0.5, ease: 'bounce.out' }, E('n10b') - 0.35);
-  sfx('boing', E('n10b') - 0.1, 0.5);
-  const need = el('div', 'hand', s, 'too bright?'); need.style.cssText += ';font-size:40px;color:var(--gold)'; at(need, 500, 390);
-  popIn(need, E('n10b') + 0.1, { rot: 5, rotTo: 4, sfx: false });
-  // butter on a hot skillet
-  const pan = emo('1f373', 320, s, 1420, 640); gsap.set(pan, { opacity: 0 });
-  const butter = emo('1f9c8', 190, s, 1420, 560); butter.style.filter = 'drop-shadow(0 8px 0 rgba(0,0,0,.45))';
-  const tbut = W('n10c', 'butter') - 0.2;
-  popIn(pan, tbut - 0.1, { sfx: 'pop2' });
-  tl.fromTo(butter, { x: -330, y: -40, opacity: 0, rotation: -10 }, { x: 330, y: 0, opacity: 1, rotation: 10, duration: 2.0, ease: 'sine.inOut' }, tbut);
-  tl.to(butter, { opacity: 0, duration: 0.2 }, tbut + 1.8);
-  emitter({ t0: tbut, t1: tbut + 1.9, rate: 50, life: 0.7, speed: 120, angle: -Math.PI / 2, spread: 1.6, size: 16, shape: 'star', colors: ['#fff', '#ffe89a'], pos: tt => [1420 - 330 + 660 * gsap.parseEase('sine.inOut')(Math.min(1, Math.max(0, (tt - tbut) / 2))), 540] });
+  tl.to(LAP['14'].st, { glow: 2.8, duration: 1.0, ease: 'power2.in' }, tn);
+  tl.to(LAP['13'].st, { glow: 0.55, duration: 1.0 }, tn);
+  lights(tn, 1.0, { bloom: 0.9, gR: 1.2 });
+  const shades = el('img', 'emo', s); shades.src = FL('sunglasses'); shades.width = 240; shades.height = 240; at(shades, 0, 0);
+  follow(shades, '13', 'screen', 0, -30);
+  gsap.set(shades, { opacity: 0 });
+  tl.fromTo(shades, { y: -700, rotation: -30, opacity: 0 }, { y: 0, rotation: 6, opacity: 1, duration: 0.5, ease: 'bounce.out', immediateRender: false }, E('n10b') - 0.4);
+  sfx('boing', E('n10b') - 0.15, 0.5);
+  screen('13', E('n10b') - 0.4, faceScreen('hot_face', { size: 0.6 }));
+  const bright = el('div', 'hand', s, 'too bright?'); bright.style.cssText += ';font-size:48px;color:#fff'; at(bright, 520, 300, { rotation: 4 });
+  popIn(bright, E('n10b') + 0.05, { rot: 6, rotTo: 4, sfx: false });
+  // butter on a hot skillet: glides across the 14" screen
+  const tbut = W('n10c', 'butter') - 0.35;
+  tl.to(LAP['14'].st, { glow: 1.1, duration: 0.4 }, tbut - 0.3);
+  lights(tbut - 0.3, 0.4, { bloom: 0.5 });
+  fadeOut([hz, nitsBox, bright, shades], tbut - 0.3);
+  shot(tbut - 0.3, 0.8, [1.6, 1.5, 5.6], [1.8, 1.0, 0]);
+  screen('14', tbut, (c, w, h, dt, tt, k) => feed(c, w, h, dt + 5, tt, k, (c, w, h) => {
+    const p = gsap.parseEase('sine.inOut')(Math.min(1, dt / 1.9));
+    c.save(); c.shadowColor = 'rgba(0,0,0,.4)'; c.shadowBlur = 30; c.shadowOffsetY = 16;
+    c.drawImage(img('cooking'), w / 2 - 230, h * 0.6 - 200, 460, 460);
+    c.drawImage(img('butter'), 60 + p * (w - 420), h * 0.34 - 50 - Math.sin(p * Math.PI) * 40, 300, 300); c.restore();
+    c.fillStyle = 'rgba(255,255,255,.95)'; c.font = '400 76px Marker'; c.textAlign = 'center'; c.fillText('smoooooth', w / 2, 140); c.textAlign = 'left';
+  }));
   sfx('sizzle', tbut, 0.45, { dur: 2.0 });
-  const smooth = el('div', 'hand', s, 'smoooooth'); smooth.style.cssText += ';font-size:58px;color:#fff'; at(smooth, 1420, 400);
-  popIn(smooth, tbut + 0.6, { rot: -4, rotTo: -2, sfx: false });
-  tl.to([hz, nitsBox], { opacity: 0, duration: 0.2 }, tbut - 0.2);
   point('B', E('n10c') + 0.05);
   wipe(S('r3'));
 })();
@@ -931,134 +905,115 @@ let F13, F14;
 (() => {
   const s = scene('r3');
   const t = roundCard(3, 'PORTS', S('r3') + 0.05, '#b8ffcf');
-  // side profile of a laptop, with ports
-  function profile(x, y, w, color, label) {
-    const p = el('div', 'c', s); gsap.set(p, { left: x - w / 2, top: y, width: w, height: 60 });
-    p.innerHTML = `<div style="position:absolute;left:0;right:0;top:0;height:18px;border-radius:9px 9px 3px 3px;background:#b9bec8;border:5px solid ${O}"></div>
-      <div style="position:absolute;left:0;right:0;top:24px;height:34px;border-radius:4px 4px 16px 16px;background:linear-gradient(#e6e9ef,#aeb3bd);border:5px solid ${O}"></div>`;
-    const tg = el('div', 'tag ' + color, s, label); at(tg, x, y - 70);
-    return { p, tg };
+  place(S('r3'), '13', [-1.85, 0, 0], 0, { lid: 104 }); place(S('r3'), '14', [1.85, 0, 0], 0, { lid: 104 });
+  tl.set(LAP['14'].st, { glow: 0.85 }, S('r3'));
+  lights(S('r3'), 0.01, { gL: 0.4, gR: 0.4, rimL: 50, rimR: 50, key: 160, bloom: 0.45 });
+  screen('13', S('r3'), faceScreen('nerd_face', { size: 0.6 })); screen('14', S('r3'), faceScreen('smiling_face_with_sunglasses', { size: 0.6 }));
+  cut(t - 0.3, [-6.4, 0.55, 2.2], [-1.9, 0.12, -0.2], { fov: 30 });
+  shot(t - 0.3, 2.6, [-5.6, 0.45, 1.6], [-1.9, 0.1, -0.35], { ease: 'power1.out' });
+  const P13 = LAP['13'].ports, P14 = LAP['14'].ports;
+  const ring = (p, t0, t1) => { tl.to(p.ring.material, { opacity: 0.95, duration: 0.2 }, t0); if (t1) tl.to(p.ring.material, { opacity: 0, duration: 0.3 }, t1); };
+  const two = W('n11a', 'two') - 0.1;
+  ring(P13.tb1, two, L('n12a') - 0.5); ring(P13.tb2, two + 0.15, L('n12a') - 0.5);
+  sfx('click', two, 0.6); sfx('click', two + 0.15, 0.6);
+  callout('13', () => ST.project(P13.tb1.group), 'Left side', 'USB-C ×2', two + 0.1, L('n12a') - 0.5, { dx: 320, dy: -250 });
+  const twoBig = el('div', 'big gold', s, '2.'); twoBig.style.fontSize = '320px'; at(twoBig, 1560, 560);
+  slam(twoBig, W('n11a', 'Two') - 0.15, { from: 2.5, amp: 14, gain: 0.6 });
+  fadeOut(twoBig, L('n11b') + 0.1);
+  // dongles hang off the port, one after another
+  const td = W('n11b', 'dongles') - 0.45;
+  const dg = el('div', 'fill', s);
+  const svg = el('div', 'c', dg); svg.innerHTML = '<svg width="1920" height="1400" style="position:absolute;left:0;top:0;overflow:visible"><path id="dgc" stroke="#f2f2f6" stroke-width="9" fill="none" stroke-linecap="round"/></svg>';
+  const dn = [];
+  for (let i = 0; i < 6; i++) {
+    const d = el('div', 'c', dg); d.style.cssText = 'width:150px;height:84px;border-radius:22px;background:linear-gradient(180deg,#ffffff,#d6d8df);box-shadow:0 18px 30px rgba(0,0,0,.5),inset 0 -4px 0 rgba(0,0,0,.08)';
+    d.innerHTML = '<div style="position:absolute;left:30px;top:34px;width:30px;height:14px;border-radius:4px;background:#15131d"></div><div style="position:absolute;left:78px;top:34px;width:40px;height:14px;border-radius:7px;background:#15131d"></div>';
+    at(d, 0, 0); gsap.set(d, { opacity: 0 }); dn.push(d);
+    tl.fromTo(d, { opacity: 0, scale: 0.3 }, { opacity: 1, scale: 1, duration: 0.25, ease: 'back.out(3)', immediateRender: false }, td + i * 0.14);
+    sfx('click', td + i * 0.14, 0.45);
   }
-  function port(parent, x, kind) {
-    const e = el('div', 'c', parent);
-    const shapes = { usbc: 'width:40px;height:14px;border-radius:7px', tb: 'width:40px;height:14px;border-radius:7px', hdmi: 'width:52px;height:16px;border-radius:2px 2px 8px 8px', sd: 'width:56px;height:8px;border-radius:2px', mag: 'width:50px;height:12px;border-radius:6px;background:#3a3a3a', jack: 'width:14px;height:14px;border-radius:50%' };
-    e.style.cssText = shapes[kind] + ';background:#16112a;box-shadow:0 0 0 3px rgba(255,255,255,.25)';
-    at(e, x, 41);
-    return e;
-  }
-  const A = profile(500, 380, 760, 'red', '13″ · M1');
-  const ta = L('n11a') - 0.2;
-  slideIn(A.p, ta, -900, 0); popIn(A.tg, ta + 0.1, { sfx: false });
-  const pa = [port(A.p, 70, 'usbc'), port(A.p, 130, 'usbc')];
-  pa.forEach((p, i) => { popIn(p, W('n11a', 'two') + i * 0.15, { from: 3, sfx: 'click' }); });
-  const two = el('div', 'chip red', s, '2 × USB-C'); at(two, 500, 520);
-  popIn(two, W('n11a', 'USB') - 0.1, { from: 0.4 });
-  const thats = el('div', 'hand', s, "that's it."); thats.style.cssText += ';font-size:54px;color:#fff'; at(thats, 800, 520);
-  popIn(thats, L('n11b'), { rot: -6, rotTo: -4, sfx: 'boing', gain: 0.3 });
-  // dongle chain, growing down and off-screen
-  const chain = el('div', 'c', s); gsap.set(chain, { left: 0, top: 0, width: 1920, height: 1080 });
-  const dongles = [[170, 640], [360, 720], [180, 820], [400, 900], [200, 990], [420, 1080], [230, 1170]];
-  let prev = [70 + 500 - 380, 421];
-  let svgs = '';
-  const cables = [];
-  dongles.forEach(([x, y], i) => { cables.push(`M${prev[0]},${prev[1]} C${prev[0]},${prev[1] + 60} ${x},${y - 80} ${x},${y - 34}`); prev = [x, y + 34]; });
-  chain.innerHTML = `<svg width="1920" height="1300" style="position:absolute;left:0;top:0;overflow:visible">${cables.map((d, i) => `<path class="cab" d="${d}" stroke="#e8e8ee" stroke-width="10" fill="none" stroke-linecap="round"/>`).join('')}</svg>`;
-  const tdg = W('n11b', 'dongles') - 0.5;
-  chain.querySelectorAll('.cab').forEach((c, i) => { const len = c.getTotalLength ? 400 : 400; c.style.strokeDasharray = 400; tl.fromTo(c, { strokeDashoffset: 400 }, { strokeDashoffset: 0, duration: 0.15 }, tdg + i * 0.2); });
-  dongles.forEach(([x, y], i) => {
-    const d = el('div', 'c', chain); d.style.cssText = 'width:110px;height:68px;border-radius:16px;background:linear-gradient(#fff,#d9dbe2);border:5px solid #16112a;box-sizing:border-box';
-    d.innerHTML = '<div style="position:absolute;left:22px;top:22px;width:22px;height:12px;border-radius:3px;background:#16112a"></div><div style="position:absolute;left:56px;top:22px;width:24px;height:12px;border-radius:6px;background:#16112a"></div>';
-    at(d, x, y, { rotation: (i % 2 ? 8 : -8) });
-    popIn(d, tdg + i * 0.2 + 0.1, { sfx: 'click', gain: 0.5, rot: (i % 2 ? 8 : -8), rotTo: (i % 2 ? 8 : -8) });
-  });
-  const dl = el('div', 'hand', s, 'dongle life'); dl.style.cssText += ';font-size:62px;color:var(--gold)'; at(dl, 700, 760);
-  popIn(dl, tdg + 0.8, { rot: -8, rotTo: -6, sfx: false });
-
-  // the 14"
-  const B = profile(1420, 380, 760, 'blue', '14″ · M1 Pro');
-  const tb = L('n12a') - 0.3;
-  slideIn(B.p, tb, 900, 0); popIn(B.tg, tb + 0.1, { sfx: false });
-  const kinds = [['mag', 60], ['tb', 130], ['tb', 190], ['jack', 250], ['sd', 510], ['tb', 600], ['hdmi', 690]];
-  const pb = kinds.map(([k, x]) => port(B.p, x, k));
-  gsap.set(pb, { opacity: 0 });
-  const chipsB = [['3 × Thunderbolt 4', W('n12a', 'three') - 0.1, [1, 2, 5]], ['HDMI', W('n12a', 'HDMI') - 0.1, [6]], ['SD slot', W('n12a', 'SD') - 0.1, [4]], ['MagSafe', W('n12a', 'MagSafe') - 0.1, [0]]];
-  chipsB.forEach(([label, tt, idx], i) => {
-    const c = el('div', 'chip blue', s, label); c.style.fontSize = '32px'; c.style.padding = '12px 22px';
-    at(c, [1190, 1560, 1190, 1560][i], [510, 510, 610, 610][i]);
-    popIn(c, tt, { from: 0.4 });
-    idx.forEach((j, k) => popIn(pb[j], tt + k * 0.08, { from: 3, sfx: 'click', gain: 0.4 }));
-  });
-  popIn(pb[3], W('n12a', 'MagSafe') + 0.2, { from: 3, sfx: false });
-  const plus = el('div', 'hand', s, '+ headphone jack'); plus.style.cssText += ';font-size:34px;color:rgba(255,255,255,.7)'; at(plus, 1420, 690);
-  popIn(plus, E('n12a') - 0.1, { sfx: false });
-
-  // the trip gag
-  const tg0 = L('n12b') - 0.35;
-  [...s.children].forEach(e => { if (e !== chain) tl.to(e, { opacity: 0, y: -80, duration: 0.3, ease: 'power2.in' }, tg0); });
-  tl.to(chain, { opacity: 0, y: 200, duration: 0.3, ease: 'power2.in' }, tg0);
-  const gag = el('div', 'fill', s);
-  tl.fromTo(gag, { opacity: 0 }, { opacity: 1, duration: 0.3 }, tg0 + 0.2);
-  const tables = [480, 1440].map((x, i) => {
-    const tb = el('div', 'c', gag); tb.style.cssText = `width:620px;height:300px;`;
-    tb.innerHTML = `<div style="position:absolute;left:0;right:0;top:0;height:36px;border-radius:10px;background:${i ? '#6c4a2f' : '#6c4a2f'};border:6px solid ${O}"></div>
-      <div style="position:absolute;left:60px;top:36px;width:34px;height:260px;background:#553a24;border:6px solid ${O};border-top:0"></div>
-      <div style="position:absolute;right:60px;top:36px;width:34px;height:260px;background:#553a24;border:6px solid ${O};border-top:0"></div>`;
-    at(tb, x, 850);
-    return tb;
-  });
-  const lbls = [['USB-C', 'red', 480], ['MagSafe', 'blue', 1440]].map(([h, c, x]) => { const e = el('div', 'tag ' + c, gag, h); at(e, x, 170); return e; });
-  const la = laptop('13', gag, 480, 560, 0.62), lb = laptop('14', gag, 1440, 560, 0.62);
-  gsap.set([la.root, lb.root], { transformOrigin: '50% 50%' });
-  la.expr('happy', tg0); lb.expr('happy', tg0);
-  // cables: from the left side of each laptop down to the floor
-  const cab = el('div', 'c', gag); cab.innerHTML = `<svg width="1920" height="1080" style="position:absolute;left:0;top:0;overflow:visible">
-    <path id="cabA" stroke="#f2f2f6" stroke-width="10" fill="none" stroke-linecap="round"/>
-    <path id="cabB" stroke="#f2f2f6" stroke-width="10" fill="none" stroke-linecap="round"/>
-    <rect id="magB" width="30" height="20" rx="6" fill="#d8b36a" stroke="${O}" stroke-width="4"/></svg>`;
-  const tt0 = W('n12b', 'trips') - 0.25;      // feet kick the cables
-  const tStay = W('n12b', 'stays') - 0.1;
-  const tFlip = W('n12b', 'triple') - 0.3;
-  const feet = [260, 1220].map((x, i) => { const f = emo('1f9b6', 170, gag, x, 1180); gsap.set(f, { scaleX: i ? -1 : 1 }); return f; });
-  feet.forEach((f, i) => tl.fromTo(f, { y: 0, rotation: 0 }, { keyframes: [{ y: -200, rotation: i ? 25 : -25, duration: 0.25, ease: 'power3.out' }, { y: 0, rotation: 0, duration: 0.35, ease: 'power2.in', delay: 0.15 }] }, tt0 + i * 0.04));
-  const yank = { a: 0, b: 0 };
-  tl.to(yank, { a: 1, b: 1, duration: 0.2, ease: 'power2.out' }, tt0 + 0.12);
-  tl.to(yank, { b: 0, duration: 0.4, ease: 'power2.inOut' }, tt0 + 0.5);
-  sfx('swish', tt0, 0.6); sfx('boing', tt0 + 0.2, 0.35);
-  // MagSafe lets go: connector pops, laptop stays
-  const mag = { off: 0 };
-  tl.to(mag, { off: 1, duration: 0.25, ease: 'power2.out' }, tt0 + 0.55);
-  sfx('magsnap', tt0 + 0.55, 0.9);
-  burst({ t: tt0 + 0.55, x: 1440 - 180, y: 575, n: 16, speed: 500, size: 12, life: 0.5, g: 800, colors: ['#fff', '#ffe89a'], shape: 'star' });
-  lb.expr('smug', tStay); tl.to(lb.root, { rotation: -4, duration: 0.12, yoyo: true, repeat: 3 }, tt0 + 0.55);
-  const stay = el('div', 'hand', gag, 'stays put.'); stay.style.cssText += ';font-size:56px;color:#fff'; at(stay, 1440, 300);
-  popIn(stay, tStay, { rot: -5, rotTo: -3, sfx: 'pop2' });
-  // USB-C does not let go: laptop gets dragged, then triple backflip
-  la.expr('shock', tt0 + 0.5);
-  tl.to(la.root, { x: -60, rotation: -8, duration: 0.3, ease: 'power2.out' }, tt0 + 0.5);
-  tl.to(la.root, { x: -80, rotation: -14, duration: 0.2, yoyo: true, repeat: 3, ease: 'sine.inOut' }, tt0 + 0.8);
-  tl.to(la.root, { keyframes: [{ x: -200, y: -380, rotation: -540, duration: 0.55, ease: 'power1.out' }, { x: -420, y: 900, rotation: -1080 - 30, duration: 0.7, ease: 'power2.in' }] }, tFlip);
-  sfx('flip3', tFlip, 0.7);
-  sfx('crash', tFlip + 1.2, 0.8);
-  const cnt = el('div', 'big', gag, ''); cnt.style.cssText += ';font-size:120px;color:var(--gold);-webkit-text-stroke:8px #16112a;paint-order:stroke fill'; at(cnt, 520, 330);
-  const flips = { v: 0 }; tl.to(flips, { v: 3, duration: 1.1, ease: 'none' }, tFlip + 0.05);
-  proc(() => { const n = Math.min(3, Math.floor(flips.v + 0.35)); const s2 = n ? n + '×!' : ''; if (cnt.textContent !== s2) cnt.textContent = s2; });
-  tl.fromTo(cnt, { opacity: 0 }, { opacity: 1, duration: 0.1 }, tFlip + 0.1);
-  const boom = emo('1f4a5', 260, gag, 200, 960); popIn(boom, tFlip + 1.2, { sfx: false, from: 0.2 });
-  shake(tFlip + 1.2, 18, 0.5);
-  // draw cables every frame
+  const dcount = { n: 0 }; tl.to(dcount, { n: 6, duration: 0.84, ease: 'none' }, td);
   proc(tt => {
-    // the cable end follows the laptop's port (USB-C stays plugged in), rotating with it
-    const th = gsap.getProperty(la.root, 'rotation') * Math.PI / 180, ox = -165, oy = 118;
-    const lx = 480 + gsap.getProperty(la.root, 'x') + ox * Math.cos(th) - oy * Math.sin(th);
-    const ly = 560 + gsap.getProperty(la.root, 'y') + ox * Math.sin(th) + oy * Math.cos(th);
-    // each cable droops to the floor; a kicking foot pushes its low point up
-    const ka = [250, 1010 - yank.a * 60], kb = [1210, 1010 - yank.b * 60];
-    $('#cabA').setAttribute('d', `M${lx},${ly} C${lx - 50},${ly + 160} ${ka[0] + 40},${ka[1] - 120} ${ka[0]},${ka[1]} S ${ka[0] - 30},1070 ${ka[0] - 40},1110`);
-    const mx = 1440 - 165 - mag.off * 110, my = 678 + mag.off * 150;
-    $('#cabB').setAttribute('d', `M${mx},${my} C${mx - 50},${my + 160} ${kb[0] + 40},${kb[1] - 120} ${kb[0]},${kb[1]} S ${kb[0] - 30},1070 ${kb[0] - 40},1110`);
-    const m = $('#magB'); m.setAttribute('x', mx - 15); m.setAttribute('y', my - 10);
+    const a = ST.project(P13.tb2.group);
+    const pts = [[a.x, a.y]];
+    dn.forEach((d, i) => { const x = a.x + 120 + (i % 2 ? 170 : 40) + i * 40, y = a.y + 150 + i * 120 + Math.sin(tt * 3 + i) * 6; d.style.left = x + 'px'; d.style.top = y + 'px'; d.style.rotate = (i % 2 ? 7 : -7) + 'deg'; pts.push([x, y]); });
+    const n = Math.min(6, Math.ceil(dcount.n));
+    let path = `M${pts[0][0]},${pts[0][1]}`; for (let i = 1; i <= n; i++) path += ` C${pts[i - 1][0] + 20},${pts[i - 1][1] + 70} ${pts[i][0]},${pts[i][1] - 100} ${pts[i][0]},${pts[i][1] - 34}`;
+    $('#dgc').setAttribute('d', n ? path : '');
   });
-  point('B', E('n12b') + 0.05);
+  const dl = el('div', 'hand', s, 'dongle life.'); dl.style.cssText += ';font-size:76px;color:var(--gold)'; at(dl, 1350, 700, { rotation: -6 });
+  popIn(dl, td + 0.6, { rot: -10, rotTo: -6, sfx: false });
+  fadeOut([dg, dl], L('n12a') - 0.45);
+  // the 14": left side, then right side, then back for MagSafe
+  const t12 = L('n12a') - 0.45;
+  shot(t12, 0.7, [-1.2, 0.8, 4.6], [1.0, 0.15, -0.3], { ease: 'power3.inOut' });
+  const tTB = W('n12a', 'three') - 0.1, tH = W('n12a', 'HDMI') - 0.2, tSD = W('n12a', 'SD') - 0.2, tM = W('n12a', 'MagSafe') - 0.25;
+  const rOff = L('n12b') - 0.3;
+  ring(P14.tb1, tTB, rOff); ring(P14.tb2, tTB + 0.1, rOff);
+  callout('14', () => ST.project(P14.tb2.group), 'Thunderbolt 4', '×3', tTB + 0.1, tH - 0.1, { dx: -380, dy: -250 });
+  shot(tH - 0.35, 0.55, [5.4, 0.8, 3.2], [2.3, 0.12, -0.2], { ease: 'power3.inOut' });
+  sfx('swish', tH - 0.35, 0.45);
+  ring(P14.tb3, tH - 0.05, rOff); ring(P14.hdmi, tH, rOff); ring(P14.sd, tSD, rOff);
+  callout('14', () => ST.project(P14.hdmi.group), 'Plug in a TV', 'HDMI', tH + 0.05, tM - 0.3, { dx: -420, dy: -260 });
+  callout('14', () => ST.project(P14.sd.group), 'Camera cards', 'SD slot', tSD + 0.05, tM - 0.3, { dx: -360, dy: 170 });
+  shot(tM - 0.35, 0.55, [-1.0, 0.7, 3.9], [0.95, 0.12, -0.6], { ease: 'power3.inOut' });
+  sfx('swish', tM - 0.35, 0.45);
+  ring(P14.magsafe, tM, rOff); ring(P14.jack, tM + 0.1, rOff);
+  callout('14', () => ST.project(P14.magsafe.group), 'Charging', 'MagSafe 3', tM + 0.05, rOff, { dx: -380, dy: -230 });
+  // the trip: MagSafe pops off; USB-C drags the 13" into a triple backflip
+  const tt0 = L('n12b') - 0.2;
+  place(tt0, '13', [-2.1, 0, 0], 0.2); place(tt0, '14', [2.1, 0, 0], -0.2);
+  cut(tt0, [0, 2.1, 10.2], [0, 0.6, 0.6], { fov: 30 });
+  shot(tt0, 3, [0, 1.8, 9.6], [0, 0.6, 0.6]);
+  const cableMat = new THREE.MeshStandardMaterial({ color: '#f4f4f6', roughness: 0.5 });
+  const plugMat = new THREE.MeshStandardMaterial({ color: '#d9b26a', metalness: 0.8, roughness: 0.3 });
+  const cab = { '13': new THREE.Mesh(new THREE.BufferGeometry(), cableMat), '14': new THREE.Mesh(new THREE.BufferGeometry(), cableMat) };
+  const plug = new THREE.Mesh(new THREE.BoxGeometry(0.06, 0.035, 0.13), plugMat);
+  ST.scene.add(cab['13'], cab['14'], plug);
+  const cst = { on: 0, yank: 0, mag: 0 };
+  tl.set(cst, { on: 1 }, tt0); tl.set(cst, { on: 0 }, SE('r3') + 0.4);
+  const tk = W('n12b', 'trips') - 0.1;
+  tl.to(cst, { yank: 1, duration: 0.25, ease: 'power2.out' }, tk);
+  tl.to(cst, { mag: 1, duration: 0.35, ease: 'power2.out' }, tk + 0.12);
+  const wv = new THREE.Vector3();
+  proc(() => {
+    const vis = !!cst.on && !!G.on; cab['13'].visible = cab['14'].visible = plug.visible = vis;
+    if (!vis) return;
+    for (const k of ['13', '14']) {
+      const pt = k === '13' ? P13.tb1.group : P14.magsafe.group;
+      pt.updateWorldMatrix(true, false); pt.getWorldPosition(wv);
+      const start = wv.clone().add(new THREE.Vector3(-0.05, 0, 0));
+      if (k === '14') start.add(new THREE.Vector3(-0.35 * cst.mag, -0.04 * cst.mag, 0.25 * cst.mag));
+      const floorX = k === '13' ? -3.4 : 0.9;
+      const mid = new THREE.Vector3((start.x + floorX) / 2, 0.03 + 0.3 * cst.yank, start.z + 1.3 + 0.5 * cst.yank);
+      const curve = new THREE.CatmullRomCurve3([start, start.clone().add(new THREE.Vector3(-0.25, -0.02, 0.05)), mid, new THREE.Vector3(floorX, 0.025, 3.2), new THREE.Vector3(floorX - 0.3, 0.025, 6)]);
+      cab[k].geometry.dispose(); cab[k].geometry = new THREE.TubeGeometry(curve, 48, 0.022, 8, false);
+      if (k === '14') { plug.position.copy(start); plug.rotation.y = cst.mag * 0.8; }
+    }
+  });
+  const foot = emo('assets/fluent/foot_3d_default.png', 280, s, 960, 1220);
+  tl.fromTo(foot, { x: -900, y: 0, rotation: -20 }, { keyframes: [{ x: 0, y: -190, rotation: 10, duration: 0.3, ease: 'power2.out' }, { x: 900, y: 0, rotation: 30, duration: 0.35, ease: 'power2.in' }] }, tk - 0.3);
+  sfx('swish', tk - 0.2, 0.6);
+  sfx('magsnap', tk + 0.12, 0.9);
+  const pops = el('div', 'hand', s, '*pop*'); pops.style.cssText += ';font-size:66px;color:#fff'; at(pops, 1060, 700, { rotation: 6 });
+  popIn(pops, tk + 0.15, { rot: 10, rotTo: 6, sfx: false });
+  screen('14', tk + 0.2, faceScreen('smirking_face', { size: 0.6 }));
+  const ok = el('div', 'pill blue', s, 'MagSafe: laptop stays put'); at(ok, 1440, 160); popIn(ok, W('n12b', 'pops') - 0.1, { from: 0.4 });
+  screen('13', tk + 0.2, faceScreen('face_screaming_in_fear', { size: 0.6 }));
+  move(tk + 0.2, 0.35, '13', [-2.5, 0, 0.35], 0.35, { ease: 'power2.out' });
+  tl.to(LAP['13'].group.rotation, { z: 0.08, duration: 0.12, yoyo: true, repeat: 5 }, tk + 0.5);
+  const tf = W('n12c', 'Triple') - 0.2;
+  shot(tf - 0.1, 1.6, [-1.5, 2.4, 11.5], [-2.5, 1.6, 0.5], { ease: 'power1.inOut' });
+  const G13 = LAP['13'].group;
+  tl.to(G13.position, { keyframes: [{ x: -3.2, y: 2.6, z: 1.2, duration: 0.55, ease: 'power2.out' }, { x: -4.4, y: -2.5, z: 2.0, duration: 0.7, ease: 'power2.in' }] }, tf);
+  tl.to(G13.rotation, { x: -Math.PI * 6, duration: 1.25, ease: 'power1.inOut' }, tf);
+  sfx('flip3', tf, 0.7); sfx('crash', tf + 1.2, 0.7);
+  const cnt = el('div', 'big gold', s, ''); cnt.style.fontSize = '160px'; at(cnt, 620, 330);
+  const flips = { v: 0 }; tl.to(flips, { v: 3, duration: 1.2, ease: 'power1.inOut' }, tf);
+  proc(() => { const n = Math.min(3, Math.floor(flips.v + 0.3)); const s2 = n ? n + '×!' : ''; if (cnt.textContent !== s2) cnt.textContent = s2; });
+  const boom = emo('collision', 340, s, 260, 900); popIn(boom, tf + 1.2, { sfx: false, from: 0.2 });
+  shake(tf + 1.2, 18, 0.5);
+  point('B', E('n12c') + 0.1);
   wipe(S('r4'));
 })();
 
@@ -1068,164 +1023,134 @@ let F13, F14;
 (() => {
   const s = scene('r4');
   const t = roundCard(4, 'VIDEO CALLS', S('r4') + 0.05, '#ffd0a8');
-  function win(x, title, res, color) {
-    const w = el('div', 'window', s); gsap.set(w, { left: x - 380, top: 250, width: 760, height: 520 });
-    w.innerHTML = `<div class="bar"><i style="background:#ff5f57"></i><i style="background:#febc2e"></i><i style="background:#28c840"></i><span style="margin-left:14px">${title}</span></div>`;
-    const body = el('div', 'c', w); gsap.set(body, { left: 0, top: 54, width: 744, height: 450 }); body.style.background = '#2f2c40';
-    const badge = el('div', 'tag ' + color, s, res); badge.style.fontSize = '40px'; at(badge, x, 840);
-    return { w, body, badge };
+  place(S('r4'), '13', [-1.85, 0, 0], 0.12, { lid: 104, rx: 0 }); place(S('r4'), '14', [1.85, 0, 0], -0.12, { lid: 104 });
+  tl.set(LAP['13'].st, { glow: 0.85 }, S('r4'));
+  lights(S('r4'), 0.01, { gL: 0.5, gR: 0.5, rimL: 40, rimR: 40, key: 150, bloom: 0.4 });
+  cut(t - 0.3, [0, 1.75, 9.2], [0, 1.0, 0], { fov: 28 });
+  shot(t - 0.3, 2.4, [0, 1.6, 8.6], [0, 1.0, 0]);
+  const pix = document.createElement('canvas'); pix.width = 32; pix.height = 20;
+  function call(label, res) {
+    return (c, w, h, dt, tt, k) => {
+      c.fillStyle = '#16151f'; c.fillRect(0, 0, w, h); menubar(c, w, h, k);
+      c.fillStyle = '#23212f'; c.beginPath(); c.roundRect(40, 60, w - 80, h - 150, 24); c.fill();
+      c.fillStyle = 'rgba(255,255,255,.85)'; c.font = '700 26px Inter'; c.textBaseline = 'middle'; c.fillText('Weekly Sync', 70, 100);
+      c.fillStyle = k === '13' ? '#ff3b5c' : '#3d8bff'; c.beginPath(); c.roundRect(w - 180, 78, 120, 40, 20); c.fill(); c.fillStyle = '#fff'; c.font = '800 22px Inter'; c.fillText(res, w - 160, 99);
+      c.save(); c.beginPath(); c.roundRect(40, 130, w - 80, h - 220, 0); c.clip(); label(c, w, h, dt, tt); c.restore();
+      c.fillStyle = '#2d2a3c'; [0, 1, 2].forEach(i => { c.beginPath(); c.arc(w / 2 - 90 + i * 90, h - 48, 28, 0, 7); c.fill(); });
+      c.fillStyle = '#ff3b5c'; c.beginPath(); c.arc(w / 2 + 90, h - 48, 28, 0, 7); c.fill();
+    };
   }
-  const A = win(500, 'Weekly Sync', '720p', 'red'), B = win(1420, 'Weekly Sync', '1080p', 'blue');
-  slideIn(A.w, L('n13a') - 0.3, 0, 900, { dur: 0.6, ease: 'back.out(1.2)' });
-  slideIn(B.w, L('n13a') - 0.15, 0, 900, { dur: 0.6, ease: 'back.out(1.2)', sfx: false });
-  popIn(A.badge, W('n13a', 'Seven') - 0.05);
-  popIn(B.badge, W('n13a', 'ten') - 0.05);
-  // silhouettes
-  [A, B].forEach(o => { const p = el('div', 'c', o.body); p.style.cssText = 'width:260px;height:300px;'; p.innerHTML = '<div style="position:absolute;left:70px;top:20px;width:120px;height:120px;border-radius:50%;background:#4a4660"></div><div style="position:absolute;left:0;top:160px;width:260px;height:180px;border-radius:130px 130px 0 0;background:#4a4660"></div>'; at(p, 372, 260); o.sil = p; });
-  // potato in witness protection (pixelated)
-  const cv = el('canvas', 'c', A.body); cv.width = 28; cv.height = 17; cv.style.cssText = 'width:744px;height:450px;image-rendering:pixelated;opacity:0';
-  const im1 = new Image(), im2 = new Image(); im1.src = 'assets/emoji/1f954.svg'; im2.src = 'assets/emoji/1f576.svg';
-  window.READY.push(Promise.all([im1.decode(), im2.decode()]).then(() => {
-    const c = cv.getContext('2d'); c.fillStyle = '#5d6a86'; c.fillRect(0, 0, 28, 17);
-    c.drawImage(im1, 7, 1, 15, 15); c.drawImage(im2, 9, 4, 10, 5);
-  }));
-  const bar = el('div', 'c', A.body); bar.style.cssText = 'width:340px;height:56px;background:#000'; at(bar, 372, 190, { rotation: -3 });
-  const chy = el('div', 'c', A.body, 'IDENTITY PROTECTED'); chy.style.cssText = 'font:900 30px/1 var(--body);letter-spacing:.14em;background:#e02843;color:#fff;padding:12px 18px'; gsap.set(chy, { left: 20, top: 370 });
-  const tp = W('n13b', 'potato') - 0.3;
-  tl.to(A.sil, { opacity: 0, duration: 0.1 }, tp);
-  tl.fromTo(cv, { opacity: 0 }, { opacity: 1, duration: 0.1 }, tp);
-  tl.fromTo(bar, { scaleX: 0 }, { scaleX: 1, duration: 0.2, ease: 'power3.out' }, W('n13b', 'witness') - 0.1);
-  tl.fromTo(chy, { x: -500 }, { x: 0, duration: 0.3, ease: 'power3.out' }, W('n13b', 'witness'));
-  sfx('glitch', tp, 0.6); sfx('censor', W('n13b', 'witness') - 0.1, 0.5);
-  // crisp you
-  const you = emo('1f929', 300, B.body, 372, 225); gsap.set(you, { opacity: 0 });
-  const ty = W('n13c', 'you', 1) - 0.25;
-  tl.to(B.sil, { opacity: 0, duration: 0.1 }, ty);
-  popIn(you, ty, { sfx: 'sparkle', from: 0.5 });
-  burst({ t: ty + 0.1, x: 1420, y: 520, n: 24, speed: 700, size: 22, life: 0.9, g: 300, shape: 'star', colors: ['#fff', '#ffe89a', '#9fe3ff'] });
-  const yl = el('div', 'hand', s, 'you. in HD.'); yl.style.cssText += ';font-size:52px;color:#fff'; at(yl, 1420, 930);
-  popIn(yl, ty + 0.3, { rot: -5, rotTo: -3, sfx: false });
-  // speakers
+  const silhouette = (c, w, h) => { c.fillStyle = '#3b3850'; c.beginPath(); c.arc(w / 2, h / 2 - 20, 90, 0, 7); c.fill(); c.beginPath(); c.ellipse(w / 2, h / 2 + 220, 200, 140, 0, Math.PI, 0); c.fill(); };
+  screen('13', S('r4'), call(silhouette, '720p')); screen('14', S('r4'), call(silhouette, '1080p'));
+  callout('13', 'screenTop', 'Camera', '720p', W('n13a', 'Seven') - 0.1, L('n13b') - 0.2, { dx: 360, dy: -60 });
+  callout('14', 'screenTop', 'Camera', '1080p', W('n13a', 'ten') - 0.1, L('n13b') - 0.2, { dx: -360, dy: -60 });
+  const tp = W('n13b', 'potato') - 0.35;
+  shot(W('n13b', 'thirteen') - 0.2, 0.9, [-1.8, 1.25, 5.0], [-1.85, 1.05, 0]);
+  screen('13', tp, call((c, w, h, dt) => {
+    const p = pix.getContext('2d'); p.fillStyle = '#6c7896'; p.fillRect(0, 0, 32, 20); p.drawImage(img('potato'), 9, 1, 16, 16);
+    c.imageSmoothingEnabled = false; c.drawImage(pix, 40, 130, w - 80, h - 220); c.imageSmoothingEnabled = true;
+    if (dt > 0.6) { c.fillStyle = '#000'; c.save(); c.translate(w / 2 + 10, h / 2 - 50); c.rotate(-0.05); c.fillRect(-200, -36, 400, 72); c.restore(); }
+    if (dt > 0.9) { c.fillStyle = '#e02843'; c.fillRect(60, h - 170, 420, 54); c.fillStyle = '#fff'; c.font = '900 28px Inter'; c.fillText('IDENTITY PROTECTED', 80, h - 142); }
+  }, '720p'));
+  sfx('glitch', tp, 0.5); sfx('censor', tp + 0.6, 0.5);
+  const ty = W('n13c', 'you', 1) - 0.3;
+  shot(W('n13c', 'fourteen') - 0.25, 0.8, [1.8, 1.25, 5.0], [1.85, 1.05, 0]);
+  screen('14', ty, call((c, w, h, dt) => {
+    const g = c.createRadialGradient(w / 2, h / 2, 50, w / 2, h / 2, w / 2); g.addColorStop(0, '#3a5fd6'); g.addColorStop(1, '#161a3a'); c.fillStyle = g; c.fillRect(40, 130, w - 80, h - 220);
+    const sc = 0.6 + 0.4 * gsap.parseEase('back.out(2)')(Math.min(1, dt / 0.3)); c.drawImage(img('star-struck'), w / 2 - 190 * sc, h / 2 - 180 * sc, 380 * sc, 380 * sc);
+    c.fillStyle = '#fff'; c.font = '400 56px Marker'; c.fillText('you. in HD.', 80, h - 130);
+  }, '1080p'));
+  sfx('sparkle', ty, 0.6);
   const tsp = L('n14') - 0.2;
-  tl.to([A.w, B.w], { scale: 0.62, y: -150, duration: 0.45, ease: 'power3.inOut' }, tsp);
-  tl.to([A.badge, B.badge, yl], { opacity: 0, duration: 0.2 }, tsp);
-  function speakers(x, n, color, t0) {
-    const g = el('div', 'c', s); gsap.set(g, { left: x - 380, top: 640, width: 760, height: 260 });
-    const cols = n > 2 ? 3 : 2, rowsN = Math.ceil(n / cols), out = [];
-    for (let i = 0; i < n; i++) {
-      const c = i % cols, r = Math.floor(i / cols);
-      const sp = el('div', 'c', g); sp.style.cssText = `width:110px;height:110px;border-radius:50%;background:radial-gradient(circle,#2b2838 0 22%,${color} 23% 30%,#1b1926 31% 62%,#3a3650 63%);border:6px solid ${O}`;
-      at(sp, 380 + (c - (cols - 1) / 2) * 150, 60 + r * 140 + (rowsN === 1 ? 70 : 0));
-      popIn(sp, t0 + i * 0.07, { sfx: i < 2 ? 'pop' : false, gain: 0.4 });
-      out.push(sp);
-    }
-    const lab = el('div', 'sub', g, `${n} speakers`); lab.style.fontWeight = 900; at(lab, 380, 330);
-    popIn(lab, t0 + 0.2, { sfx: false });
-    proc(tt => { if (tt < t0) return; const k = 1 + 0.08 * Math.max(0, Math.sin(tt * Math.PI * 4)); out.forEach(sp => sp.style.scale = k); });
-    return g;
-  }
-  speakers(500, 2, '#ff4a5f', W('n14', 'two') - 0.15);
-  speakers(1420, 6, '#3f8cff', W('n14', 'six') - 0.1);
+  shot(tsp, 0.9, [0, 5.2, 4.2], [0, 0.1, 0.1], { ease: 'power2.inOut' });
+  const pulse = { a: 0 }; tl.set(pulse, { a: 1 }, tsp + 0.4); tl.set(pulse, { a: 0 }, SE('r4') + 0.5);
+  proc(tt => {
+    for (const k of ['13', '14']) LAP[k].grilles.forEach(g => { g.material.color.set(pulse.a ? (k === '13' ? '#ff5a75' : '#5aa2ff') : '#0a0a0c'); g.material.opacity = pulse.a ? 0.45 + 0.55 * Math.abs(Math.sin(tt * 12.56)) : 1; });
+  });
+  [['13', '2 speakers', 'red', 'two'], ['14', '6 speakers', 'blue', 'six']].forEach(([k, txt, c, w]) => {
+    const e = el('div', 'pill ' + c, s, `<img src="${FL('speaker_high_volume')}" width="46" height="46">${txt}`); at(e, 0, 0); follow(e, k, 'keyboard', 0, -190, [tsp, SE('r4') + 1]);
+    popIn(e, W('n14', w) - 0.15, { from: 0.4 });
+  });
   point('B', E('n14') + 0.05);
   wipe(S('comeback'));
 })();
 
 // =============================================================================================
-// COMEBACK: but wait!
+// COMEBACK: but wait
 // =============================================================================================
 (() => {
   const s = scene('comeback'), t0 = S('comeback');
-  hudShow(t0 + 0.1, true);
-  glow('L', 1, t0); glow('R', 0.2, t0);
-  const fire = el('div', 'fill', s); fire.style.background = 'radial-gradient(900px 600px at 50% 110%, rgba(255,90,40,.55), rgba(255,90,40,0) 70%)';
-  const a = laptop('13', s, 960, 1540, 1.0);
-  gsap.set(a.gloves, { opacity: 1 });
-  a.expr('angry', t0);
+  place(t0, '13', [0, -2.2, 0], 0.15, { lid: 104, rx: 0 }); place(t0, '14', [0, 0, -40], 0, { visible: false });
+  tl.set(LAP['13'].st, { glow: 0.85 }, t0);
+  lights(t0, 0.01, { gL: 1.2, gR: 0, rimL: 150, rimR: 0, key: 90, top: 80, bloom: 0.5 });
+  cut(t0, [0, 1.3, 7.8], [0, 1.45, 0], { fov: 30 });
   const tw = L('n15');
   sfx('scratch', tw - 0.08, 0.9);
   MUSIC.push({ type: 'stop', t: tw - 0.08, until: W('n15', 'fights') - 0.1 });
-  const wait = el('div', 'big', s, 'BUT WAIT!'); wait.style.cssText += ';font-size:180px;color:#fff'; at(wait, 960, 180);
+  const wait = el('div', 'big white', s, 'BUT WAIT!'); wait.style.fontSize = '170px'; at(wait, 960, 140);
   slam(wait, tw - 0.15, { from: 2.4, rot: -8, rotTo: -4, amp: 18, gain: 0.5 });
-  tl.fromTo(s, { filter: 'grayscale(1)' }, { filter: 'grayscale(0)', duration: 0.3 }, W('n15', 'fights') - 0.1);
-  tl.fromTo(a.root, { y: 0 }, { y: -840, duration: 0.7, ease: 'back.out(1.4)' }, W('n15', 'thirteen') - 0.2);
-  tl.set(a.st, { bob: 1 }, W('n15', 'fights'));
-  sfx('whooshUp', W('n15', 'thirteen') - 0.25, 0.7);
-  const fb = el('div', 'big', s, 'FIGHTS BACK!'); fb.style.cssText += ';font-size:110px;color:var(--gold);-webkit-text-stroke:8px #16112a;paint-order:stroke fill'; at(fb, 960, 345);
+  tl.set('#gl', { filter: 'grayscale(1) brightness(.7)' }, t0);
+  tl.to('#gl', { filter: 'grayscale(0) brightness(1)', duration: 0.3 }, W('n15', 'fights') - 0.1);
+  tl.set('#gl', { filter: 'none' }, W('n15', 'fights') + 0.25);
+  tl.to(LAP['13'].group.position, { y: 0, duration: 0.7, ease: 'back.out(1.4)' }, W('n15', 'thirteen') - 0.25);
+  screen('13', t0, faceScreen('face_with_steam_from_nose', { size: 0.64 }));
+  touchbar(t0, tbGradient);
+  glovesOn('13', W('n15', 'fights') - 0.2);
+  sfx('whooshUp', W('n15', 'thirteen') - 0.3, 0.6);
+  const fb = el('div', 'big gold', s, 'FIGHTS BACK!'); fb.style.fontSize = '120px'; at(fb, 960, 290);
   slam(fb, W('n15', 'fights') - 0.2, { from: 2.2, rot: 6, rotTo: 3 });
-  emitter({ t0: W('n15', 'fights'), t1: L('n16a') + 0.3, rate: 70, life: 0.9, speed: 380, angle: -Math.PI / 2, spread: 0.9, size: 40, pos: [960, 1080], jitter: 1200, g: -200 });
+  const fires = [300, 1620].map(x => emo('fire', 320, s, x, 820));
+  fires.forEach((f, i) => popIn(f, W('n15', 'fights') + i * 0.08, { from: 0.2, sfx: false }));
+  emitter({ t0: W('n15', 'fights'), t1: L('n16a'), rate: 80, life: 0.9, speed: 380, angle: -Math.PI / 2, spread: 0.9, size: 60, add: true, shape: 'glow', pos: [960, 1100], jitter: 1500, g: -200 });
   sfx('crowd', W('n15', 'fights'), 0.4, { dur: 2 });
-  // clear to the two stats
   const tc = L('n16a') - 0.3;
-  tl.to([wait, fb], { opacity: 0, y: -100, duration: 0.3 }, tc);
-  tl.to(a.root, { y: 0, duration: 0.4, ease: 'power2.in' }, tc);
-  tl.to(fire, { opacity: 0.3, duration: 0.4 }, tc);
-  // weight: a balance scale
-  const sc = el('div', 'c', s); gsap.set(sc, { left: 500 - 400, top: 300, width: 800, height: 600 });
-  sc.innerHTML = `<svg width="800" height="600" viewBox="0 0 800 600" style="overflow:visible">
-      <polygon points="400,300 340,560 460,560" fill="#ffc93c" stroke="${O}" stroke-width="8" stroke-linejoin="round"/>
-      <rect x="300" y="550" width="200" height="30" rx="10" fill="#ffc93c" stroke="${O}" stroke-width="8"/>
-      <g class="beam"><rect x="60" y="286" width="680" height="28" rx="14" fill="#fff" stroke="${O}" stroke-width="8"/>
-        <g class="panL"><path d="M110,300 L60,420 M110,300 L160,420" stroke="#fff" stroke-width="5"/><path d="M30,420 H190 Q190,470 110,470 Q30,470 30,420 Z" fill="#ff4a5f" stroke="${O}" stroke-width="8"/>
-          <text x="110" y="402" text-anchor="middle" font-family="Anton" font-size="56" fill="#fff" stroke="${O}" stroke-width="8" paint-order="stroke">3.0 lb</text></g>
-        <g class="panR"><path d="M690,300 L640,420 M690,300 L740,420" stroke="#fff" stroke-width="5"/><path d="M610,420 H770 Q770,470 690,470 Q610,470 610,420 Z" fill="#3f8cff" stroke="${O}" stroke-width="8"/>
-          <text x="690" y="402" text-anchor="middle" font-family="Anton" font-size="56" fill="#fff" stroke="${O}" stroke-width="8" paint-order="stroke">3.5 lb</text></g></g>
-      <circle cx="400" cy="300" r="16" fill="${O}"/></svg>`;
-  const beam = sc.querySelector('.beam'), pL = sc.querySelector('.panL'), pR = sc.querySelector('.panR');
-  gsap.set(beam, { svgOrigin: '400 300' }); gsap.set(pL, { svgOrigin: '110 300' }); gsap.set(pR, { svgOrigin: '690 300' });
-  const tsc = L('n16a') - 0.15;
-  popIn(sc, tsc, { from: 0.5, sfx: 'whoosh' });
-  tl.fromTo(beam, { rotation: 0 }, { rotation: 7, duration: 1.2, ease: 'elastic.out(1,0.35)' }, W('n16a', 'lighter') - 0.2);
-  tl.fromTo([pL, pR], { rotation: 0 }, { rotation: -7, duration: 1.2, ease: 'elastic.out(1,0.35)' }, W('n16a', 'lighter') - 0.2);
-  sfx('clunk', W('n16a', 'lighter') - 0.15, 0.7);
-  const lt = el('div', 'chip red', s, '½ lb lighter'); at(lt, 500, 250);
-  popIn(lt, W('n16a', 'half') - 0.1, { from: 0.4 });
-  point('R', E('n16a') - 0.1);
-  // battery
-  const bat = el('div', 'c', s); gsap.set(bat, { left: 1420 - 380, top: 380, width: 760, height: 460 });
-  const rowsB = [['13″', 20, '#ff4a5f'], ['14″', 17, '#3f8cff']].map(([h, hrs, c], i) => {
-    const r = el('div', 'c', bat); gsap.set(r, { left: 0, top: i * 190, width: 760, height: 150 });
-    r.innerHTML = `<div class="tag ${i ? 'blue' : 'red'}" style="position:absolute;left:0;top:44px">${h}</div>
-      <div style="position:absolute;left:120px;top:20px;width:460px;height:110px;border:8px solid #fff;border-radius:22px;box-sizing:border-box"></div>
-      <div style="position:absolute;left:580px;top:52px;width:22px;height:46px;background:#fff;border-radius:0 8px 8px 0"></div>
-      <div class="fillb" style="position:absolute;left:134px;top:34px;width:${432 * hrs / 20}px;height:82px;border-radius:12px;background:${c};transform-origin:0 50%"></div>
-      <div class="big hrs" style="position:absolute;left:630px;top:40px;font-size:72px">0h</div>`;
-    return r;
-  });
+  fadeOut([wait, fb, ...fires], tc, { y: -80 });
+  shot(tc, 0.8, [-1.9, 1.6, 6.4], [-1.5, 0.85, 0]);
+  glovesOff('13', tc);
+  const wt = el('div', 'glass', s, `<div style="padding:30px 40px">
+    <div class="eyebrow" style="color:rgba(255,255,255,.6)">Weight</div>
+    <div style="display:flex;gap:36px;align-items:baseline;margin-top:18px"><div class="big" style="font-size:110px;color:#ff8fa3">3.0<span style="font-size:48px"> lb</span></div><div class="big" style="font-size:70px;color:rgba(255,255,255,.4)">3.5<span style="font-size:32px"> lb</span></div></div>
+    <div class="pill red" style="margin-top:18px;font-size:28px">½ lb lighter</div></div>`);
+  gsap.set(wt, { left: 110, top: 230 });
+  popIn(wt, W('n16a', 'half') - 0.25, { from: 0.5, sfx: 'whoosh' });
+  point('R', E('n16a') - 0.05);
+  const bat = el('div', 'glass', s, `<div style="padding:30px 40px;width:620px">
+    <div class="eyebrow" style="color:rgba(255,255,255,.6)">Battery · video playback</div>
+    ${[['13″', 20, '#ff5a75'], ['14″', 17, '#5aa2ff']].map(([h, v, c]) => `<div style="display:flex;align-items:center;gap:18px;margin-top:22px"><div style="font:800 30px/1 var(--body);width:60px">${h}</div>
+      <div style="position:relative;flex:1;height:54px;border:5px solid rgba(255,255,255,.85);border-radius:14px"><div class="bf" style="position:absolute;left:5px;top:5px;bottom:5px;width:${(v / 20) * 93}%;border-radius:8px;background:${c};transform-origin:0 50%;box-shadow:0 0 24px ${c}"></div></div>
+      <div class="big hrs" style="font-size:56px;width:110px;text-align:right">0h</div></div>`).join('')}
+    <div class="fine" style="margin-top:14px">“Up to” hours · Apple TV app movie playback</div></div>`);
+  gsap.set(bat, { left: 110, top: 590 });
   const tbt = W('n16b', 'battery') - 0.3;
-  popIn(bat, tbt - 0.15, { from: 0.6, sfx: 'whoosh' });
-  rowsB.forEach((r, i) => {
-    tl.fromTo(r.querySelector('.fillb'), { scaleX: 0 }, { scaleX: 1, duration: 1.0, ease: 'power2.out' }, tbt + i * 0.1);
-    counter(r.querySelector('.hrs'), 0, i ? 17 : 20, tbt + i * 0.1, 1.0, v => Math.round(v) + 'h');
-  });
-  sfx('rise', tbt, 0.4, { dur: 1.0, f0: 300, f1: 900 });
-  const bl = el('div', 'fine', s, 'Up to, per Apple: video playback in the Apple TV app'); at(bl, 1420, 870); popIn(bl, tbt + 0.4, { sfx: false });
-  point('R', E('n16b') + 0.1);
-  // the Touch Bar can scroll emoji
-  const tt = L('n17a') - 0.3;
-  [sc, lt, bat, bl].forEach(e => tl.to(e, { opacity: 0, y: -60, duration: 0.3 }, tt));
-  const tb = el('div', 'touchbar', s); gsap.set(tb, { left: 110, top: 470, width: 1700, height: 150 });
-  const tr = el('div', 'track', tb); tr.style.gap = '60px';
-  const codes = ['1f602', '1f973', '1f984', '1f355', '1f47b', '1f525', '1f3b8', '1f308', '1f4af', '1f60d', '1f929', '1f389', '1f37a', '1f451', '1f644'];
-  for (let i = 0; i < 30; i++) { const im = el('img', '', tr); im.src = `assets/emoji/${codes[i % codes.length]}.svg`; im.width = im.height = 100; }
-  tl.fromTo(tb, { scaleX: 0, opacity: 0 }, { scaleX: 1, opacity: 1, duration: 0.5, ease: 'back.out(1.6)' }, tt + 0.1);
-  sfx('sparkle', tt + 0.2, 0.6);
-  // position = integral of speed, integrated once up front from the same keyframes
-  const ramps = [[W('n17a', 'scroll') - 0.2, 0.4, 0, 1, 'power1.out'], [L('n17b') - 0.1, 0.6, 1, 0, 'power2.out'], [L('n17c') - 0.05, 0.3, 0, 2.2, 'power2.in']];
+  popIn(bat, tbt - 0.15, { from: 0.5, sfx: 'whoosh' });
+  bat.querySelectorAll('.bf').forEach((b, i) => tl.fromTo(b, { scaleX: 0 }, { scaleX: 1, duration: 1.0, ease: 'power2.out' }, tbt + i * 0.1));
+  bat.querySelectorAll('.hrs').forEach((h, i) => counter(h, 0, i ? 17 : 20, tbt + i * 0.1, 1.0, v => Math.round(v) + 'h'));
+  sfx('rise', tbt, 0.35, { dur: 1.0, f0: 300, f1: 900 });
+  screen('13', L('n16a'), faceScreen('smirking_face', { size: 0.64 }));
+  point('R', E('n16b') + 0.05);
+  // the Touch Bar, up close
+  const tt = L('n17a') - 0.35;
+  fadeOut([wt, bat], tt);
+  shot(tt, 1.1, [0.15, 1.35, 1.05], [0.15, 0.05, -0.78], { ease: 'power2.inOut', fov: 32 });
+  const ramps = [[W('n17a', 'scroll') - 0.3, 0.4, 0, 1, 'power1.out'], [L('n17b') - 0.1, 0.7, 1, 0, 'power2.out']];
   const vAt = q => { let v = 0; for (const [a, d, v0, v1, e] of ramps) if (q >= a) v = v0 + (v1 - v0) * gsap.parseEase(e)(Math.min(1, (q - a) / d)); return v; };
-  const XS = []; { let x = 0; for (let q = tt; q <= SE('comeback') + 1; q += 0.001) { XS.push(x); x += vAt(q) * 900 * 0.001; } }
-  proc(q => { const x = XS[Math.max(0, Math.min(XS.length - 1, Math.round((q - tt) / 0.001)))]; tr.style.transform = `translateX(${-(x % 2400)}px)`; });
-  const cap = el('div', 'hand', s, '✨ emoji scrolling ✨'); cap.style.cssText += ';font-size:64px;color:#fff'; at(cap, 960, 350);
-  popIn(cap, W('n17a', 'emoji') - 0.1, { rot: -4, rotTo: -2, sfx: false });
-  const crick = emo('1f997', 150, s, 960, 800); popIn(crick, L('n17b'), { sfx: false, from: 0.2 });
+  const XS = []; { let x = 0; for (let q = tt; q <= SE('comeback') + 1; q += 0.001) { XS.push(x); x += vAt(q) * 230 * 0.001; } }
+  touchbar(tt, tbEmoji(q => XS[Math.max(0, Math.min(XS.length - 1, Math.round((q - tt) / 0.001)))]));
+  const cap = el('div', 'hand', s, '✨ emoji scrolling ✨'); cap.style.cssText += ';font-size:66px;color:#fff'; at(cap, 960, 180);
+  popIn(cap, W('n17a', 'emoji') - 0.15, { rot: -4, rotTo: -2, sfx: 'sparkle' });
+  const crick = emo('cricket', 210, s, 1520, 780); popIn(crick, L('n17b'), { sfx: false, from: 0.2 });
   proc(q => { crick.style.rotate = (Math.sin(q * 30) * 4) + 'deg'; });
   sfx('crickets', L('n17b') - 0.05, 0.7, { dur: 1.4 });
-  MUSIC.push({ type: 'stop', t: L('n17b') - 0.1, until: L('n17c') - 0.05 });
-  const nob = el('div', 'hand', s, '(nobody asked)'); nob.style.cssText += ';font-size:48px;color:rgba(255,255,255,.7)'; at(nob, 960, 920);
-  popIn(nob, L('n17b') + 0.3, { sfx: false });
-  tl.to([crick, nob], { opacity: 0, duration: 0.2 }, L('n17c') - 0.05);
-  const bic = el('div', 'big', s, 'BUT IT CAN.'); bic.style.cssText += ';font-size:110px;color:var(--gold)'; at(bic, 960, 820);
-  popIn(bic, L('n17c'), { from: 2, ease: 'power4.out', dur: 0.25, sfx: 'tada' });
-  point('R', E('n17c') + 0.05, 0.5);
+  MUSIC.push({ type: 'stop', t: L('n17b') - 0.1, until: E('n17c') + 0.25 });
+  const nob = el('div', 'hand', s, '(nobody asked)'); nob.style.cssText += ';font-size:54px;color:rgba(255,255,255,.8)'; at(nob, 960, 960);
+  popIn(nob, L('n17b') + 0.25, { sfx: false });
+  tl.to([crick, nob, cap], { opacity: 0, duration: 0.2 }, L('n17c') - 0.1);
+  touchbar(L('n17c') - 0.1, tbSkull);
+  const rip = el('div', 'stamp', s, 'DISCONTINUED BY APPLE'); rip.style.fontSize = '74px'; at(rip, 960, 300, { rotation: -6 });
+  slam(rip, L('n17c') + 0.05, { from: 2.4, rot: -14, rotTo: -6, sfx: 'stamp', gain: 0.9 });
+  const zero = el('div', 'big', $('#pluslayer'), '+0'); zero.style.cssText += ';font-size:76px;color:#ff5a75;text-shadow:0 6px 0 rgba(0,0,0,.4)'; at(zero, 800, 150, { opacity: 0 });
+  tl.fromTo(zero, { opacity: 0, y: 20 }, { opacity: 1, y: 0, duration: 0.3, immediateRender: false }, E('n17c')).to(zero, { opacity: 0, duration: 0.3 }, E('n17c') + 0.9);
+  sfx('buzzer', E('n17c') + 0.05, 0.5);
   wipe(S('math'));
 })();
 
@@ -1233,62 +1158,54 @@ let F13, F14;
 // THE MATH: a receipt
 // =============================================================================================
 (() => {
-  const s = scene('math'), t0 = S('math');
-  hudShow(t0 + 0.2, false);
-  glow('L', 0, t0); glow('R', 0, t0);
-  const slot = el('div', 'c', s); slot.style.cssText = 'width:720px;height:40px;border-radius:20px;background:#07060d;border:6px solid #2d2842'; at(slot, 640, 96);
-  const clip = el('div', 'c', s); gsap.set(clip, { left: 640 - 330, top: 100, width: 660, height: 1000 }); clip.style.overflow = 'hidden';
+  const s = scene('math', { gl: false }), t0 = S('math');
+  hud(t0 + 0.2, false);
+  el('div', 'fill bg2d', s);
+  const slot = el('div', 'c', s); slot.style.cssText = 'width:720px;height:40px;border-radius:20px;background:#050409;box-shadow:inset 0 4px 10px #000,0 0 0 2px rgba(255,255,255,.12)'; at(slot, 640, 96);
+  const clip = el('div', 'c', s); gsap.set(clip, { left: 640 - 330, top: 100, width: 660, height: 0 }); clip.style.overflow = 'hidden';
   const rc = el('div', 'receipt', clip); gsap.set(rc, { left: 0, top: 0, width: 660 });
   const items = ['2× GPU cores', '~3× memory bandwidth', '120Hz XDR screen', '1080p camera', '6 speakers', 'MagSafe', 'HDMI', 'SD card slot', '2nd external display'];
-  rc.innerHTML = `<div style="text-align:center;padding:36px 0 8px;font:400 52px/1 var(--display);letter-spacing:.04em">UPGRADE RECEIPT</div>
-    <div style="text-align:center;font:700 24px/1.4 var(--mono);color:#777">13″ M1 → 14″ M1 PRO</div><hr>
+  rc.innerHTML = `<div style="text-align:center;padding:36px 0 8px;font:400 54px/1 var(--display);letter-spacing:.04em">UPGRADE RECEIPT</div>
+    <div style="text-align:center;font:700 21px/1.4 var(--mono);color:#777">FOR: DYLAN · 13″ M1 → 14″ M1 PRO</div><hr>
     ${items.map(i => `<div class="row it"><span><span class="ck">✓</span>${i}</span><span style="color:#999">incl.</span></div>`).join('')}
     <hr><div class="row tot" style="font-size:40px;height:66px"><span>TOTAL</span><span>$125.00</span></div>
-    <div class="row per" style="font-size:31px;color:#1aa35a"><span>PER UPGRADE</span><span>$13.89</span></div>
-    <div style="height:40px"></div>`;
-  // the receipt unrolls from the slot: the clip grows as each line prints; a torn edge rides the bottom
+    <div class="row per" style="font-size:31px;color:#13a35a"><span>PER UPGRADE</span><span>$13.89</span></div><div style="height:40px"></div>`;
   const H = n => 150 + n * 54;
-  const edge = el('div', 'c', clip); edge.style.cssText = 'width:660px;height:22px;background:linear-gradient(135deg,#fffdf7 50%,transparent 50%) 0 0/22px 22px,linear-gradient(-135deg,#fffdf7 50%,transparent 50%) 0 0/22px 22px';
+  const edge = el('div', 'c', clip); edge.style.cssText = 'width:660px;height:22px;background:linear-gradient(135deg,#f6f1e4 50%,transparent 50%) 0 0/22px 22px,linear-gradient(-135deg,#f6f1e4 50%,transparent 50%) 0 0/22px 22px';
   const grow = { h: 0 };
   proc(() => { clip.style.height = grow.h + 22 + 'px'; rc.style.height = grow.h + 'px'; rc.style.overflow = 'hidden'; edge.style.top = grow.h + 'px'; });
   const printAt = (h, t, d = 0.25) => tl.to(grow, { h, duration: d, ease: 'power2.out' }, t);
-  printAt(H(0), L('n18') + 0.3, 0.6);
-  sfx('printer', L('n18') + 0.3, 0.5, { dur: 0.6 });
-  const rows = rc.querySelectorAll('.it');
-  const ids = ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9'];
-  rows.forEach((r, i) => {
-    printAt(H(i + 1), L(ids[i]) - 0.05, 0.22);
-    sfx('printer', L(ids[i]) - 0.05, 0.35, { dur: 0.22 });
-  });
-  printAt(H(9) + 26 + 66, L('n20a') - 0.3, 0.3);
-  sfx('printer', L('n20a') - 0.3, 0.45, { dur: 0.3 });
-  printAt(H(9) + 26 + 66 + 54 + 40, W('n20a', 'fourteen') - 0.15, 0.25);
-  sfx('printer', W('n20a', 'fourteen') - 0.15, 0.4, { dur: 0.25 });
-  const bst = el('div', 'stamp', clip, 'BARGAIN'); bst.style.fontSize = '96px'; at(bst, 330, H(4) + 20, { rotation: -14 });
-  tl.fromTo(bst, { scale: 2.5, opacity: 0 }, { scale: 1, opacity: 0.9, duration: 0.2, ease: 'power4.in', immediateRender: false }, E('n20a') - 0.1);
+  printAt(H(0), L('n18') + 0.3, 0.6); sfx('printer', L('n18') + 0.3, 0.5, { dur: 0.6 });
+  ['m1', 'm2', 'm3', 'm4', 'm5', 'm6', 'm7', 'm8', 'm9'].forEach((id, i) => { printAt(H(i + 1), L(id) - 0.05, 0.22); sfx('printer', L(id) - 0.05, 0.35, { dur: 0.22 }); });
+  printAt(H(9) + 26 + 66, L('n20a') - 0.3, 0.3); sfx('printer', L('n20a') - 0.3, 0.45, { dur: 0.3 });
+  printAt(H(9) + 26 + 66 + 54 + 40, W('n20a', 'fourteen') - 0.15, 0.25); sfx('printer', W('n20a', 'fourteen') - 0.15, 0.4, { dur: 0.25 });
+  const bst = el('div', 'stamp', clip, 'BARGAIN'); bst.style.cssText += ';font-size:96px;background:transparent;box-shadow:none;mix-blend-mode:multiply'; at(bst, 330, H(4) + 20, { rotation: -14 });
   gsap.set(bst, { opacity: 0 });
+  tl.fromTo(bst, { scale: 2.5, opacity: 0 }, { scale: 1, opacity: 0.9, duration: 0.2, ease: 'power4.in', immediateRender: false }, E('n20a') - 0.1);
   sfx('stamp', E('n20a') + 0.1, 0.9); shake(E('n20a') + 0.1, 10, 0.3);
-  // right: the big number
-  const big = el('div', 'big', s, '$125'); big.style.cssText += ';font-size:280px;color:var(--gold);text-shadow:0 10px 0 #b4541a,0 20px 0 #16112a'; at(big, 1430, 380);
-  slam(big, L('n18') + 0.1, { from: 2.4, rot: -6, rotTo: -3, sfx: 'cashier', gain: 0.9 });
-  const buys = el('div', 'hand', s, 'buys you...'); buys.style.cssText += ';font-size:60px;color:#fff'; at(buys, 1450, 580);
-  popIn(buys, W('n18', 'buy') - 0.1, { rot: -5, rotTo: -3, sfx: false });
-  const per = el('div', 'c', s, `<div style="text-align:center"><div class="sub" style="font-weight:800;color:rgba(255,255,255,.75)">÷ 9 upgrades =</div><div class="big" style="font-size:170px;color:#35d07f;margin-top:10px">$13.89</div><div class="sub" style="font-weight:800">each</div></div>`);
-  at(per, 1430, 720);
-  tl.to(buys, { opacity: 0, duration: 0.2 }, L('n20a') - 0.2);
-  tl.to(big, { scale: 0.6, y: -150, duration: 0.4, ease: 'power3.inOut' }, L('n20a') - 0.2);
-  popIn(per, W('n20a', 'fourteen') - 0.15, { from: 0.4, sfx: 'cashier', gain: 0.8 });
-  // vs one Apple dongle
-  const dg = el('div', 'card2', s, `<div style="display:flex;align-items:center;gap:26px;padding:26px 34px">
-      <svg width="170" height="110" viewBox="0 0 170 110"><path d="M10,55 C40,55 40,20 70,20" stroke="#bbb" stroke-width="10" fill="none" stroke-linecap="round"/><rect x="66" y="24" width="96" height="62" rx="16" fill="#fff" stroke="#16112a" stroke-width="6"/><rect x="84" y="46" width="22" height="12" rx="3" fill="#16112a"/><rect x="116" y="46" width="30" height="12" rx="3" fill="#16112a"/></svg>
-      <div><div style="font:800 28px/1.2 var(--body);white-space:nowrap">One Apple USB&#8209;C<br>multiport adapter</div><div style="font:400 84px/1 var(--display);color:#e02843;margin-top:6px">$69</div></div></div>`);
-  at(dg, 1430, 900);
+  const big = el('div', 'big gold', s, '$125'); big.style.fontSize = '300px'; at(big, 1430, 380);
+  slam(big, L('n18') + 0.1, { from: 2.4, rot: -6, rotTo: -3, sfx: 'cashier', gain: 0.8 });
+  const buys = el('div', 'hand', s, 'gets Dylan...'); buys.style.cssText += ';font-size:62px;color:#fff'; at(buys, 1450, 600, { rotation: -3 });
+  popIn(buys, W('n18', 'Dylan') - 0.1, { rot: -5, rotTo: -3, sfx: false });
+  const money = emo('money_with_wings', 210, s, 1770, 230); popIn(money, L('n18') + 0.4, { from: 0.2, sfx: false });
+  proc(q => { money.style.translate = `0 ${Math.sin(q * 3) * 12}px`; });
+  const per = el('div', 'c', s, `<div style="text-align:center"><div class="sub" style="font-weight:800;color:rgba(255,255,255,.75)">÷ 9 upgrades =</div><div class="big" style="font-size:180px;color:#3ee08a;margin-top:10px;text-shadow:0 8px 0 #0b5a31,0 20px 40px rgba(0,0,0,.5)">$13.89</div><div class="sub" style="font-weight:800">each</div></div>`);
+  at(per, 1430, 700);
+  tl.to([buys, money], { opacity: 0, duration: 0.2 }, L('n20a') - 0.2);
+  tl.to(big, { scale: 0.55, y: -170, duration: 0.4, ease: 'power3.inOut' }, L('n20a') - 0.2);
+  popIn(per, W('n20a', 'fourteen') - 0.15, { from: 0.4, sfx: 'cashier', gain: 0.7 });
+  const dg = el('div', 'glass', s, `<div style="display:flex;align-items:center;gap:26px;padding:24px 34px">
+      <svg width="170" height="110" viewBox="0 0 170 110"><defs><linearGradient id="dgg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset="1" stop-color="#cfd2da"/></linearGradient></defs><path d="M8,58 C40,58 40,22 70,22" stroke="#e8e8ee" stroke-width="10" fill="none" stroke-linecap="round"/><rect x="66" y="24" width="96" height="62" rx="16" fill="url(#dgg)"/><rect x="84" y="46" width="22" height="12" rx="3" fill="#15131d"/><rect x="116" y="46" width="30" height="12" rx="6" fill="#15131d"/></svg>
+      <div><div style="font:800 28px/1.25 var(--body);white-space:nowrap">One Apple USB&#8209;C<br>multiport adapter</div><div class="big" style="font-size:88px;color:#ff5a75;margin-top:6px">$69</div></div></div>`);
+  at(dg, 1430, 910);
   const tdg = W('n20b', 'Apple') - 0.3;
-  tl.to(per, { y: -110, scale: 0.8, duration: 0.35, ease: 'power3.inOut' }, tdg - 0.2);
+  tl.to(per, { y: -120, scale: 0.8, duration: 0.35, ease: 'power3.inOut' }, tdg - 0.2);
   tl.to(big, { opacity: 0, duration: 0.2 }, tdg - 0.2);
   popIn(dg, tdg, { from: 0.4, rot: 6, rotTo: 2 });
-  const ck = el('div', 'stamp', s, 'CHEAPER'); ck.style.cssText += ';color:#1aa35a;border-color:#1aa35a;mix-blend-mode:normal;background:rgba(255,255,255,.92);font-size:92px'; at(ck, 1520, 770, { rotation: -10 });
+  const ck = el('div', 'stamp green', s, 'CHEAPER'); ck.style.fontSize = '88px'; at(ck, 1580, 780, { rotation: -10 });
   slam(ck, E('n20b') - 0.3, { from: 2.4, rot: -18, rotTo: -10, sfx: 'stamp', amp: 14 });
+  const need = el('div', 'hand', s, '(the 13″ would need one)'); need.style.cssText += ';font-size:42px;color:rgba(255,255,255,.85)'; at(need, 1430, 1040, { rotation: -2 });
+  popIn(need, E('n20b') + 0.1, { sfx: false });
   wipe(S('verdict'));
 })();
 
@@ -1297,88 +1214,82 @@ let F13, F14;
 // =============================================================================================
 (() => {
   const s = scene('verdict'), t0 = S('verdict');
-  spots(1, t0, 0.3); glow('L', 0.5, t0); glow('R', 0.5, t0);
-  // ring ropes
-  const ropes = el('div', 'fill', s);
-  ropes.innerHTML = [700, 780, 860].map((y, i) => `<div style="position:absolute;left:-20px;right:-20px;top:${y}px;height:16px;border-radius:8px;background:${['#ff4a5f', '#fff', '#3f8cff'][i]};box-shadow:0 6px 0 rgba(0,0,0,.35)"></div>`).join('') +
-    `<div style="position:absolute;left:0;right:0;top:940px;bottom:0;background:linear-gradient(#2a2350,#150f2c)"></div>`;
-  const a = laptop('13', s, 700, 640, 0.95), b = laptop('14', s, 1220, 640, 0.95);
-  gsap.set([a.gloves, b.gloves], { opacity: 1 });
-  gsap.set(a.root, { transformOrigin: '50% 90%' });
-  a.expr('angry', t0); b.expr('angry', t0); a.look(14, 0, t0); b.look(-14, 0, t0);
-  tl.set([a.st, b.st], { bob: 1 }, t0);
-  slideIn(a.root, t0, -900, 0, { dur: 0.5 }); slideIn(b.root, t0, 900, 0, { dur: 0.5, sfx: false });
-  sfx('drumroll', L('a07'), 0.6, { dur: W('a07', 'knockout') - L('a07') + 0.1 });
-  // KO punch
+  place(t0, '13', [-1.45, 0, 0], 0.5, { lid: 104 }); place(t0, '14', [1.45, 0, 0], -0.5, { lid: 104 });
+  tl.set(LAP['13'].st, { glow: 0.85 }, t0); tl.set(LAP['14'].st, { glow: 0.85 }, t0);
+  lights(t0, 0.01, { gL: 0.9, gR: 0.9, rimL: 100, rimR: 100, key: 110, top: 90, bloom: 0.45, gC: 0 });
+  cut(t0, [0, 1.35, 8.4], [0, 0.95, 0], { fov: 30 });
+  shot(t0, 1.9, [0, 1.15, 7.4], [0, 0.95, 0], { ease: 'power1.in' });
+  glovesOn('13', t0); glovesOn('14', t0 + 0.1);
+  screen('13', t0, faceScreen('face_with_steam_from_nose', { size: 0.62 })); screen('14', t0, faceScreen('smiling_face_with_sunglasses', { size: 0.62 }));
+  touchbar(t0, tbGradient);
+  sfx('drumroll', L('a07'), 0.55, { dur: W('a07', 'knockout') - L('a07') + 0.1 });
   const tk = W('a07', 'knockout') - 0.05;
-  punch(b, 0, tk, -230);
+  move(tk - 0.1, 0.18, '14', [0.75, 0, 0.2], -0.62, { ease: 'power3.in' });
+  punch('14', 0, tk, -1.3);
   sfx('punchBig', tk + 0.08, 1);
-  flash(tk + 0.1, 0.9, 0.4); shake(tk + 0.1, 30, 0.6);
-  burst({ t: tk + 0.1, x: 900, y: 520, n: 30, speed: 1100, size: 26, life: 0.7, g: 600, shape: 'star', colors: ['#fff', '#ffc93c'] });
-  // knocked out cold: X eyes, then the lid slams shut
-  a.expr('ko', tk + 0.1);
-  tl.set(a.st, { bob: 0 }, tk + 0.1);
-  tl.to(a.root, { x: -140, rotation: -6, duration: 0.35, ease: 'power3.out' }, tk + 0.12);
-  tl.to(a.gloves[0], { x: -30, y: 150, rotation: -60, duration: 0.5, ease: 'bounce.out' }, tk + 0.2);
-  tl.to(a.gloves[1], { x: 30, y: 150, rotation: 60, duration: 0.5, ease: 'bounce.out' }, tk + 0.25);
-  tl.to(a.lid, { scaleY: 0.06, duration: 0.3, ease: 'power3.in' }, tk + 0.55);
-  sfx('thud', tk + 0.85, 1); shake(tk + 0.85, 14, 0.3);
-  const ko = el('div', 'big', s, 'K.O.!'); ko.style.cssText += ';font-size:260px;color:#fff;-webkit-text-stroke:12px #16112a;paint-order:stroke fill'; at(ko, 960, 300);
+  flash(tk + 0.1, 0.8, 0.4); shake(tk + 0.1, 30, 0.6);
+  burst({ t: tk + 0.1, x: 880, y: 470, n: 36, speed: 1200, size: 30, life: 0.7, g: 600, shape: 'star', colors: ['#fff', '#ffcc4d'] });
+  screen('13', tk + 0.1, faceScreen('face_screaming_in_fear', { size: 0.62, noPop: true }));
+  move(tk + 0.12, 0.4, '13', [-2.1, 0, -0.3], 0.9, { ease: 'power3.out' });
+  glovesOff('13', tk + 0.2);
+  tl.to(LAP['13'].st, { lid: 0, duration: 0.35, ease: 'power3.in' }, tk + 0.5);
+  tl.to(LAP['13'].st, { glow: 0, duration: 0.1 }, tk + 0.8);
+  sfx('lidslam', tk + 0.84, 1); shake(tk + 0.85, 14, 0.3);
+  const ko = el('div', 'big chrome', s, 'K.O.!'); ko.style.fontSize = '280px'; at(ko, 960, 260);
   slam(ko, tk + 0.12, { from: 3, rot: -12, rotTo: -6, sfx: false });
-  // stars circling the fallen laptop
-  const stars = [0, 1, 2].map(i => emo('2b50', 70, s, 0, 0));
-  const ts = tk + 0.9;
-  proc(q => { const ax = 560 + gsap.getProperty(a.root, 'x') + 140; stars.forEach((st, i) => { const an = q * 5 + i * 2.1; st.style.left = (ax + Math.cos(an) * 130) + 'px'; st.style.top = (690 + Math.sin(an) * 34) + 'px'; st.style.opacity = q > ts && q < SE('verdict') + 1 ? 1 : 0; st.style.zIndex = Math.sin(an) > 0 ? 3 : 1; }); });
+  const stars = [0, 1, 2].map(() => ST.sprite(FL('star'), 0.45));
+  const kst = { on: 0 }; tl.set(kst, { on: 1 }, tk + 0.95); tl.set(kst, { on: 0 }, SE('verdict') + 0.3);
+  proc(q => {
+    const g = LAP['13'].group;
+    stars.forEach((sp, i) => { const an = q * 4 + i * 2.1; sp.visible = !!kst.on; sp.position.set(g.position.x + Math.cos(an) * 1.1, 0.5 + Math.sin(q * 6 + i) * 0.05, g.position.z + Math.sin(an) * 0.5); });
+  });
   // winner
   const tw = L('a08') - 0.1;
   tl.to(ko, { opacity: 0, y: -80, duration: 0.25 }, tw - 0.2);
-  b.expr('joy', tw); tl.set(b.st, { bob: 0 }, tw);
-  tl.to(b.root, { x: -190, duration: 0.5, ease: 'power2.inOut' }, tw);
-  tl.to(a.root, { x: -250, duration: 0.5, ease: 'power2.inOut' }, tw);
-  tl.to(b.gloves[1], { y: -260, x: -40, rotation: -20, duration: 0.4, ease: 'back.out(2)' }, tw + 0.3);
-  const crown = emo('1f451', 190, s, 1030, 360);
-  tl.fromTo(crown, { y: -800, rotation: -30 }, { y: 0, rotation: -8, duration: 0.6, ease: 'bounce.out' }, W('a08', 'Pro') - 0.1);
-  sfx('ding', W('a08', 'Pro') + 0.3, 0.8);
-  const win = el('div', 'big', s, 'WINNER'); win.style.cssText += ';font-size:200px;color:var(--gold);text-shadow:0 8px 0 #b4541a,0 16px 0 #16112a'; at(win, 960, 160);
+  screen('14', tw, faceScreen('partying_face', { size: 0.62 }));
+  move(tw, 0.6, '14', [0.9, 0, 0], -0.2);
+  tl.to(LAP['14'].group.position, { y: 0.35, duration: 0.8, ease: 'power2.out' }, tw + 0.2);
+  tl.to(LAP['14'].group.rotation, { y: -0.2 + Math.PI * 2, duration: 5.5, ease: 'power1.inOut' }, tw + 0.5);
+  glovesOff('14', tw + 0.1);
+  shot(tw, 1.4, [0.3, 1.6, 7.9], [0.8, 1.95, 0]);
+  lights(tw, 0.6, { gC: 1.1, gL: 0.2, gR: 0.9, rimL: 20, top: 200, bloom: 0.7 });
+  const crown = ST.sprite(FL('crown'), 0.9);
+  LAP['14'].lidPivot.add(crown); crown.position.set(0, 0.2, LAP['14'].D + 0.25); crown.material.opacity = 0;
+  tl.fromTo(crown.position, { y: 2.5 }, { y: 0.2, duration: 0.6, ease: 'bounce.out', immediateRender: false }, W('a08', 'Pro') - 0.1);
+  tl.to(crown.material, { opacity: 1, duration: 0.1 }, W('a08', 'Pro') - 0.1);
+  sfx('ding', W('a08', 'Pro') + 0.35, 0.8);
+  const win = el('div', 'big gold', s, 'WINNER'); win.style.fontSize = '210px'; at(win, 960, 170);
   slam(win, tw + 0.1, { from: 2.6, rot: -6, rotTo: -2, amp: 22 });
   sfx('crowd', tw + 0.1, 0.55, { dur: 4 }); sfx('fanfare', tw + 0.2, 0.55);
-  burst({ t: tw + 0.3, x: 400, y: 1080, n: 120, speed: 2300, angle: -Math.PI / 2 + 0.35, spread: 0.7, size: 22, life: 3, g: 1100, drag: 0.8 });
-  burst({ t: tw + 0.3, x: 1520, y: 1080, n: 120, speed: 2300, angle: -Math.PI / 2 - 0.35, spread: 0.7, size: 22, life: 3, g: 1100, drag: 0.8 });
-  emitter({ t0: tw + 0.8, t1: E('n21'), rate: 40, life: 3.5, speed: 60, angle: Math.PI / 2, spread: 1, size: 22, shape: 'rect', colors: CONFETTI, pos: [960, -40], jitter: 2000, g: 120, shrink: false });
-  const nm = el('div', 'c', s, `<div class="tag blue" style="font-size:40px">14″ MacBook Pro · M1 Pro</div>`); at(nm, 960, 950);
+  burst({ t: tw + 0.3, x: 360, y: 1080, n: 130, speed: 2300, angle: -Math.PI / 2 + 0.35, spread: 0.7, size: 22, life: 3, g: 1100, drag: 0.8 });
+  burst({ t: tw + 0.3, x: 1560, y: 1080, n: 130, speed: 2300, angle: -Math.PI / 2 - 0.35, spread: 0.7, size: 22, life: 3, g: 1100, drag: 0.8 });
+  emitter({ t0: tw + 0.8, t1: E('n21'), rate: 45, life: 3.5, speed: 60, angle: Math.PI / 2, spread: 1, size: 22, shape: 'rect', colors: CONFETTI, pos: [960, -40], jitter: 2000, g: 120, shrink: false });
+  const nm = el('div', 'pill blue', s, '14″ MacBook Pro · M1 Pro'); nm.style.fontSize = '38px'; at(nm, 960, 960);
   popIn(nm, W('a08', 'fourteen') - 0.1, { from: 0.4 });
-  // "Get the 14. Your eyes, your ears, your future self"
   const tg = L('n21') - 0.2;
   tl.to([win, nm], { opacity: 0, duration: 0.25 }, tg);
-  const get = el('div', 'big', s, 'GET THE 14″'); get.style.cssText += ';font-size:220px;color:#fff;-webkit-text-stroke:10px #16112a;paint-order:stroke fill'; at(get, 960, 190);
-  slam(get, tg, { from: 2.2, rot: -4, rotTo: -2, amp: 16 });
-  const thanks = [['1f440', 'your eyes', 'eyes'], ['1f442', 'your ears', 'ears'], ['1f64c', 'future you', 'future']].map(([c, label, w], i) => {
-    const g = el('div', 'c', s, `<div style="display:flex;align-items:center;gap:16px;background:rgba(14,11,28,.8);border:5px solid #fff;border-radius:999px;padding:12px 30px 12px 16px"><img src="assets/emoji/${c}.svg" width="70" height="70"><span style="font:800 40px/1 var(--body)">${label}</span></div>`);
-    at(g, 560 + i * 400, 930);
-    popIn(g, W('n21', w) - 0.15, { from: 0.4 });
-    return g;
+  const dy = el('div', 'big white', s, 'DYLAN,'); dy.style.fontSize = '120px'; at(dy, 960, 110);
+  const get = el('div', 'big gold', s, 'GET THE 14″'); get.style.fontSize = '220px'; at(get, 960, 275);
+  popIn(dy, tg, { from: 0.5, dur: 0.3 });
+  slam(get, W('n21', 'Get') - 0.15, { from: 2.2, rot: -4, rotTo: -2, amp: 16 });
+  const thanks = [['eyes', 'your eyes', 'eyes'], ['assets/fluent/ear_3d_default.png', 'your ears', 'ears'], ['assets/fluent/raising_hands_3d_default.png', 'future you', 'future']].map(([c, label, w], i) => {
+    const g = el('div', 'glass', s, `<div style="display:flex;align-items:center;gap:16px;padding:12px 30px 12px 16px"><img src="${FL(c)}" width="84" height="84"><span style="font:800 40px/1 var(--body)">${label}</span></div>`);
+    g.style.borderRadius = '999px'; at(g, 560 + i * 400, 960);
+    popIn(g, W('n21', w) - 0.15, { from: 0.4 }); return g;
   });
-  const thx = el('div', 'hand', s, 'will thank you'); thx.style.cssText += ';font-size:52px;color:var(--gold)'; at(thx, 960, 1030);
+  const thx = el('div', 'hand', s, 'will thank you'); thx.style.cssText += ';font-size:52px;color:var(--gold)'; at(thx, 960, 1045);
   popIn(thx, W('n21', 'thank') - 0.1, { rot: -3, rotTo: -2, sfx: false });
-  // the fine print
   const tf = L('n22') - 0.3;
-  tl.to([...thanks, thx], { opacity: 0, y: 40, duration: 0.3 }, tf);
-  tl.to(get, { scale: 0.7, y: -60, duration: 0.4, ease: 'power3.inOut' }, tf);
+  fadeOut([...thanks, thx, dy], tf);
+  tl.to(get, { scale: 0.6, y: -80, duration: 0.4, ease: 'power3.inOut' }, tf);
+  shot(tf, 1.2, [-1.4, 1.2, 6.4], [-1.4, 0.6, 0]);
   const fp = el('div', 'hand', s, '*unless you really, really love the Touch Bar'); fp.style.cssText += ';font-size:54px;color:#fff'; at(fp, 960, 1000);
   popIn(fp, L('n22'), { rot: -2, rotTo: -1, from: 0.6, sfx: false });
   MUSIC.push({ type: 'duck', t: L('n22') - 0.1, until: E('n23') + 0.2, gain: 0.35 });
-  const mini = el('div', 'touchbar', s); gsap.set(mini, { left: 330, top: 870, width: 340, height: 44 });
-  const tr = el('div', 'track', mini); tr.style.gap = '20px'; tr.style.paddingLeft = '20px';
-  ['1f622', '1f622', '1f622', '1f622', '1f622', '1f622', '1f622'].forEach(c => { const im = el('img', '', tr); im.src = `assets/emoji/${c}.svg`; im.width = im.height = 32; });
-  tl.fromTo(mini, { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.3, ease: 'back.out(2)' }, W('n22', 'Touch') - 0.1);
-  const bub = el('div', 'bubble', s, 'i do. 😢'); bub.innerHTML = 'i do. <img src="assets/emoji/1f622.svg" width="44" height="44" style="vertical-align:-8px">';
-  at(bub, 470, 590);
-  popIn(bub, E('n23') + 0.1, { from: 0.3, rot: -6, rotTo: -4, sfx: 'pop2' });
+  const bub = el('div', 'bubble', s, `i do. <img src="${FL('loudly_crying_face')}" width="56" height="56" style="vertical-align:-12px">`);
+  at(bub, 0, 0); follow(bub, '13', LAP['13'].group, 40, -210);
+  popIn(bub, E('n23') + 0.05, { from: 0.3, rot: -6, rotTo: -4, sfx: 'pop2' });
   sfx('sadtrombone', E('n23') - 0.05, 0.75);
-  // touch bar powers off
-  tl.to(mini, { filter: 'brightness(3)', duration: 0.05, yoyo: true, repeat: 3 }, E('n23') + 0.2);
-  tl.to(mini, { scaleY: 0.05, opacity: 0, duration: 0.25, ease: 'power3.in' }, E('n23') + 0.5);
-  sfx('powerdown', E('n23') + 0.45, 0.5);
 })();
 
 // =============================================================================================
@@ -1386,41 +1297,61 @@ let F13, F14;
 // =============================================================================================
 (() => {
   const s = scene('end'), t0 = S('end');
-  spots(0.4, t0); glow('L', 0, t0); glow('R', 0.8, t0);
+  place(t0, '13', [0, 0, -40], 0, { visible: false });
+  place(t0, '14', [2.2, 0.25, 0], -0.5, { lid: 106 });
+  glovesOff('14', t0);
+  cut(t0, [0, 1.3, 8.2], [0.6, 1.0, 0], { fov: 30 });
+  shot(t0, 3, [0.4, 1.2, 7.6], [0.9, 1.0, 0], { ease: 'none' });
+  tl.to(LAP['14'].group.rotation, { y: 0.1, duration: 3, ease: 'none' }, t0);
+  lights(t0, 0.01, { gC: 0.9, gL: 0, gR: 0.8, rimL: 0, rimR: 100, top: 160, bloom: 0.5 });
+  screen('14', t0, faceScreen('smiling_face_with_sunglasses', { size: 0.62 }));
   flash(t0, 0.6, 0.4);
-  const k = el('div', 'eyebrow', s, 'The verdict'); k.style.color = 'var(--gold)'; at(k, 960, 250);
-  const h = el('div', 'big', s, 'GET THE 14″ M1 PRO'); h.style.cssText += ';font-size:170px;color:#fff'; at(h, 960, 390);
-  const sub = el('div', 'hand', s, '$125 well spent.'); sub.style.cssText += ';font-size:72px;color:var(--gold)'; at(sub, 960, 560);
-  const sc = el('div', 'c', s, `<div style="display:flex;align-items:center;gap:0;border:5px solid #16112a;border-radius:20px;overflow:hidden;font:400 70px/1 var(--display)">
-     <span style="background:var(--blue);padding:14px 30px">14″ &nbsp;4</span><span style="background:#16112a;color:#aaa;padding:14px 20px;font-size:40px">vs</span><span style="background:var(--red);padding:14px 30px">2½&nbsp; 13″</span></div>`);
-  at(sc, 960, 720);
-  const fine = el('div', 'fine', s, 'Specs from Apple’s tech specs. Battery: “up to” hours, Apple TV app video playback.<br>No MacBooks were harmed. One Touch Bar’s feelings were hurt.');
-  fine.style.textAlign = 'center'; at(fine, 960, 900);
-  popIn(k, t0 + 0.05, { sfx: false }); slam(h, t0 + 0.1, { from: 2, amp: 14 });
+  const k = el('div', 'eyebrow', s, 'The verdict'); k.style.color = 'var(--gold)'; gsap.set(k, { left: 140, top: 250 });
+  const h = el('div', 'big white', s, 'GET THE<br>14″ M1 PRO'); h.style.fontSize = '150px'; h.style.lineHeight = '.95'; gsap.set(h, { left: 140, top: 300 });
+  const sub = el('div', 'hand', s, '$125 well spent, Dylan.'); sub.style.cssText += ';font-size:60px;color:var(--gold)'; gsap.set(sub, { left: 150, top: 610, rotation: -3 });
+  const sc = el('div', 'c', s, `<div style="display:flex;align-items:center;border-radius:18px;overflow:hidden;font:400 64px/1 var(--display);box-shadow:0 20px 40px rgba(0,0,0,.5)">
+     <span style="background:linear-gradient(180deg,#5aa2ff,#1a55d6);padding:14px 30px">14″ &nbsp;4</span><span style="background:#0e0b19;color:#aaa;padding:14px 20px;font-size:36px">vs</span><span style="background:linear-gradient(180deg,#ff5a75,#c9173d);padding:14px 30px">2 &nbsp;13″</span></div>`);
+  gsap.set(sc, { left: 140, top: 730 });
+  const fine = el('div', 'fine', s, 'Specs from Apple’s tech specs. Battery: “up to” hours, Apple TV app movie playback.<br>No MacBooks were harmed. One Touch Bar’s feelings were hurt.');
+  gsap.set(fine, { left: 140, top: 900 });
+  slideIn(k, t0 + 0.05, -80, 0, { fade: true, sfx: false }); slam(h, t0 + 0.1, { from: 1.8, amp: 12 });
   popIn(sub, t0 + 0.5, { rot: -5, rotTo: -3, sfx: 'pop2' }); popIn(sc, t0 + 0.8, { from: 0.5 });
   tl.fromTo(fine, { opacity: 0 }, { opacity: 1, duration: 0.5 }, t0 + 1.2);
   tl.to('#black', { opacity: 1, duration: 0.8, ease: 'power1.in' }, C.total - 0.8);
 })();
 
-// ---------------------------------------------------------------------------------------------
-// rendering entry points
-// ---------------------------------------------------------------------------------------------
+// =============================================================================================
+// Rendering entry points
+// =============================================================================================
 tl.set({}, {}, C.total);
-window.renderAt = t => { tl.seek(t, false); for (const f of PROCS) f(t); };
+proc(() => {
+  const g = LAP['14'].st.glow, x = $('#xdr');
+  const a = G.on && LAP['14'].group.visible ? Math.max(0, Math.min(0.95, (g - 1.0) / 1.2)) : 0;
+  x.style.opacity = a;
+  if (a) { const p = ST.project(LAP['14'].anchors.screen); gsap.set(x, { left: p.x, top: p.y, xPercent: -50, yPercent: -50 }); }
+});
+window.renderAt = t => {
+  tl.seek(t, false);
+  ST.prepare(t);   // camera first, so everything pinned to the 3D scene lines up this frame
+  for (const f of PROCS) f(t);
+  $('#gl').style.visibility = G.on ? 'visible' : 'hidden';
+  $('#bg').style.visibility = G.on ? 'visible' : 'hidden';
+  if (G.on) ST.render(t);
+};
 window.getEvents = () => ({ sfx: SFX.slice().sort((a, b) => a.t - b.t), music: MUSIC, total: C.total, scenes: C.scenes });
-window.ready = Promise.all([document.fonts.ready, ...window.READY, ...[...document.images].map(i => i.decode().catch(() => { }))]);
+window.ready = Promise.all([document.fonts.ready, ...window.READY, ...[...document.images].map(i => i.decode().catch(() => { }))]).then(() => new Promise(r => setTimeout(r, 300)));
 
-// live preview in a browser: fit to the window, play with the soundtrack if present
+// live preview in a browser (serve this folder over http): click to play with the soundtrack
 const params = new URLSearchParams(location.search);
 if (!params.has('render')) {
   const vp = $('#viewport');
-  const fit = () => { const k = Math.min(innerWidth / 1920, innerHeight / 1080); vp.style.transform = `scale(${k})`; vp.style.width = '1920px'; document.body.style.width = innerWidth + 'px'; vp.style.marginLeft = (innerWidth - 1920 * k) / 2 + 'px'; vp.style.marginTop = (innerHeight - 1080 * k) / 2 + 'px'; };
-  document.body.style.display = 'block'; addEventListener('resize', fit); fit();
+  const fit = () => { const k = Math.min(innerWidth / 1920, innerHeight / 1080); vp.style.transform = `translate(${(innerWidth - 1920 * k) / 2}px,${(innerHeight - 1080 * k) / 2}px) scale(${k})`; };
+  addEventListener('resize', fit); fit();
   const audio = new Audio('assets/soundtrack.mp3');
   let t0 = null, playing = false;
+  const loop = () => { const t = !audio.paused ? audio.currentTime : (performance.now() - t0) / 1000; renderAt(Math.min(t, C.total)); if (t < C.total) requestAnimationFrame(loop); else playing = false; };
   const start = () => { if (playing) return; playing = true; audio.currentTime = 0; audio.play().catch(() => { }); t0 = performance.now(); requestAnimationFrame(loop); };
-  const loop = () => { const t = audio.duration && !audio.paused ? audio.currentTime : (performance.now() - t0) / 1000; renderAt(Math.min(t, C.total)); if (t < C.total) requestAnimationFrame(loop); else playing = false; };
-  window.ready.then(() => { renderAt(+(params.get('t') || 11.6)); });
+  window.ready.then(() => renderAt(+(params.get('t') || 11.8)));
   addEventListener('click', start); addEventListener('keydown', e => { if (e.key === ' ') start(); });
 }
 </script>

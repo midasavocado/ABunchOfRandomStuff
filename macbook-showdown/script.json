@@ -14,12 +14,12 @@
   {
    "id": "intro",
    "lead": 0.6,
-   "tail": 0.24,
+   "tail": 0.3,
    "lines": [
     {
      "id": "n01",
      "v": "N",
-     "text": "Your buddy has a problem."
+     "text": "Dylan has a problem."
     },
     {
      "id": "n02a",
@@ -36,34 +36,34 @@
     {
      "id": "n02c",
      "v": "N",
-     "text": "And he can't.",
-     "gap": 0.25
+     "text": "And Dylan can't.",
+     "gap": 0.2
     },
     {
      "id": "n02d",
      "v": "N",
      "text": "Decide.",
-     "gap": 0.26
+     "gap": 0.3
     },
     {
      "id": "n03",
      "v": "N",
      "text": "So let's settle this. The only way we know how.",
-     "gap": 0.38
+     "gap": 0.4
     }
    ]
   },
   {
    "id": "title",
-   "lead": 0.0,
-   "tail": 0.0,
+   "lead": 0,
+   "tail": 0,
    "hold": 2.5,
    "lines": []
   },
   {
    "id": "fighters",
    "lead": 0.3,
-   "tail": 0.36,
+   "tail": 0.4,
    "lines": [
     {
      "id": "a01",
@@ -73,33 +73,33 @@
     {
      "id": "n04",
      "v": "N",
-     "text": "Eight-core CPU. Eight-core graphics. And, a Touch Bar.",
+     "text": "Eight-core CPU. Eight-core graphics. And a Touch Bar. A feature so beloved, Apple killed it.",
      "gap": 0.3
     },
     {
      "id": "a02",
      "v": "A",
      "text": "And in the blue corner! The fourteen-inch, M one Pro!",
-     "gap": 0.52
+     "gap": 0.5
     },
     {
      "id": "n05",
      "v": "N",
-     "text": "Ten-core CPU. Sixteen-core graphics. And, a notch.",
+     "text": "Ten-core CPU. Sixteen-core graphics. And a notch. You'll live.",
      "gap": 0.3
     },
     {
      "id": "n06",
      "v": "N",
      "text": "Both packing sixteen gigs of RAM, and a five-twelve gig SSD. Now, fight!",
-     "gap": 0.6
+     "gap": 0.5
     }
    ]
   },
   {
    "id": "r1",
    "lead": 0.2,
-   "tail": 0.36,
+   "tail": 0.4,
    "lines": [
     {
      "id": "a03",
@@ -110,26 +110,26 @@
      "id": "n07",
      "v": "N",
      "text": "The M one Pro has double the graphics cores, and almost three times the memory bandwidth.",
-     "gap": 0.45
+     "gap": 0.5
     },
     {
      "id": "n08a",
      "v": "N",
      "text": "The thirteen-inch is a golden retriever.",
-     "gap": 0.38
+     "gap": 0.4
     },
     {
      "id": "n08b",
      "v": "N",
      "text": "The fourteen-inch is a golden retriever, with a jetpack.",
-     "gap": 0.3
+     "gap": 0.25
     }
    ]
   },
   {
    "id": "r2",
    "lead": 0.2,
-   "tail": 0.3,
+   "tail": 0.4,
    "lines": [
     {
      "id": "a04",
@@ -139,13 +139,13 @@
     {
      "id": "n09",
      "v": "N",
-     "text": "The thirteen has a perfectly nice sixty hertz LCD.",
-     "gap": 0.45
+     "text": "The thirteen gets a sixty hertz LCD, with bezels you could land a plane on.",
+     "gap": 0.5
     },
     {
      "id": "n10a",
      "v": "N",
-     "text": "The fourteen? A mini-LED XDR display.",
+     "text": "The fourteen gets a mini-LED XDR display.",
      "gap": 0.3
     },
     {
@@ -158,14 +158,14 @@
      "id": "n10c",
      "v": "N",
      "text": "Scrolling on it is like butter on a hot skillet.",
-     "gap": 0.26
+     "gap": 0.3
     }
    ]
   },
   {
    "id": "r3",
    "lead": 0.2,
-   "tail": 0.36,
+   "tail": 0.4,
    "lines": [
     {
      "id": "a05",
@@ -175,33 +175,39 @@
     {
      "id": "n11a",
      "v": "N",
-     "text": "The thirteen-inch has two USB-C ports.",
-     "gap": 0.45
+     "text": "The thirteen-inch has two USB-C ports. Two.",
+     "gap": 0.5
     },
     {
      "id": "n11b",
      "v": "N",
-     "text": "That's it. Hope you like dongles.",
-     "gap": 0.25
+     "text": "Hope you like dongles.",
+     "gap": 0.2
     },
     {
      "id": "n12a",
      "v": "N",
      "text": "The fourteen has three Thunderbolt ports, HDMI, an SD slot, and MagSafe.",
-     "gap": 0.45
+     "gap": 0.5
     },
     {
      "id": "n12b",
      "v": "N",
-     "text": "So when someone trips on your charger, your laptop stays put, instead of doing a triple backflip.",
-     "gap": 0.26
+     "text": "So when someone trips on the charger, it just pops off.",
+     "gap": 0.3
+    },
+    {
+     "id": "n12c",
+     "v": "N",
+     "text": "The thirteen-inch? Triple backflip.",
+     "gap": 0.25
     }
    ]
   },
   {
    "id": "r4",
    "lead": 0.2,
-   "tail": 0.3,
+   "tail": 0.4,
    "lines": [
     {
      "id": "a06",
@@ -212,32 +218,32 @@
      "id": "n13a",
      "v": "N",
      "text": "Seven-twenty P camera, versus ten-eighty P.",
-     "gap": 0.45
+     "gap": 0.5
     },
     {
      "id": "n13b",
      "v": "N",
-     "text": "One makes you look like a potato in witness protection.",
-     "gap": 0.3
+     "text": "On the thirteen-inch, you look like a potato in witness protection.",
+     "gap": 0.25
     },
     {
      "id": "n13c",
      "v": "N",
-     "text": "The other makes you look like, you.",
-     "gap": 0.3
+     "text": "On the fourteen, you look like, you.",
+     "gap": 0.25
     },
     {
      "id": "n14",
      "v": "N",
-     "text": "Plus, six speakers instead of two.",
-     "gap": 0.38
+     "text": "Plus six speakers instead of two.",
+     "gap": 0.4
     }
    ]
   },
   {
    "id": "comeback",
    "lead": 0.3,
-   "tail": 0.36,
+   "tail": 0.4,
    "lines": [
     {
      "id": "n15",
@@ -248,49 +254,49 @@
      "id": "n16a",
      "v": "N",
      "text": "It's half a pound lighter,",
-     "gap": 0.3
+     "gap": 0.35
     },
     {
      "id": "n16b",
      "v": "N",
-     "text": "and its battery lasts hours longer.",
+     "text": "and its battery lasts a few hours longer.",
      "gap": 0.1
     },
     {
      "id": "n17a",
      "v": "N",
      "text": "And the Touch Bar can scroll through emoji.",
-     "gap": 0.38
+     "gap": 0.4
     },
     {
      "id": "n17b",
      "v": "N",
      "text": "Nobody asked for that.",
-     "gap": 0.34
+     "gap": 0.4
     },
     {
      "id": "n17c",
      "v": "N",
-     "text": "But it can.",
-     "gap": 0.34
+     "text": "Not even Apple.",
+     "gap": 0.35
     }
    ]
   },
   {
    "id": "math",
    "lead": 0.3,
-   "tail": 0.36,
+   "tail": 0.4,
    "lines": [
     {
      "id": "n18",
      "v": "N",
-     "text": "So what does a hundred and twenty-five bucks buy?"
+     "text": "So what does a hundred and twenty-five bucks get Dylan?"
     },
     {
      "id": "m1",
      "v": "N",
      "text": "Double the graphics.",
-     "gap": 0.26
+     "gap": 0.3
     },
     {
      "id": "m2",
@@ -349,15 +355,15 @@
     {
      "id": "n20b",
      "v": "N",
-     "text": "That's cheaper than one Apple dongle.",
-     "gap": 0.3
+     "text": "Cheaper than one Apple dongle.",
+     "gap": 0.25
     }
    ]
   },
   {
    "id": "verdict",
    "lead": 0.3,
-   "tail": 0.24,
+   "tail": 0.3,
    "lines": [
     {
      "id": "a07",
@@ -368,33 +374,33 @@
      "id": "a08",
      "v": "A",
      "text": "The fourteen-inch, M one Pro!",
-     "gap": 0.68
+     "gap": 0.7
     },
     {
      "id": "n21",
      "v": "N",
-     "text": "Get the fourteen. Your eyes, your ears, and your future self will thank you.",
+     "text": "Dylan. Get the fourteen. Your eyes, your ears, and your future self will thank you.",
      "gap": 1.2
     },
     {
      "id": "n22",
      "v": "N",
      "text": "Unless you really, really love the Touch Bar.",
-     "gap": 0.38
+     "gap": 0.4
     },
     {
      "id": "n23",
      "v": "N",
      "text": "Nobody really loves the Touch Bar.",
-     "gap": 0.52
+     "gap": 0.5
     }
    ]
   },
   {
    "id": "end",
-   "lead": 0.0,
-   "tail": 0.0,
-   "hold": 3.5,
+   "lead": 0,
+   "tail": 0,
+   "hold": 3.0,
    "lines": []
   }
  ]
