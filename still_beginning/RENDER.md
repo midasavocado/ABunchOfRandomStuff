@@ -45,5 +45,13 @@ Budget roughly a day for the whole film at 4K; the preview pass is 1-2 hours.
 - s19c hold-down clamp rebuilt as real fabricated hardware (`lib/holddown.py`), used by every pad view.
 - Film-wide: worn/chipped paint with cavity grime (`sb.painted`), lathe shading fix (glass refraction),
   gaze/expression/walk helpers for MPFB people (`lib/folks.py`), the s28 statement typography (Inter, OFL).
+- Detail/background pass: s07a real SLM chamber (powder streaks, LED strip catching the fused metal), s07b full
+  manufacturing hall (`lib/factory.py`: portal frame, clerestory daylight, machines, racking, controller), s10b plant
+  room + earlier focus pull, s12a nacelle/spinner/tower detail, s14 farmland patchwork (tramlines, margins, hedges)
+  and a visible city, s16b NFT hydroponic channels, s19b/s20 far spaceport + cirrus dawn sky, s23 south-pole massifs
+  and lit habitats, s24 Mars exterior (mesas, dunes, solar field, rover) + hand reach fix, s06b framing, s17 city
+  visible in EEVEE.
+- Score: first drop trimmed with a swell so the ignition drop lands ~2 LU bigger (rebuilt automatically).
+- Scene builds are much faster (`sb.prim` builds meshes directly; pixel-identical to the old operator path).
 - Lookdev switches (never set them for finals): `SB_NOVOL=1`, `SB_SAMPLES`, `SB_TAA`, `SB_PCT`,
   `SB_EARTH_PROXY=1` (Cycles-renderable Earth stand-in; the real Earth is EEVEE-only).
