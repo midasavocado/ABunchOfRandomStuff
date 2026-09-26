@@ -385,9 +385,11 @@ if HAND:
 # aimed so the hand's lift (contact ~(0.23, 0.33)) plays just right of centre, the window bays behind it
 # over the gardener's right shoulder: her hand reaches into the plants and lifts the leaf toward the light, the
 # window bays and Mars beyond; her shoulder soft in the foreground. Slow drift in.
-cam = sb.camera("Cam", loc=(0.66, -0.42, 1.34), target=V((0.18, 0.42, 0.96)), lens=40, fstop=4.0, clip=(0.02, 10000))
-sb.cam_bake(cam, S0, S1, lambda t: V((0.66, -0.42, 1.34)).lerp(V((0.6, -0.3, 1.3)), sb.smooth(t)),
-            lambda t: V((0.18, 0.42, 0.96)).lerp(V((0.22, 0.38, 0.99)), sb.smooth(t)), focus=lambda t: 0.95)
+C0, C1 = V((0.98, -0.46, 1.24)), V((0.92, -0.36, 1.2))
+G0, G1 = V((0.2, 0.36, 0.95)), V((0.22, 0.34, 0.99))
+cam = sb.camera("Cam", loc=C0, target=G0, lens=40, fstop=4.0, clip=(0.02, 10000))
+sb.cam_bake(cam, S0, S1, lambda t: C0.lerp(C1, sb.smooth(t)), lambda t: G0.lerp(G1, sb.smooth(t)),
+            focus=lambda t: (C0.lerp(C1, sb.smooth(t)) - G0.lerp(G1, sb.smooth(t))).length)
 FOCUS = os.environ.get("S24_FOCUS")
 if FOCUS:
     cam.data.dof.focus_distance = float(FOCUS)
