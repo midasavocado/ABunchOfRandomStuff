@@ -378,4 +378,8 @@ def clone(rig, name):
         for m in n.modifiers:
             if m.type == 'ARMATURE' and m.object is rig:
                 m.object = new
+            if m.type == 'SUBSURF':                       # crowd people are small in frame: no subdivision
+                m.show_render = False; m.show_viewport = False
+        if any(k in n.name.lower() for k in ("teeth", "tongue", "eyelash")):
+            n.hide_render = True; n.hide_viewport = True
     return new

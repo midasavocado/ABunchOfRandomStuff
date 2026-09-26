@@ -162,7 +162,7 @@ if os.environ.get("SB_NOPEOPLE") != "1":
     # the street is alive: a crowd of clones (shared meshes, own walks) along both sidewalks, further out where
     # repetition can't be read; pairs stopped to talk; people at more cafe tables down the street
     rsc = random.Random(15)
-    for k in range(34):
+    for k in range(26):
         src, z0 = walk_src[k % len(walk_src)]
         r = folks.clone(src, "Crowd%d" % k)
         side = 1 if k % 2 == 0 else -1
@@ -171,7 +171,7 @@ if os.environ.get("SB_NOPEOPLE") != "1":
         hd = 0.0 if rsc.random() < 0.5 else 180.0
         folks.walk(r, F0 - 2, F1 + 2, V((x, y, z0)), hd, speed=rsc.uniform(1.1, 1.45), phase=rsc.uniform(0, 6.28),
                    stride=rsc.uniform(1.3, 1.55))
-    for k in range(6):                       # pairs talking, turned to each other, a little weight on one leg
+    for k in range(4):                       # pairs talking, turned to each other, a little weight on one leg
         x = rsc.uniform(20.0, 110.0); y = (1 if k % 2 else -1) * rsc.uniform(7.0, 9.0)
         a, b = folks.clone(walk_src[k % len(walk_src)][0], "TalkA%d" % k), folks.clone(walk_src[(k + 3) % len(walk_src)][0], "TalkB%d" % k)
         for r, dx, rz in ((a, -0.45, 90.0), (b, 0.45, -90.0)):
