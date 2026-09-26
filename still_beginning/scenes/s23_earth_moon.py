@@ -17,7 +17,7 @@ sb.setup_render("EEVEE", mblur=True, shutter=0.3, look="AgX - Medium High Contra
 KM = 1000.0
 DIST = 384400.0
 EHAT = V((0.0, -1.0, 0.0))                                   # Moon -> Earth
-SUN = V((1.0, 0.06, 0.04)).normalized()                      # first quarter: terminator through the poles
+SUN = V((0.8, 0.0, 0.6)).normalized()                         # lights the Earth under the camera; the Moon half-lit
 E_KM = EHAT * DIST                                           # Earth centre (km, scene axes)
 E = earth.build(center_km=tuple(E_KM), sun_dir=tuple(SUN), clouds=0.45, lights=0.0, samples=16, nadir=(10.0, 40.0, 0.0),
                 detail=1.0)
@@ -29,8 +29,9 @@ Re = earth.R
 u0 = V((0.0, -0.33, 0.944)).normalized()                     # local up at the start: Moon 19 deg below horizontal = 8 deg over the dipped limb
 P0 = (E_KM + u0 * (Re + 800.0)) * KM
 D1 = 4200e3                                                  # final distance from the Moon's centre
-DIR1 = V((0.0, -0.85, -0.52)).normalized()                   # end: Earth side, below the equator, facing the south pole
-SPOLE = V((0.0, 0.0, -luna.R * 0.92))
+TERM = V((0.45, -0.6, -0.6)).normalized()                     # the terminator on the southern near side (n.SUN = 0)
+DIR1 = (TERM + V((0.0, -0.7, 0.0))).normalized()             # end: above it, from the Earth side
+SPOLE = TERM * luna.R * 0.92
 
 
 def ease(t):
