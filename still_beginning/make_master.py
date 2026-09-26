@@ -45,14 +45,16 @@ def main():
     vf = ["scale=3840:2160:flags=lanczos" if PREVIEW else "null",
           # fine luma grain (temporal), breaks up banding in dark gradients before 8-bit quantisation
           "noise=c0s=5:c0f=t+u:c1s=0:c2s=0",
-          "format=yuv420p"]
+          "format=yuv420p",
+          # tag the frames themselves: newer ffmpeg takes colour metadata from the filter graph, not the output flags
+          "setparams=color_primaries=bt709:color_trc=bt709:colorspace=bt709:range=tv"]
     cmd = ["ffmpeg", "-y", "-hide_banner", "-loglevel", "error",
            "-f", "concat", "-safe", "0", "-i", lst, "-i", AUDIO,
            "-map", "0:v:0", "-map", "1:a:0",
            "-vf", ",".join(vf), "-fps_mode", "cfr", "-r", "24", "-frames:v", "2880",
            "-c:v", "libx264", "-profile:v", "high", "-preset", os.environ.get("SB_MASTER_PRESET", "slow"), "-tune", "film",
            "-crf", "12", "-maxrate", "120M", "-bufsize", "240M",
-           "-x264-params", "aq-mode=3:aq-strength=0.9:deblock=-1,-1",
+           "-x264-params", "aq-mode=3:aq-strength=0.9:deblock=-1,-1:colorprim=bt709:transfer=bt709:colormatrix=bt709",
            "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", "-color_range", "tv",
            "-c:a", "aac", "-b:a", "320k", "-ar", "48000", "-ac", "2",
            "-t", "120", "-movflags", "+faststart", OUT + ".part.mp4"]

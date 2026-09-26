@@ -9,12 +9,17 @@ REPO="$(cd "$HERE/.." && pwd)"
 OUT="$HOME/Desktop/SB_review"
 cd "$REPO"
 git checkout still_beginning
-git pull --ff-only
+git pull --ff-only || true
 git lfs pull
 cd "$HERE"
-# never reuse stale preview shots
-rm -f edit/*_prev.mov STILL_BEGINNING.mp4
-python3 render_all.py --preview
+if [ "$1" = "--reuse" ]; then
+  # shots already rendered: just re-assemble the film
+  python3 render_all.py --preview --master-only
+else
+  # never reuse stale preview shots
+  rm -f edit/*_prev.mov STILL_BEGINNING.mp4
+  python3 render_all.py --preview
+fi
 mkdir -p "$OUT" review
 # small review copy (960x540, same cut + score)
 ffmpeg -y -loglevel error -i STILL_BEGINNING.mp4 -vf scale=960:540 -c:v libx264 -crf 20 -preset medium \
