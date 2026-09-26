@@ -1,0 +1,21 @@
+{
+  "_comment": "Per-shot finishing on top of post.py defaults (bloom 0.05, halation 0.02, vignette 0.18). Balanced from the Mac review stills: cut-to-cut exposure, and the brief's palette arc (graphite/silver + blue hour -> warm amber at the family table -> real Earth daylight -> restrained space).",
+  "_default": {"contrast": 0.04, "sat": 0.96},
+  "s03a": {"gain": 0.88, "contrast": 0.06},
+  "s03b": {"gain": 0.94},
+  "s06b": {"gain": 0.95},
+  "s08a": {"gain": 0.86, "warmth": 0.03},
+  "s08b": {"gain": 0.88, "warmth": 0.05},
+  "s09a": {"warmth": 0.03},
+  "s09b": {"warmth": 0.04, "lift": 0.01},
+  "s12a": {"gain": 0.94},
+  "s12b": {"gain": 0.9, "contrast": 0.06},
+  "s13": {"gain": 0.94},
+  "s16a": {"gain": 0.8, "contrast": 0.1, "warmth": 0.02},
+  "s16b": {"gain": 0.94},
+  "s17": {"lift": 0.012, "warmth": 0.02},
+  "s21": {"lift": 0.008},
+  "s25": {"lift": 0.006},
+  "s26": {"lift": 0.006},
+  "s27": {"warmth": 0.02}
+}
