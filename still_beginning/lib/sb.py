@@ -1135,7 +1135,7 @@ def glass(name, color=(1, 1, 1), rough=0.0, ior=1.5, thin=False):
     except Exception:
         pass
     if thin and 'Thin Wall' in m.node_tree.nodes["Principled BSDF"].inputs:      # Blender 5.2+
-        m.node_tree.nodes["Principled BSDF"].inputs['Thin Wall'].default_value = 0.0
+        m.node_tree.nodes["Principled BSDF"].inputs['Thin Wall'].default_value = False
     return m
 
 
