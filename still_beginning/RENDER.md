@@ -33,11 +33,27 @@ Single shots: `python3 render_all.py --shots s09a,s17`. Re-assemble only: `pytho
 ## Engines and rough timings (M5 Pro GPU)
 | engine | shots | ~per 4K frame |
 |---|---|---|
-| Cycles (glass/water, eyes, gold mirror) | s01, s09a, s09b, s16a, s25, s27 | 60-120 s |
+| Cycles (glass/water, eyes, gold mirror) | s01, s09a, s09b, s16a, s25 | 60-120 s |
 | EEVEE (everything else, incl. the analytic Earth) | all others | 5-20 s |
 Budget roughly a day for the whole film at 4K; the preview pass is 1-2 hours.
 
-## What changed in this pass (cloud session)
+## The edit: handles + blended cuts (this pass)
+Every shot renders 8 extra frames past each cut (`lib/timeline.py` HANDLE; none before the first frame or after the
+last), and the camera operator (`lib/cinema.py`) rebuilds each camera so it is always moving at a cut, keeps moving
+through the handles, and floats like a real operator (steadicam / handheld / drone / macro / weightless, per shot).
+`make_master.py` then blends every cut over 4-16 frames (quintic S-curve, highlights lead) so cuts barely read as
+transitions. Old `edit/*.mov` files without handles are rejected -- a full re-render is needed once.
+`SB_CLEARCHECK=1` scans a shot for the camera inside / grazing geometry; `SB_NOCINEMA=1` shows the raw authored move.
+
+## The final act (this pass)
+s22 orbit build -> s23e Earth to Moon (one flight across 384,000 km) -> s23 the lunar settlement with a spaceport
+(ships landing and lifting off) -> s23m Moon to Mars -> s25 the telescope -> s24c the Mars colony (drone flight:
+hub, habitats, greenhouses, industry, spaceport; a ship lands in a ring of dust) -> s24 the greenhouse hand ->
+s25z the pull-back from the colony to the whole planet (140 m to 22,000 km, one move) -> s28 sunrise over the limb
+of Mars, the title. New libraries: `lib/ship.py` (colony ship), `lib/mars.py` (Mars at every scale, limb
+atmosphere), `lib/colony.py` (the colony on the global timeline), `lib/luna.py` (the Moon as a globe).
+
+## Earlier passes (cloud session)
 - New scenes: s08 (workshop pin press + finger test), s09 (family table: prosthetic grasp + reveal, first drop),
   s15 (golden-hour city street crane), s16a/b/c (water, greenhouse, maker-library), s17 (hero one: the child
   drawing at night, ends on the amber cuff), s21 (staging at the edge of space), s22 (orbital truss assembly),

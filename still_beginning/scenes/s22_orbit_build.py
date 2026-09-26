@@ -171,6 +171,7 @@ cam = sb.camera("Cam", loc=P0, target=T0, lens=24, fstop=5.6, clip=(0.05, 20000.
 sb.cam_bake(cam, F0, F1, lambda t: P0.lerp(P1, sb.smoother(t)), lambda t: T0.lerp(T1, sb.smoother(t)),
             focus=lambda t: (P0.lerp(P1, sb.smoother(t)) - T0.lerp(T1, sb.smoother(t))).length)
 E.track(cam, F0 - 2, F1 + 2)
+import cinema; cinema.AFTER.append(lambda c, f0, f1: E.track(c, f0, f1))      # re-bake after the operator
 sb.frames(F0, F1)
 if os.environ.get("SB_SAVE"):
     sb.save(sid)

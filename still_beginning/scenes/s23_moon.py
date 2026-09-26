@@ -223,6 +223,59 @@ def dust_update(scene, depsgraph=None):
 
 bpy.app.handlers.frame_change_pre.append(dust_update)
 
+# ---------------------------------------------------------------- spaceport beyond the settlement: one ship standing on
+# its sintered pad, one lifting off (a wide faint vacuum plume, a flat ballistic spray of dust), one descending to land
+import ship
+SHM = ship.materials("LS")
+pad_m = sb.painted("LunarPad", (0.22, 0.215, 0.21), rough=0.8, grime=0.6)
+padlamp = sb.emit_mat("LPadLamp", (1.0, 0.85, 0.6), 60.0)
+LPADS = [V((-70.0, 330.0)), V((115.0, 520.0)), V((30.0, 900.0))]
+for i, P in enumerate(LPADS):
+    z = float(T.height(np.array([P.x]), np.array([P.y]))[0])
+    sb.prim("cyl", "LPad%d" % i, loc=(P.x, P.y, z + 0.15), vertices=96, radius=26.0, depth=0.5, mat=pad_m)
+    for k in range(20):
+        a_ = 2 * math.pi * k / 20
+        sb.prim("cube", "LPadLamp", loc=(P.x + math.cos(a_) * 25.2, P.y + math.sin(a_) * 25.2, z + 0.45), scale=(0.2, 0.2, 0.05), mat=padlamp)
+FS0, FS1 = S0 - 24, S1 + 24
+
+
+def lz(P):
+    return float(T.height(np.array([P.x]), np.array([P.y]))[0]) + 0.4 - ship.GROUND_Z
+
+
+LS1 = ship.build("LShip1", M=SHM, legs_deployed=1.0)
+LS1["root"].location = (LPADS[0].x, LPADS[0].y, lz(LPADS[0]))
+LS1["root"].rotation_euler = (0, 0, math.radians(170))
+LS2 = ship.build("LShip2", M=SHM, legs_deployed=1.0)
+LS2["root"].rotation_euler = (0, 0, math.radians(200))
+FLO2 = S0 + 8
+ship.fly(LS2, FS0, FS1, lambda f: V((LPADS[1].x, LPADS[1].y, lz(LPADS[1]) + 4.0 * max(0.0, (f - FLO2) / 24.0) ** 2)),
+         lambda f: sb.smoother(sb.remap(f, FLO2 - 16, FLO2)), legs_fn=lambda f: 1.0 - sb.smoother(sb.remap(f, FLO2 + 30, FLO2 + 70)),
+         light_max=3e6)
+for k in range(FS0, FS1 + 1):
+    th = sb.smoother(sb.remap(k, FLO2 - 16, FLO2))
+    LS2["plume"].scale = (2.6, 2.6, 0.5 + 1.2 * th); LS2["plume"].keyframe_insert("scale", frame=k)
+ship.dust_ring("LDust2", (LPADS[1].x, LPADS[1].y, lz(LPADS[1]) + ship.GROUND_Z), FLO2 - 8, FS1, radius_max=160.0, n=30,
+               color=(0.42, 0.41, 0.40), density=0.08, seed=4, height=2.0, rise=0.0)
+LS3 = ship.build("LShip3", M=SHM, legs_deployed=0.0)
+LS3["root"].rotation_euler = (0, 0, math.radians(185))
+FTD3 = S1 - 6
+
+
+def pos3(f):
+    if f >= FTD3:
+        return V((LPADS[2].x, LPADS[2].y, lz(LPADS[2])))
+    u = min(1.0, (FTD3 - f) / 110.0)
+    return V((LPADS[2].x - 20.0 * u * u, LPADS[2].y, lz(LPADS[2]) + 280.0 * u ** 1.8))
+
+
+ship.fly(LS3, FS0, FS1, pos3, lambda f: 1.0 if f < FTD3 + 2 else max(0.0, 1.0 - (f - FTD3 - 2) / 6.0),
+         legs_fn=lambda f: sb.smoother(sb.remap(f, FTD3 - 70, FTD3 - 30)), light_max=3e6)
+for k in range(FS0, FS1 + 1):
+    LS3["plume"].scale = (2.6, 2.6, 1.3); LS3["plume"].keyframe_insert("scale", frame=k)
+ship.dust_ring("LDust3", (LPADS[2].x, LPADS[2].y, lz(LPADS[2]) + ship.GROUND_Z), FTD3 - 24, FTD3 + 4, radius_max=150.0, n=30,
+               color=(0.42, 0.41, 0.40), density=0.08, seed=6, height=2.0, rise=0.0)
+
 # ---------------------------------------------------------------- camera: low, follows the rover with a slow pan
 zc = float(T.height(np.array([0.0]), np.array([-2.0]))[0])
 cam = sb.camera("Cam", loc=(0, -2, zc + 1.1), target=(0, 60, zc), lens=35, clip=(0.1, 200000))

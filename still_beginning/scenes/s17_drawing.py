@@ -49,7 +49,7 @@ sb.world_bluehour(glow_az=15.0, glow=1.2, glow_col=(0.9, 0.35, 0.12), zenith=(0.
 rocket.box("Desk", (0, 0.13, DESK_Z - 0.02), (1.3, 0.76, 0.04), M["oak"], bev=0.006)
 for sx in (-0.6, 0.6):
     rocket.box("DeskLeg", (sx, 0.13, (DESK_Z - 0.04) / 2), (0.04, 0.68, DESK_Z - 0.04), M["oak_dark"], bev=0.004)
-home.chair("Chair", (0.02, -0.42, 0), 0.0, M)
+home.chair("Chair", (0.02, -0.42, 0), math.pi, M)      # back behind the child
 # desk lamp: articulated, warm, on the left
 import workshop
 WM = workshop.materials()
@@ -240,7 +240,7 @@ bpy.context.scene.frame_set(F1 - 1)
 bpy.context.view_layer.update()
 cuff_pt = folks.bone_world(rig, "lowerarm02.R", tail=True) * 0.7 + folks.bone_world(rig, "lowerarm02.R") * 0.3
 bpy.context.scene.frame_set(F0)
-P = [V((1.05, -1.55, 1.25)), V((0.62, -0.9, 1.12)), V((0.3, -0.4, 1.0)), cuff_pt + V((0.2, -0.16, 0.14))]
+P = [V((1.05, -1.55, 1.25)), V((0.66, -0.92, 1.14)), V((0.36, -0.4, 1.06)), cuff_pt + V((0.2, -0.16, 0.14))]
 Tg = [V((0.0, 0.25, 1.0)), V((0.05, 0.15, 0.85)), tip_at(1560) + V((0, 0, 0.01)), cuff_pt + V((0.0, 0.03, 0.0))]
 
 

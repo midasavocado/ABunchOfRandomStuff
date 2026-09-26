@@ -122,6 +122,7 @@ for f in range(F0 - 2, F1 + 3):
     cam.keyframe_insert("rotation_quaternion", frame=f)
 import dbgcam; dbgcam.apply(); cam = bpy.context.scene.camera
 E.track(cam, F0 - 2, F1 + 2)
+import cinema; cinema.AFTER.append(lambda c, f0, f1: E.track(c, f0, f1))      # re-bake after the operator
 sb.frames(F0, F1)
 if os.environ.get("SB_SAVE"):
     sb.save(sid)

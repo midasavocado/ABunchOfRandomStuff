@@ -33,6 +33,9 @@ SHOT_STYLE = {
 }
 # (trim_in, trim_out) as fractions of the authored move; 0 keeps an exact authored frame (first shot / title end)
 TRIM_DEFAULT = (0.06, 0.06)
+# callables (cam, f0, f1) run after the camera is rebuilt -- e.g. the analytic Earth re-bakes the camera position
+# it ray-marches from (earth.Earth.track), so the planet always matches the final, operated camera
+AFTER = []
 TRIM = {"s01": (0.0, 0.05), "s28": (0.04, 0.0), "s20": (0.0, 0.05), "s09a": (0.0, 0.06)}
 
 
@@ -40,7 +43,7 @@ def _sample(cam, f):
     """camera world matrix + lens + focus at frame f from its F-curves (fast; no scene evaluation)."""
     sc = bpy.context.scene
     sc.frame_set(f)
-    return cam.matrix_world.copy(), cam.data.lens, cam.data.dof.focus_distance
+    return cam.matrix_world.copy(), cam.data.lens, cam.data.dof.focus_distance, (cam.data.clip_start, cam.data.clip_end)
 
 
 def _noise1(seed, period):
@@ -73,7 +76,7 @@ def finish(sid, cam=None, style=None):
         x = max(0.0, min(1.0, u)) * N
         i = min(int(x), N - 1) if N > 0 else 0
         k = x - i
-        m0, l0, d0 = samples[i]; m1, l1, d1 = samples[min(i + 1, N)]
+        m0, l0, d0, _ = samples[i]; m1, l1, d1, _ = samples[min(i + 1, N)]
         loc = m0.translation.lerp(m1.translation, k)
         q = m0.to_quaternion().slerp(m1.to_quaternion(), k)
         return loc, q, l0 + (l1 - l0) * k, d0 + (d1 - d0) * k
@@ -98,6 +101,14 @@ def finish(sid, cam=None, style=None):
             ax, ang = d.to_axis_angle()
             return p1 + (p1 - p0) * k, q1 @ Quaternion(ax, ang * k), l1, d1
         return at(u)
+
+    clips = [c[3] for c in samples]
+    clip_anim = len(set(clips)) > 1
+
+    def clip_at(g):
+        t = (g - a) / max(1, N)
+        u = max(0.0, min(1.0, ti + t * span))
+        return clips[min(int(round(u * N)), N)]
 
     amp, period, rdeg, rolldeg = st
     nx, ny, nz = (_noise1(hash((sid, c)) & 0xffff, period) for c in "xyz")
@@ -124,5 +135,54 @@ def finish(sid, cam=None, style=None):
         cam.data.lens = lens * (1.0 + 0.004 * nlens(g))
         cam.data.dof.focus_distance = fd
         cam.data.keyframe_insert("lens", frame=g)
+        if clip_anim:
+            cam.data.clip_start, cam.data.clip_end = clip_at(g)
+            cam.data.keyframe_insert("clip_start", frame=g)
+            cam.data.keyframe_insert("clip_end", frame=g)
         cam.data.dof.keyframe_insert("focus_distance", frame=g)
     cam["cinema_done"] = 1
+    for fn in AFTER:
+        fn(cam, a - hin, b + hout)
+
+
+def check_clearance(sid, step=2, near=None):
+    """Report frames where the camera is inside an object (rays from the lens hit back faces) or grazing one (a hit
+    closer than `near`, default 1.5% of the focus distance, min 2 cm). Prints CLEAR lines; returns the list."""
+    import bpy
+    sc = bpy.context.scene
+    cam = sc.camera
+    _, a, b, _ = TL.shot(sid)
+    hin, hout = TL.handles(sid)
+    bad = []
+    fov = cam.data.angle
+    grid = [(-0.9, -0.6), (0, -0.6), (0.9, -0.6), (-0.9, 0), (0, 0), (0.9, 0), (-0.9, 0.6), (0, 0.6), (0.9, 0.6)]
+    for g in range(a - hin, b + hout, step):
+        sc.frame_set(g)
+        dg = bpy.context.evaluated_depsgraph_get()
+        M = cam.matrix_world
+        o = M.translation
+        R = M.to_3x3()
+        fd = cam.data.dof.focus_distance or 1.0
+        thr = near if near is not None else max(0.02, 0.015 * fd)
+        back = {}
+        flagged = None
+        for sx, sy in grid:
+            d = (R @ V((math.tan(fov / 2) * sx, math.tan(fov / 2) * sy * 0.5625, -1.0))).normalized()
+            hit, loc, nrm, idx, ob, _ = sc.ray_cast(dg, o, d, distance=max(thr * 4, fd * 3))
+            if not hit or ob is None or ob.type != 'MESH':
+                continue
+            dist = (loc - o).length
+            if nrm.dot(d) > 0.05:
+                back[ob.name] = back.get(ob.name, 0) + 1
+            if dist < thr and flagged is None:
+                flagged = (g, ob.name, round(dist, 3), "grazing")
+        # inside a solid: most rays leave through the same object's back faces
+        for n_, c_ in back.items():
+            if c_ >= 6:
+                flagged = (g, n_, 0.0, "inside")
+        if flagged:
+            bad.append(flagged)
+    for g, n, d_, k in bad:
+        print("CLEAR %s f%d %s %s %.3fm" % (sid, g, k, n, d_))
+    print("CLEAR %s done: %d flagged frames" % (sid, len(bad)))
+    return bad

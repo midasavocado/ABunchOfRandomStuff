@@ -99,6 +99,8 @@ tree_pts = []
 for side in (1, -1):
     for k in range(int((X1 - X0) / 9.0)):
         x = X0 + 4 + k * 9.0 + rs.uniform(-0.4, 0.4)
+        if side < 0 and 1.0 < x < 13.0:
+            continue                      # the cafe terrace's stretch: no trunk in the opening's line of sight
         tree_pts.append(V((x, side * 7.0, 0.12)))
         if k % 2 == 0:
             S.lamp("Lamp%d_%d" % (side > 0, k), (x + 4.5, side * 5.8), side, M)
