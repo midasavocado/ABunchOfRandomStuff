@@ -16,6 +16,9 @@ folks.expression(rig, smile=smile)
 if os.environ.get("SB_SOULFACE"):
     import soul
     soul.face(parts + [bm], os.environ["SB_SOULFACE"])
+if os.environ.get("SB_UNITS"):
+    import soul
+    soul.set_units(parts + [bm], json.loads(os.environ["SB_UNITS"]))
 for b, (loc, rot) in ov.items():
     pb = rig.pose.bones[b]; pb.location = loc; pb.rotation_mode = 'XYZ'; pb.rotation_euler = [math.radians(r) for r in rot]
 bpy.context.view_layer.update()

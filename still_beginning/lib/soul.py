@@ -392,10 +392,20 @@ def load_face_units(basemesh, race="caucasian"):
         p = os.path.join(d, u + ".target.gz")
         if os.path.exists(p):
             TS.load_target(basemesh, p, weight=0.0, name=name)
+    # carry the units to brows / lashes / eyes (MHCLO-weighted), reusing MPFB's interpolation: it only transfers
+    # names on its viseme/ARKit lists, so ours join that list for the call
+    fsm = _mpfb_mod("services.faceservice")
+    lst = fsm.ARKIT_FACEUNITS
+    added = [KP + u for u in UNITS if KP + u not in lst]
     try:
-        _mpfb_mod("services.faceservice").FaceService.interpolate_targets(basemesh)
+        lst.extend(added)
+        fsm.FaceService.interpolate_targets(basemesh)
     except Exception as ex:
         print("SOUL interpolate failed", ex)
+    finally:
+        for n in added:
+            if n in lst:
+                lst.remove(n)
     return True
 
 
