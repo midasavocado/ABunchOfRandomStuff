@@ -52,8 +52,9 @@ def chain(f):
 
 
 # ------------------------------------------------------------------ materials (premium molecular vis: satin, soft)
-def satin(name, col, rough=0.42, sss=0.15, sheen=0.25):
-    m = sb.mat(name, col, rough=rough, spec=0.45, sss=sss, sss_radius=(1, 1, 1), sss_scale=0.004, sheen=sheen, coat=0.15, coat_rough=0.3)
+def satin(name, col, rough=0.42, sss=0.15, sheen=0.25, film=0.0):
+    m = sb.mat(name, col, rough=rough, spec=0.45, sss=sss, sss_radius=(1, 1, 1), sss_scale=0.004, sheen=sheen, coat=0.15, coat_rough=0.3,
+               thin_film=film)
     m.node_tree.nodes["Principled BSDF"].subsurface_method = 'BURLEY'
     nb = sb.NB(m)
     n = nb.noise(nb.coord('Object'), scale=180, detail=2)
@@ -61,11 +62,12 @@ def satin(name, col, rough=0.42, sss=0.15, sheen=0.25):
     return m
 
 
-M_H = satin("MolHelix", (0.78, 0.75, 0.69))
-M_E = satin("MolStrand", (0.46, 0.56, 0.70))
-M_L = satin("MolLoop", (0.36, 0.37, 0.40))
-EL = {'C': satin("AtC", (0.60, 0.61, 0.64), 0.5), 'N': satin("AtN", (0.34, 0.43, 0.72), 0.5),
-      'O': satin("AtO", (0.72, 0.33, 0.28), 0.5), 'S': satin("AtS", (0.86, 0.70, 0.30), 0.5)}
+# restrained palette (graphite / silver / blue-hour; amber is reserved for the bound ligand)
+M_H = satin("MolHelix", (0.74, 0.73, 0.71), 0.36, film=260.0)
+M_E = satin("MolStrand", (0.40, 0.48, 0.60), 0.34, film=300.0)
+M_L = satin("MolLoop", (0.30, 0.31, 0.34), 0.45)
+EL = {'C': satin("AtC", (0.52, 0.54, 0.57), 0.48), 'N': satin("AtN", (0.38, 0.44, 0.58), 0.48),
+      'O': satin("AtO", (0.56, 0.47, 0.46), 0.48), 'S': satin("AtS", (0.70, 0.60, 0.42), 0.48)}
 M_LIG = satin("AtLig", (0.95, 0.42, 0.08), 0.32, sss=0.3)
 
 # ------------------------------------------------------------------ ribbon object
@@ -176,6 +178,52 @@ for i, (loc, rot) in enumerate((((0.9, 1.6, 1.1), (0.6, 0.3, 1.2)), ((-1.3, 2.2,
 
 def freeze_bg(scene, *a):
     pass
+
+
+# ------------------------------------------------------------------ the crowded cell around it (depth, scale, life)
+# neighbouring macromolecules as solvent-surface-like bodies (displaced, satin, subsurface) at many depths, and
+# ions / water drifting close to the lens, all muted so the hero fold stays the subject.
+rs_ = np.random.default_rng(404)
+cen0 = V(tuple(P_fold.mean(0) * S))
+crowd_m = [satin("Crowd%d" % i, c, 0.5, sss=0.25) for i, c in enumerate(
+    [(0.30, 0.34, 0.42), (0.40, 0.40, 0.44), (0.26, 0.30, 0.36), (0.46, 0.44, 0.42), (0.34, 0.38, 0.46)])]
+tex = bpy.data.textures.new("CrowdDisp", 'VORONOI'); tex.noise_scale = 0.35
+tex2 = bpy.data.textures.new("CrowdDisp2", 'CLOUDS'); tex2.noise_scale = 0.2
+for i in range(46):
+    d = V(tuple(rs_.normal(0, 1, 3))).normalized()
+    r = rs_.uniform(1.4, 7.5)
+    c = cen0 + d * r + V((0, r * 0.3, 0))
+    o = sb.prim("ico", "Crowd%d" % i, loc=c, subdivisions=4, radius=rs_.uniform(0.18, 0.6), mat=crowd_m[i % len(crowd_m)])
+    o.scale = tuple(rs_.uniform(0.7, 1.3, 3))
+    o.rotation_euler = tuple(rs_.uniform(0, 6.28, 3))
+    m1 = o.modifiers.new("D1", 'DISPLACE'); m1.texture = tex; m1.strength = 0.12 * o.dimensions.x
+    m2 = o.modifiers.new("D2", 'DISPLACE'); m2.texture = tex2; m2.strength = 0.05 * o.dimensions.x
+    o.modifiers.new("Sm", 'SMOOTH').iterations = 4
+    # slow Brownian drift
+    for f in (F0 - 2, F1 + 2):
+        o.location = c + V(tuple(rs_.normal(0, 0.02, 3))) * (f - F0) / 30.0
+        o.keyframe_insert("location", frame=f)
+ion_m = satin("Ion", (0.62, 0.66, 0.72), 0.3, sss=0.4)
+pts = []
+while len(pts) < 420:
+    p_ = cen0 + V(tuple(rs_.uniform(-1.4, 1.4, 3)))
+    if (p_ - cen0).length > 0.42:
+        pts.append(p_)
+ions = bpy.data.meshes.new("Ions")
+ions.from_pydata([tuple(p_) for p_ in pts], [], [])
+ra = ions.attributes.new("rad", 'FLOAT', 'POINT')
+ra.data.foreach_set("value", rs_.uniform(0.003, 0.011, len(pts)).astype(np.float32))
+iono = bpy.data.objects.new("Ions", ions)
+sb.link_obj(iono)
+iono.modifiers.new("Sph", 'NODES').node_group = sphere_gn("SphIon", ion_m)
+for f in (F0 - 2, F1 + 2):
+    iono.location = V((0.0, 0.0, 0.02 * (f - F0) / 90.0))
+    iono.keyframe_insert("location", frame=f)
+# depth haze (cool, thin): distant crowd recedes into the blue-grey
+hz = sb.prim("cube", "Haze", loc=cen0, scale=(12, 12, 12), mat=sb.volume_mat("HazeM", density=0.035, color=(0.55, 0.62, 0.75), anisotropy=0.3))
+hz.visible_shadow = False
+sc.eevee.volumetric_start = 0.05
+sc.eevee.volumetric_end = 20.0
 
 
 # ------------------------------------------------------------------ light & world

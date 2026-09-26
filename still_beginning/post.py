@@ -58,6 +58,61 @@ def grade(img, g, vig_mask):
     return np.clip(x, 0, 1)
 
 
+# --------------------------------------------------------------------------- the statement (s28 only)
+TITLE_LINES = ("WE\u2019RE JUST", "GETTING STARTED.")
+TITLE_FONT = os.path.join(ROOT, "assets", "fonts", "Inter-Medium.ttf")
+TITLE_IN = (2745, 2757)        # line 1 with the final D-major arrival (bar 62, 114.375 s), line 2 half a beat later
+FADE_OUT = (2856, 2880)        # picture fades to black; the last frame (2879) is black
+_TITLE = {}
+
+
+def title_layers(w, h):
+    """Two anti-aliased RGBA layers (one per line), centred in the upper-middle of the frame above the limb.
+    Inter Medium, wide tracking (+14 %), warm white; a very soft glow so it sits in the light, not on top of it."""
+    key = (w, h)
+    if key in _TITLE:
+        return _TITLE[key]
+    from PIL import Image, ImageDraw, ImageFont, ImageFilter
+    size = int(h * 0.046)
+    font = ImageFont.truetype(TITLE_FONT, size)
+    track = size * 0.14
+    layers = []
+    y0 = int(h * 0.36)
+    for i, line in enumerate(TITLE_LINES):
+        widths = [font.getlength(ch) for ch in line]
+        total = sum(widths) + track * (len(line) - 1)
+        im = Image.new("L", (w, h), 0)
+        d = ImageDraw.Draw(im)
+        x = (w - total) / 2
+        y = y0 + i * int(size * 1.55)
+        for ch, cw in zip(line, widths):
+            d.text((x, y), ch, font=font, fill=255)
+            x += cw + track
+        a = np.asarray(im, np.float32) / 255.0
+        glow = np.asarray(im.filter(ImageFilter.GaussianBlur(size * 0.35)), np.float32) / 255.0
+        layers.append((a, glow))
+    _TITLE[key] = layers
+    return layers
+
+
+def apply_title(x, f):
+    """x: graded float RGB frame (0..1), f: global frame number."""
+    h, w = x.shape[:2]
+    col = np.array([0.96, 0.93, 0.88], np.float32)
+    for i, (a, glow) in enumerate(title_layers(w, h)):
+        t = (f - TITLE_IN[i]) / 30.0
+        k = 0.0 if t <= 0 else (1.0 if t >= 1 else t * t * (3 - 2 * t))
+        if k <= 0:
+            continue
+        x = x + glow[..., None] * (0.10 * k) * col                  # soft light halo
+        x = x * (1 - a[..., None] * k) + a[..., None] * k * col      # the letters
+    t = (f - FADE_OUT[0]) / (FADE_OUT[1] - 1 - FADE_OUT[0])
+    if t > 0:
+        k = min(1.0, t)
+        x = x * (1 - (k * k * (3 - 2 * k)))
+    return np.clip(x, 0, 1)
+
+
 def vignette(h, w, amt):
     yy, xx = np.mgrid[0:h, 0:w].astype(np.float32)
     r = np.sqrt(((xx - w / 2) / (w / 2)) ** 2 + ((yy - h / 2) / (h / 2)) ** 2 * 0.6)
@@ -81,11 +136,13 @@ def run(sid, keep=False, preview=False):
            "-c:v", "libx264", "-preset", "medium", "-crf", "6" if not preview else "14", "-pix_fmt", "yuv444p10le",
            "-color_primaries", "bt709", "-color_trc", "bt709", "-colorspace", "bt709", out]
     p = subprocess.Popen(cmd, stdin=subprocess.PIPE)
-    for f in frames:
+    for fi, f in enumerate(frames):
         im = cv2.imread(f, cv2.IMREAD_UNCHANGED)
         im = cv2.cvtColor(im, cv2.COLOR_BGR2RGB)
         scale = 65535.0 if im.dtype == np.uint16 else 255.0
         x = grade(im.astype(np.float32) / scale, g, vm)
+        if sid == "s28":
+            x = apply_title(x, a + fi)
         p.stdin.write((x * 65535.0 + 0.5).astype(np.uint16).tobytes())
     p.stdin.close()
     p.wait()

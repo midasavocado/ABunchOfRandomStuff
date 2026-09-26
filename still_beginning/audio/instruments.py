@@ -598,3 +598,49 @@ def ignition(rng, dur=4.5, vel=1.0):
     tr = D.hp(rng.standard_normal((n, 2)), 1800) * np.exp(-t / 0.018)[:, None] * 0.9
     out += tr.astype(np.float32)
     return D.fade_edges(out * vel, 0.0002, 0.6)
+
+
+# --------------------------------------------------------------------------- picture-sync foley (synthesized)
+def pencil_scratch(rng, dur=5.0, vel=1.0, strokes=None):
+    """Graphite on paper: band-limited grain noise (2-7 kHz) with a crackle texture and slow pressure changes;
+    strokes = list of (t0, t1) seconds of pencil contact within dur (default: continuous)."""
+    n = int(dur * SR)
+    t = _t(n)
+    nz = rng.standard_normal(n).astype(np.float32)
+    y = D.bp(nz, 2200, 7000)
+    grain = np.clip(rng.standard_normal(n) * 0.8 + 0.4, 0, None) ** 2
+    grain = D.lp(grain.astype(np.float32), 900)
+    y = y * (0.4 + grain)
+    press = 0.7 + 0.3 * np.sin(2 * np.pi * 1.3 * t + rng.uniform(0, 6)) * np.sin(2 * np.pi * 0.37 * t)
+    env = np.zeros(n, np.float32)
+    for (a, b) in (strokes or [(0.0, dur)]):
+        i0, i1 = int(a * SR), int(b * SR)
+        seg = np.ones(max(1, i1 - i0), np.float32)
+        k = min(len(seg) // 4, int(0.04 * SR))
+        if k > 0:
+            seg[:k] = np.linspace(0, 1, k); seg[-k:] = np.linspace(1, 0, k)
+        env[i0:i0 + len(seg)] = np.maximum(env[i0:i0 + len(seg)], seg[: max(0, min(len(seg), n - i0))])
+    y = y * env * press
+    return D.fade_edges((y * vel * 0.12).astype(np.float32), 0.005, 0.02)
+
+
+def pneumatic(rng, vel=1.0):
+    """Lock-bolt withdraw: a heavy metallic clack (low modal body + bright detent) followed by a short air hiss."""
+    n = int(0.9 * SR)
+    t = _t(n)
+    body = modal([410, 980, 1720, 2890], [0.06, 0.04, 0.025, 0.015], [1.0, 0.6, 0.4, 0.25], n, rng, 0.3)
+    det = modal([3100, 5200, 8300], [0.008, 0.005, 0.003], [1.0, 0.6, 0.3], n, rng, 0.15)
+    hiss = D.bp(rng.standard_normal(n).astype(np.float32), 2500, 11000) * np.exp(-np.maximum(t - 0.03, 0) / 0.22) * _rise(n, 20)
+    y = body * 0.9 + det * 0.5 + hiss * 0.12
+    return D.fade_edges((y * vel * 0.4).astype(np.float32), 0.0001, 0.05)
+
+
+def latch(rng, vel=1.0, weight=1.0):
+    """Structural latch: two-stage clunk (catch + seat) with a low resonant body."""
+    n = int(0.8 * SR)
+    y = np.zeros(n, np.float32)
+    for off, g, b in ((0.0, 0.6, 1.0), (0.055, 1.0, 0.85)):
+        m = modal([180 * b * weight, 460 * b, 1150 * b, 2400 * b], [0.09, 0.05, 0.025, 0.012], [1.0, 0.55, 0.3, 0.15],
+                  n - int(off * SR), rng, 0.35)
+        y[int(off * SR):] += m * g
+    return D.fade_edges((y * vel * 0.4).astype(np.float32), 0.0001, 0.05)

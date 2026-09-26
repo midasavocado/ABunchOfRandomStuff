@@ -18,7 +18,7 @@ sc = sb.reset()
 rs = random.Random(16)
 
 
-def water_stream(name, top, bottom, r0=0.0045, r1=0.0032, f0=0, f1=0, mat=None):
+def water_stream(name, top, bottom, r0=0.006, r1=0.0042, f0=0, f1=0, mat=None):
     """Laminar tap stream that frays slightly as it falls: a tube along a gently wavering line, radius tapering;
     animated by a travelling noise displacement (ripples run down the stream)."""
     n = 40
@@ -32,7 +32,7 @@ def water_stream(name, top, bottom, r0=0.0045, r1=0.0032, f0=0, f1=0, mat=None):
     tex.noise_depth = 2
     d = me.modifiers.new("Ripple", 'DISPLACE')
     d.texture = tex
-    d.strength = 0.0009
+    d.strength = 0.0016
     d.texture_coords = 'OBJECT'
     em = sb.empty(name + "RippleCo")
     d.texture_coords_object = em
@@ -95,13 +95,14 @@ if sid == "s16a":
             ph = rs.random() * 6.28
             b.location.z = GB.z + 0.015 + ((f * 0.0012 + k * 0.0007) % 0.04)
             b.keyframe_insert("location", frame=f)
-    tgt = GB + V((0, 0, 0.07))
-    cam = sb.camera("Cam", loc=tgt + V((0.2, -0.25, 0.02)), target=tgt, lens=100, fstop=2.8, clip=(0.01, 200))
-    sb.cam_bake(cam, F0, F1, lambda t: tgt + V((0.2, -0.25, 0.02)) + V((-0.012 * t, 0.0, 0.004 * t)), lambda t: tgt, focus="target")
+    tgt = GB + V((0, 0, 0.12))
+    CO = V((0.44, 0.1, 0.06))                        # looking back toward the window: the sun backlights the water
+    cam = sb.camera("Cam", loc=tgt + CO, target=tgt, lens=85, fstop=3.5, clip=(0.01, 200))
+    sb.cam_bake(cam, F0, F1, lambda t: tgt + CO * sb.lerp(1.0, 0.95, t) + V((0.0, 0.0, 0.006 * t)), lambda t: tgt, focus="target")
 
 elif sid == "s16b":
     import plants, rocket
-    sb.setup_render("EEVEE", mblur=True, shutter=0.5, look="AgX - Medium High Contrast")
+    sb.setup_render("EEVEE", mblur=True, shutter=0.5, look="AgX - Medium High Contrast", exposure=-0.6)
     sb.world_sky(elev=35, azim=120, strength=0.3, aerosol=1.2)
     sb.sun(35, 120, energy=4.0, color=(1.0, 0.9, 0.76), angle=1.2)
     let_m = plants.leaf_mat("LettuceLeaf", (0.10, 0.24, 0.025), gloss=0.2, translucency=0.28, veins=9.0, var=0.2)
@@ -109,23 +110,43 @@ elif sid == "s16b":
     basil_s = plants.stem_mat("BasilStem", (0.10, 0.20, 0.05))
     wm = plants.droplet_mat()
     steel = sb.brushed_metal("RackSteel", (0.7, 0.7, 0.71), rough=0.3)
-    tray = sb.mat("Tray", (0.9, 0.9, 0.88), rough=0.5)
-    # racks: 3 tiers x 2 rows along X, trays of lettuce + basil
+    tray = sb.mat("Tray", (0.32, 0.33, 0.34), rough=0.5)
+    # a small library of unique plants (6 lettuce, 4 basil) in hidden collections, instanced along the trays
+    libs = []
+    for k in range(10):
+        c = bpy.data.collections.new("PlantLib%d" % k)
+        bpy.context.scene.collection.children.link(c)
+        before = set(bpy.data.objects)
+        if k < 6:
+            plants.lettuce("LibL%d" % k, V((0, 0, 0)), seed=k * 5 + 1, radius=0.12, leaf_m=let_m)
+            pre = "LibL%d" % k
+        else:
+            plants.basil("LibB%d" % k, V((0, 0, 0)), seed=k * 7, height=0.2, leaf_m=basil_m, stem_m=basil_s, nodes=5)
+            pre = "LibB%d" % k
+        new = [o for o in bpy.data.objects if o not in before]
+        if len(new) > 1:
+            m_ = plants.merge(new, pre + "M")
+            new = [m_] if m_ else new
+        for o in new:
+            for uc in o.users_collection:
+                uc.objects.unlink(o)
+            c.objects.link(o)
+        lc = bpy.context.view_layer.layer_collection.children.get(c.name)
+        if lc:
+            lc.exclude = True
+        libs.append(c)
     for row, y in enumerate((0.0, 1.4)):
         for tier, z in enumerate((0.45, 1.05, 1.65)):
             rocket.box("Tray%d%d" % (row, tier), (2.5, y, z), (9.0, 0.7, 0.08), tray, bev=0.01)
             for k in range(20):
                 x = -1.6 + k * 0.42 + rs.uniform(-0.03, 0.03)
                 for j in (-0.16, 0.16):
-                    p = V((x, y + j, z + 0.04))
-                    if (k + tier) % 3 == 0:
-                        plants.basil("B%d%d%d%s" % (row, tier, k, j > 0), p, seed=k * 7 + tier, height=0.2, leaf_m=basil_m, stem_m=basil_s, nodes=5)
-                    else:
-                        plants.lettuce("L%d%d%d%s" % (row, tier, k, j > 0), p, seed=k * 5 + tier + row, radius=0.12, leaf_m=let_m)
+                    lib_i = (6 + (k + tier) % 4) if (k + tier) % 3 == 0 else ((k * 3 + tier + row + (j > 0)) % 6)
+                    sb.collection_instance(libs[lib_i], loc=(x, y + j, z + 0.04), rot=(0, 0, rs.uniform(0, 6.28)),
+                                           scale=rs.uniform(0.85, 1.1), name="Plant")
             for x in (-2.0, 2.5, 7.0):
                 for dy in (-0.33, 0.33):
                     rocket.rod("Post", (x, y + dy, 0), (x, y + dy, 1.9), 0.02, steel, verts=12)
-        plants.merge(plants.plant_objects("L%d" % row), "LettuceRow%d" % row)
     # droplets on the nearest leaves
     near = [o for o in bpy.data.objects if o.name.startswith("LettuceRow0")]
     # glass roof: frames overhead + a grower soft in the aisle
@@ -139,13 +160,14 @@ elif sid == "s16b":
     bm, rig, parts = folks.person("teen", name="Grower")
     folks.arms_down(rig)
     folks.place(rig, (5.5, 0.72, 0.0), -90.0)
-    tgt = V((0.4, 0.0, 1.12))
-
     def cp(t):
-        return V((sb.lerp(-0.5, 0.6, t), -0.55, 1.2))
+        return V((sb.lerp(0.05, 0.4, t), -0.62, 1.24))
 
-    cam = sb.camera("Cam", loc=cp(0), target=tgt, lens=50, fstop=2.0, clip=(0.01, 200))
-    sb.cam_bake(cam, F0, F1, cp, lambda t: V((sb.lerp(0.2, 1.4, t), 0.0, 1.1)), focus=lambda t: (cp(t) - V((sb.lerp(0.2, 1.4, t), 0.0, 1.1))).length)
+    def ctg(t):
+        return V((sb.lerp(0.55, 0.9, t), -0.16, 1.12))
+
+    cam = sb.camera("Cam", loc=cp(0), target=ctg(0), lens=50, fstop=2.8, clip=(0.01, 200))
+    sb.cam_bake(cam, F0, F1, cp, ctg, focus=lambda t: (cp(t) - ctg(t)).length)
 
 else:  # s16c learning space
     import home, folks, mhchild, rocket
@@ -155,16 +177,18 @@ else:  # s16c learning space
     M = home.materials()
     wood = M["oak"]
     # room: big windows (-X), bookshelves (+Y), a long work table with parts
-    sb.prim("plane", "Floor", scale=(8, 8, 1), mat=M["floor"])
-    sb.prim("cube", "Ceil", loc=(0, 0, 3.3), scale=(8, 8, 0.05), mat=M["wall"])
+    sb.prim("plane", "Floor", loc=(0.75, 0, 0), scale=(4.25, 4.0, 1), mat=M["floor"])
+    sb.prim("cube", "Ceil", loc=(0.75, 0, 3.3), scale=(4.25, 4.0, 0.05), mat=M["wall"])
     for y in (-4.0, 4.0):
-        sb.prim("cube", "Wall", loc=(0, y, 1.6), scale=(8, 0.05, 1.7), mat=M["wall"])
+        sb.prim("cube", "Wall", loc=(0.75, y, 1.6), scale=(4.25, 0.05, 1.7), mat=M["wall"])
+    sb.prim("cube", "BackWallE", loc=(5.0, 0, 1.6), scale=(0.05, 4.0, 1.7), mat=M["wall"])
     for k in range(6):
         rocket.box("Mullion", (-3.5, -3.5 + k * 1.4, 1.6), (0.08, 0.06, 3.2), M["window_frame"], bev=0.004)
     import land
     lib = land.tree_library(n=2, seed=170, leaf_count=40000, height=9.0, crown_r=3.5)
     land.place_trees(lib, [V((-9, -3, 0)), V((-11, 2.5, 0)), V((-8, 6, 0))], name="SchoolTree")
-    sb.prim("plane", "Yard", loc=(-15, 0, -0.02), scale=(12, 12, 1), mat=sb.mat("Yard", (0.12, 0.2, 0.06), rough=0.9))
+    sb.prim("plane", "Yard", loc=(-120, 0, -0.02), scale=(118, 200, 1), mat=sb.mat("Yard", (0.12, 0.2, 0.06), rough=0.9))
+    land.place_trees(lib, [V((-rs.uniform(25, 90), rs.uniform(-40, 40), 0)) for _ in range(18)], scale_rng=(0.8, 1.4), name="FarTree")
     # bookshelves along +Y
     for k in range(5):
         rocket.box("Shelf", (-1.5 + k * 1.1, 3.8, 1.2), (1.0, 0.3, 2.4), M["oak_dark"], bev=0.01)
@@ -180,13 +204,23 @@ else:  # s16c learning space
     for sx in (-1.1, 1.1):
         for sy in (-0.42, 0.42):
             rocket.box("TLeg", (sx, sy, 0.35), (0.05, 0.05, 0.7), M["black"], bev=0.003)
-    plate = rocket.box("RoverChassis", (0.0, 0.0, 0.8), (0.28, 0.18, 0.03), sb.brushed_metal("Alu", (0.8, 0.8, 0.82), rough=0.3), bev=0.004)
-    for sx in (-0.13, 0.13):
-        for sy in (-0.11, 0.11):
-            w = sb.prim("cyl", "Wheel", loc=(sx, sy, 0.79), rot=(math.pi / 2, 0, 0), vertices=32, radius=0.045, depth=0.035,
-                        mat=sb.rubber("WheelR"))
-    rocket.box("RoverBoard", (0.0, 0.0, 0.83), (0.12, 0.09, 0.01), sb.mat("PCB", (0.05, 0.25, 0.12), rough=0.4), bev=0.001)
-    rocket.box("RoverMast", (0.08, 0.0, 0.9), (0.02, 0.02, 0.14), sb.painted("Amb", (0.7, 0.3, 0.04), rough=0.3), bev=0.002)
+    alu = sb.brushed_metal("Alu", (0.8, 0.8, 0.82), rough=0.3)
+    tread = sb.rubber("WheelR", (0.05, 0.05, 0.055))
+    nbw = sb.NB(tread)
+    nbw.set('Normal', nbw.bump(nbw.wave(nbw.coord('Object'), scale=180, wtype='RINGS', direction='Z').outputs['Fac'], strength=0.4, distance=0.001))
+    rocket.box("RoverBody", (0.0, 0.0, 0.84), (0.26, 0.17, 0.06), sb.painted("RoverWhite", (0.82, 0.82, 0.8), rough=0.35), bev=0.008)
+    rocket.box("RoverSolar", (0.0, 0.0, 0.875), (0.3, 0.2, 0.006), sb.mat("RovCells", (0.02, 0.03, 0.08), rough=0.15, coat=1.0), bev=0.001)
+    for sy in (-1, 1):
+        rocket.rod("Rocker", (0.12, sy * 0.1, 0.8), (-0.02, sy * 0.1, 0.83), 0.006, alu, verts=8)
+        rocket.rod("Bogie", (-0.02, sy * 0.1, 0.83), (-0.14, sy * 0.1, 0.8), 0.006, alu, verts=8)
+        for x in (0.12, 0.0, -0.13):
+            w = sb.prim("cyl", "Wheel", loc=(x, sy * 0.115, 0.78), rot=(math.pi / 2, 0, 0), vertices=32, radius=0.035, depth=0.03, mat=tread)
+            sb.bevel(w, 0.004, 2)
+            sb.prim("cyl", "Hub", loc=(x, sy * 0.132, 0.78), rot=(math.pi / 2, 0, 0), vertices=16, radius=0.012, depth=0.006, mat=alu)
+    rocket.rod("Mast", (0.09, 0.0, 0.87), (0.09, 0.0, 0.99), 0.006, alu, verts=8)
+    rocket.box("CamHead", (0.1, 0.0, 1.0), (0.04, 0.06, 0.03), sb.painted("RovGraph", (0.05, 0.05, 0.055), rough=0.4), bev=0.004)
+    sb.prim("torus", "LensRing", loc=(0.121, 0.012, 1.0), rot=(0, math.pi / 2, 0), major_radius=0.008, minor_radius=0.0025,
+            mat=sb.painted("RovAmber", (0.75, 0.3, 0.04), rough=0.3, coat=0.4))
     for k in range(20):
         p = V((rs.uniform(-0.9, 0.9), rs.uniform(-0.35, 0.35), 0.745))
         if p.length < 0.3:
@@ -199,12 +233,16 @@ else:  # s16c learning space
         bm, rig, parts = mhchild.build(name="Kid%d" % k, hair=["short01", "ponytail01", "afro01", "bob01"][k],
                                        top=["male_casualsuit01", "female_casualsuit01", "male_casualsuit03", "male_casualsuit05"][k],
                                        skin=["young_asian_female", "young_caucasian_female", "young_african_male", "young_caucasian_male"][k],
-                                       phenotype=dict(age=0.15 + 0.02 * k, gender=[1.0, 0.0, 1.0, 0.0][k],
+                                       phenotype=dict(age=0.14 + 0.01 * k, gender=[1.0, 0.0, 1.0, 0.0][k],
                                                       race=[dict(asian=0.7, caucasian=0.3, african=0.0), dict(caucasian=0.8, asian=0.1, african=0.1),
                                                             dict(african=0.8, caucasian=0.2, asian=0.0), dict(caucasian=0.5, asian=0.3, african=0.2)][k]))
         folks.arms_down(rig)
         folks.place(rig, (x, y, 0.0), rz + 90.0)
-        folks.reach(rig, "R", V((x * 0.35, y * 0.3, 0.8)), iters=20)
+        folks.arms_down(rig, drop=30, elbow=20)
+        tgt_r = V((0.0, 0.0, 0.8)) + (V((x, y, 0.8)) - V((0.0, 0.0, 0.8))).normalized() * 0.2
+        folks.reach(rig, "R", tgt_r + V((0.0, 0.0, 0.03)), iters=25)
+        if k % 2 == 0:
+            folks.reach(rig, "L", tgt_r + V((0.06, 0.06, 0.02)), iters=25)
         folks.look_at(rig, V((0.0, 0.0, 0.8)))
         folks.expression(rig, smile=0.6)
     bm, rig, parts = folks.person("researcher", name="Teacher")

@@ -1,0 +1,49 @@
+# STILL BEGINNING — rendering the film (on the Mac)
+
+Everything is in this folder: scene scripts (`scenes/`), shared libraries (`lib/`), the finished score
+(`audio/score_master.wav`), grading/titles (`post.py`) and the verified master assembly (`make_master.py`).
+
+## 0. Once
+- Blender 5.2 with the MPFB extension + MakeHuman system assets (already installed on this Mac; see
+  `docs/PEOPLE.md`). `blender` on PATH, or `export BLENDER=/Applications/Blender.app/Contents/MacOS/Blender`.
+- `python3` with `numpy opencv-python pillow` and `ffmpeg`/`ffprobe` (Homebrew).
+- `git lfs pull` (assets: parts, gloves, robot links, screen images, suit caches).
+
+## 1. Watch the whole film small first (recommended, about 1-2 h)
+```
+python3 render_all.py --preview
+open STILL_BEGINNING.mp4
+```
+Every shot at 960x540, graded and cut to the score, scaled to 4K for the verification pass. This is the cheapest
+way to judge timing, continuity and the cut before committing the GPU for a day.
+
+## 2. The final
+```
+rm -f edit/*_prev.mov STILL_BEGINNING.mp4
+python3 render_all.py
+```
+Renders each shot at 3840x2160 (16-bit PNG) -> grades it (`post.py`: bloom, halation, vignette, the s28 statement)
+-> `edit/<sid>.mov`, deletes the PNGs, then assembles and **verifies** `STILL_BEGINNING.mp4`:
+H.264 High yuv420p Rec.709, 24 fps CFR, exactly 2880 decoded frames, AAC 48 kHz 320 kbps, decoded audio
+5,760,000 samples (120.000 s), -12 LUFS +/-1, true peak <= -1 dBTP, faststart. It exits non-zero if any check fails.
+
+It is resumable: a finished shot (`edit/<sid>.mov`) is skipped; delete it to re-render that shot.
+Single shots: `python3 render_all.py --shots s09a,s17`. Re-assemble only: `python3 render_all.py --master-only`.
+
+## Engines and rough timings (M5 Pro GPU)
+| engine | shots | ~per 4K frame |
+|---|---|---|
+| Cycles (glass/water, eyes, gold mirror) | s01, s09a, s09b, s16a, s25, s27 | 60-120 s |
+| EEVEE (everything else, incl. the analytic Earth) | all others | 5-20 s |
+Budget roughly a day for the whole film at 4K; the preview pass is 1-2 hours.
+
+## What changed in this pass (cloud session)
+- New scenes: s08 (workshop pin press + finger test), s09 (family table: prosthetic grasp + reveal, first drop),
+  s15 (golden-hour city street crane), s16a/b/c (water, greenhouse, maker-library), s17 (hero one: the child
+  drawing at night, ends on the amber cuff), s21 (staging at the edge of space), s22 (orbital truss assembly),
+  s25 (space telescope wing latching), s26 (hero three: orbital sunrise -> gold visor), s27 (the eye at dawn).
+- s19c hold-down clamp rebuilt as real fabricated hardware (`lib/holddown.py`), used by every pad view.
+- Film-wide: worn/chipped paint with cavity grime (`sb.painted`), lathe shading fix (glass refraction),
+  gaze/expression/walk helpers for MPFB people (`lib/folks.py`), the s28 statement typography (Inter, OFL).
+- Lookdev switches (never set them for finals): `SB_NOVOL=1`, `SB_SAMPLES`, `SB_TAA`, `SB_PCT`,
+  `SB_EARTH_PROXY=1` (Cycles-renderable Earth stand-in; the real Earth is EEVEE-only).

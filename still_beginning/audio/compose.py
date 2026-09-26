@@ -833,6 +833,24 @@ def render_fx():
     add(fx, rv * 0.6, b2s(62) - L - int(0.003 * SR))
     add(fx, D.stereo(I.sub_boom(rng, 3.0, 50, 36, 0.4, tau=1.2)), b2s(62))
     cue("final_chord", b2s(62) / SR, "FINAL D MAJOR ARRIVAL - bar 62 downbeat")
+    # --- picture-sync foley for the scenes of this pass (frames -> seconds at 24 fps)
+    fs = lambda f: int(round(f / 24.0 * SR))
+    add(mech, D.stereo(I.metal_click(rng, 2600, 0.7, tau=0.02), -0.2), fs(652))            # s08a: pin seats home
+    add(mech, D.stereo(I.lens_click(rng, 0.35), -0.15), fs(652) + int(0.03 * SR))
+    for k, f in enumerate((680, 683, 686, 689, 692)):                                          # s08b: fingers close
+        add(mech, D.stereo(I.servo(rng, 88 + k, 0.35, 0.09), 0.3 - 0.15 * k), fs(f))
+    for k, f in enumerate((702, 704, 706, 708, 710)):                                          # ... and open
+        add(mech, D.stereo(I.servo(rng, 84 - k, 0.28, 0.08, glide=-2.0), -0.3 + 0.15 * k), fs(f))
+    add(mech, D.stereo(I.pencil_scratch(rng, 5.0, 0.55, strokes=[(0.0, 5.0)]), 0.25), fs(1470))   # s17: pencil
+    add(mech, D.stereo(I.pencil_scratch(rng, 0.6, 0.35), 0.25), fs(1452))
+    add(mech, D.stereo(I.pneumatic(rng, 0.9), 0.1), fs(1789))                                   # s19c: lock bolt
+    add(fx, D.stereo(I.latch(rng, 0.8, weight=0.7)), fs(2000))                                 # s21: staging
+    add(fx, D.stereo(I.sub_boom(rng, 1.2, 48, 30, 0.35, tau=0.4)), fs(2024))                   # s21: upper stage lights
+    add(mech, D.stereo(I.latch(rng, 0.7), -0.25), fs(2136))                                   # s22: bay latches
+    add(mech, D.stereo(I.latch(rng, 0.55, weight=1.4), 0.3), fs(2396))                        # s25: mirror wing latch
+    cue("transients", 652 / 24.0, "s08a pin seats (metal click)")
+    cue("transients", 1789 / 24.0, "s19c lock bolt withdraws (pneumatic clack) in the held breath")
+    cue("transients", 2396 / 24.0, "s25 mirror wing latches")
     # bookend: last tiny lens click as the chord decays
     add(mech, D.stereo(I.lens_click(rng, 0.2), 0.2), t(118.2))
     cue("transients", 118.2, "closing lens click (bookend to the opening)")

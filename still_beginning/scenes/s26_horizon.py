@@ -20,7 +20,7 @@ sb.setup_render(os.environ.get("SB_ENGINE", "EEVEE"), cycles_samples=96, samples
 ALT = 410.0
 dip = math.degrees(math.acos(earth.R / (earth.R + ALT)))
 SUN_AZ = 0.0                               # sunrise straight ahead along +Y
-RISE_F = F0 + 118                          # the sun's upper limb breaks the horizon
+RISE_F = F0 + 90                           # the sun breaks the limb on the resolution downbeat (bar 57, 105.0 s)
 
 
 def sun_elev(f):
