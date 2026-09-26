@@ -100,16 +100,21 @@ HZ = V((0.0, 400.0, -45.0))                        # a point on the horizon ahea
 
 
 def cp(t):
-    k = sb.smoother(t)
-    th = math.radians(sb.lerp(215.0, 20.0, k))       # angle around the vertical axis (0 = +Y = in front)
-    r = sb.lerp(4.2, 0.85, k ** 1.3)
-    h = sb.lerp(0.9, 0.42, k)
+    # first half: behind the astronaut, drifting in - the silhouette against the gathering arc as the sun breaks the
+    # limb (mid-shot); second half: swing round to the front, ending close on the gold visor
+    if t < 0.5:
+        k = sb.smooth(t / 0.5)
+        th = math.radians(sb.lerp(200.0, 182.0, k)); r = sb.lerp(4.4, 3.2, k); h = sb.lerp(0.95, 0.75, k)
+    else:
+        k = sb.smoother((t - 0.5) / 0.5)
+        th = math.radians(sb.lerp(182.0, 20.0, k)); r = sb.lerp(3.2, 0.85, k ** 1.2); h = sb.lerp(0.75, 0.42, k)
     return C + V((math.sin(th) * r, math.cos(th) * r, h))
 
 
 def ct(t):
-    early = C + V((0.0, 12.0, -3.6))                 # beyond the astronaut, pitched down to the horizon (dip ~20 deg)
-    k = sb.smoother(sb.remap(t, 0.45, 0.97))
+    # the astronaut sits low-left of centre with the horizon arc across the frame; then the target settles on the visor
+    early = C + V((0.25, 6.0, -1.1))
+    k = sb.smoother(sb.remap(t, 0.5, 0.95))
     return early.lerp(C, k)
 
 
