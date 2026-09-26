@@ -124,8 +124,9 @@ def forearms_on_table(rig, key, lx=0.16, rx=0.16, fwd=0.2, dz=0.05):
     x, y, rz = SEATS[key]
     d = V((math.cos(rz), math.sin(rz), 0)); s = V((-d.y, d.x, 0))
     base = V((x, y, Z + dz))
-    folks.reach(rig, "L", base + d * fwd + s * lx, elbow_hint=base + s * (lx + 0.12) - d * 0.05)
-    folks.reach(rig, "R", base + d * fwd - s * rx, elbow_hint=base - s * (rx + 0.12) - d * 0.05)
+    folks.reach(rig, "L", base + d * fwd + s * lx, elbow_hint=base + s * (lx + 0.07) - d * 0.05)
+    folks.reach(rig, "R", base + d * fwd - s * rx, elbow_hint=base - s * (rx + 0.07) - d * 0.05)
+    folks.hand(rig, "L", "relaxed"); folks.hand(rig, "R", "relaxed", seed=1)
 
 
 # which sign of rotation about hand Z drops the socket end (world -Z)?
@@ -156,8 +157,10 @@ if with_people:
         WRIST.rotation_euler = (0, 0, math.radians(FLEX_SIGN * flex(f)))
         bpy.context.view_layer.update()
         tgt = elb_goal.matrix_world.translation
-        folks.reach(rig, "R", tgt, end="lowerarm01", bones=[("upperarm01.R", (0, 1, 2))])
-        for b in ("upperarm01.R",):
+        # she leans into the toast: spine + clavicle join the upper arm so the elbow really meets the socket
+        folks.reach(rig, "R", tgt, end="lowerarm01", iters=30,
+                    bones=[("spine03", (0, 2)), ("spine02", (0,)), ("clavicle.R", (0, 2)), ("upperarm01.R", (0, 1, 2))])
+        for b in ("spine03", "spine02", "clavicle.R", "upperarm01.R"):
             rig.pose.bones[b].keyframe_insert("rotation_euler", frame=f)
         bpy.context.view_layer.update()
         elbow_e.location = folks.bone_world(rig, "lowerarm01.R")
@@ -192,7 +195,7 @@ if with_people:
     forearms_on_table(people["grandma"][1], "grandma", lx=0.14, rx=0.16, fwd=0.16)
     folks.expression(people["grandma"][1], smile=0.9)
     seat_person("teen")
-    forearms_on_table(people["teen"][1], "teen", lx=0.2, rx=0.18, fwd=0.22)
+    forearms_on_table(people["teen"][1], "teen", lx=0.1, rx=0.08, fwd=0.26)
     folks.expression(people["teen"][1], smile=0.6)
     for key, (bm_, rg, pts) in people.items():
         # everyone's gaze goes to the glass in her hand (the moment); keyed so heads turn with it
