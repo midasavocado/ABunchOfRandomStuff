@@ -152,11 +152,36 @@ if os.environ.get("SB_NOPEOPLE") != "1":
     # walkers on both sidewalks
     walkers = [(-8.0, 9.0, 0.0, 1.35), (30.0, 8.2, 180.0, 1.2), (14.0, -7.6, 180.0, 1.3), (-2.0, -6.4, 0.0, 1.4),
                (45.0, 9.6, 180.0, 1.25), (58.0, -8.8, 180.0, 1.3)]
+    walk_src = []
     for k, (x, y, hd, sp) in enumerate(walkers):
         bm, rig, parts = folks.person(presets[(k + 2) % len(presets)], name="Walk%d" % k)
         bpy.context.view_layer.update()
         foot = min(folks.bone_world(rig, "foot.L").z, folks.bone_world(rig, "foot.R").z)
         folks.walk(rig, F0 - 2, F1 + 2, V((x, y, 0.12 + (rig.location.z - foot) + 0.06)), hd, speed=sp, phase=k * 1.3)
+        walk_src.append((rig, rig.location.z))
+    # the street is alive: a crowd of clones (shared meshes, own walks) along both sidewalks, further out where
+    # repetition can't be read; pairs stopped to talk; people at more cafe tables down the street
+    rsc = random.Random(15)
+    for k in range(34):
+        src, z0 = walk_src[k % len(walk_src)]
+        r = folks.clone(src, "Crowd%d" % k)
+        side = 1 if k % 2 == 0 else -1
+        x = rsc.uniform(12.0, 140.0)
+        y = side * rsc.uniform(6.6, 9.8)
+        hd = 0.0 if rsc.random() < 0.5 else 180.0
+        folks.walk(r, F0 - 2, F1 + 2, V((x, y, z0)), hd, speed=rsc.uniform(1.1, 1.45), phase=rsc.uniform(0, 6.28),
+                   stride=rsc.uniform(1.3, 1.55))
+    for k in range(6):                       # pairs talking, turned to each other, a little weight on one leg
+        x = rsc.uniform(20.0, 110.0); y = (1 if k % 2 else -1) * rsc.uniform(7.0, 9.0)
+        a, b = folks.clone(walk_src[k % len(walk_src)][0], "TalkA%d" % k), folks.clone(walk_src[(k + 3) % len(walk_src)][0], "TalkB%d" % k)
+        for r, dx, rz in ((a, -0.45, 90.0), (b, 0.45, -90.0)):
+            folks.arms_down(r, drop=30, elbow=18)
+            folks.pose(r, {"upperleg01.L": (0, 0, 0), "upperleg01.R": (-4, 0, 3), "lowerleg01.R": (8, 0, 0),
+                           "lowerleg01.L": (0, 0, 0), "foot.L": (0, 0, 0), "foot.R": (0, 0, 0), "spine01": (0, 3, 0)})
+            folks.place(r, (x + dx, y, walk_src[0][1]), rz)
+        bpy.context.view_layer.update()
+        folks.look_at(a, folks.bone_world(b, "head")); folks.look_at(b, folks.bone_world(a, "head"))
+        folks.hand(a, "R", "relaxed"); folks.hand(b, "L", "relaxed")
 
 # ---- camera: low at the cafe table -> crane up through the trees to reveal the street and the city
 # the crane leaves the cafe table low, swings out over the tram track (clear of the canopies), then rises

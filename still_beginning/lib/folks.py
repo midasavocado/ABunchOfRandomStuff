@@ -349,3 +349,33 @@ def hand(rig, side, shape="relaxed", spread=1.0, seed=0):
             pb.rotation_mode = 'XYZ'
             splay = (fi - 3) * 3.0 * spread if j == 0 else 0.0
             pb.rotation_euler = (math.radians(c + rs.uniform(-3, 3)), 0.0, math.radians(splay * (1 if side == "L" else -1)))
+
+
+def clone(rig, name):
+    """A new person from an existing one: own armature object (own pose/animation), meshes as linked copies (shared
+    mesh data = almost no memory). For crowds at a distance; expressions/skin are shared with the source."""
+    new = rig.copy()
+    new.name = name
+    new.animation_data_clear()
+    for k in ("alive",):
+        if k in new:
+            del new[k]
+    for c in rig.users_collection:
+        c.objects.link(new)
+    mapping = {rig: new}
+    for o in sorted(rig.children_recursive, key=lambda x: len(list(x.parent_recursive if hasattr(x, "parent_recursive") else []))):
+        n = o.copy()
+        n.name = name + "_" + o.name
+        n.animation_data_clear() if n.animation_data else None
+        for c in o.users_collection:
+            c.objects.link(n)
+        mapping[o] = n
+    for o, n in mapping.items():
+        if o is rig:
+            continue
+        n.parent = mapping.get(o.parent, new)
+        n.matrix_parent_inverse = o.matrix_parent_inverse.copy()
+        for m in n.modifiers:
+            if m.type == 'ARMATURE' and m.object is rig:
+                m.object = new
+    return new
