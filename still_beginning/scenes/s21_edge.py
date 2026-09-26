@@ -100,6 +100,17 @@ def tgt_world(t):
     return inter - axis * sb.lerp(6.0, 16.0, k) + V((0, 0, 2.0))
 
 
+# the vehicle is backlit by the grazing sun: without fill it is a flat black cutout. A faint cool fill from the
+# camera side (light scattered off the limb and the upper air) lets the white body and its detail read, and a warm
+# rim from the sun side traces the silhouette.
+def _dir_light(name, direction, energy, color):
+    ld = bpy.data.lights.new(name, 'SUN'); ld.energy = energy; ld.color = color; ld.angle = math.radians(8.0)
+    o = bpy.data.objects.new(name, ld); sb.link_obj(o)
+    o.rotation_mode = 'QUATERNION'; o.rotation_quaternion = V(direction).normalized().to_track_quat('-Z', 'Y')
+    return o
+_view = (inter - cam_world(0.5)).normalized()
+_dir_light("LimbFill", _view + V((0, 0, 0.35)), 0.35, (0.62, 0.72, 1.0))
+_dir_light("SunRim", -V(sd) + V((0, 0, -0.05)), 2.2, (1.0, 0.62, 0.32))
 cam = sb.camera("Cam", loc=cam_world(0), target=tgt_world(0), lens=35, fstop=11.0, clip=(0.5, 20000.0))
 for f in range(F0 - 2, F1 + 3):
     t = (f - F0) / (F1 - 1 - F0)

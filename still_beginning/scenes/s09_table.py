@@ -148,7 +148,7 @@ if with_people:
     # right arm: IK the wrist onto the prosthetic socket end for each frame (keyed), sleeve rebuilt as a hooked tube
     elbow_e = sb.empty("ElbowT")
     sock_e = sb.empty("SocketT", parent=WRIST)
-    sock_e.location = (0, -0.16, -0.004)
+    sock_e.location = (0, -0.06, -0.004)          # sleeve cuff ~6 cm above the amber wrist ring
     elb_goal = sb.empty("ElbowGoal", parent=WRIST)
     elb_goal.location = (0.01, -0.275, -0.012)
     for f in range(F0 - 2, F1 + 2):
@@ -166,11 +166,11 @@ if with_people:
         elbow_e.location = folks.bone_world(rig, "lowerarm01.R")
         elbow_e.keyframe_insert("location", frame=f)
     # sleeve: fabric tube from the elbow to over the socket end, hooked to both (so it follows the motion)
-    cu = bpy.data.curves.new("SleeveR", 'CURVE'); cu.dimensions = '3D'; cu.bevel_depth = 0.036; cu.bevel_resolution = 8
+    cu = bpy.data.curves.new("SleeveR", 'CURVE'); cu.dimensions = '3D'; cu.bevel_depth = 0.044; cu.bevel_resolution = 8     # a touch looser than the socket (0.039)
     cu.use_fill_caps = False
     sp = cu.splines.new('POLY'); sp.points.add(2)
     sl = bpy.data.objects.new("SleeveR", cu); sb.link_obj(sl); cu.materials.append(shirt_m)
-    sp.points[0].radius = 1.15; sp.points[1].radius = 1.0; sp.points[2].radius = 0.92
+    sp.points[0].radius = 1.1; sp.points[1].radius = 1.0; sp.points[2].radius = 0.95
     bpy.context.view_layer.update()
     for i, h in enumerate((elbow_e, None, sock_e)):
         p = elbow_e.matrix_world.translation if i == 0 else (sock_e.matrix_world.translation if i == 2 else
