@@ -251,7 +251,7 @@ def cam_tgt(t):
     return sb.catmull(Tg, sb.smoother(t) * 0.8 + t * 0.2)
 
 
-cam = sb.camera("Cam", loc=P[0], target=Tg[0], lens=35, fstop=3.2, clip=(0.005, 3000))
+cam = sb.camera("Cam", loc=P[0], target=Tg[0], lens=35, fstop=3.2, clip=(0.02, 3000))
 sb.cam_bake(cam, F0, F1, cam_pos, cam_tgt, lens=lambda t: sb.lerp(35.0, 50.0, sb.smoother(t)),
             focus=lambda t: (cam_pos(t) - cam_tgt(t)).length)
 dbgcam.apply()

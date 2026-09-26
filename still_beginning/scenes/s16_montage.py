@@ -8,6 +8,7 @@ a teacher leaning in; books, plants, big windows onto trees."""
 import sys, os, math, random
 sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "lib"))
 import bpy
+import numpy as np
 import sb, dbgcam
 import timeline as TL
 from mathutils import Vector as V, Matrix, Euler
@@ -110,7 +111,21 @@ elif sid == "s16b":
     basil_s = plants.stem_mat("BasilStem", (0.10, 0.20, 0.05))
     wm = plants.droplet_mat()
     steel = sb.brushed_metal("RackSteel", (0.7, 0.7, 0.71), rough=0.3)
-    tray = sb.mat("Tray", (0.32, 0.33, 0.34), rough=0.5)
+    # NFT channel plastic: white food-grade PVC with longitudinal ribs, mineral/algae staining near the cups
+    tray = sb.mat("Tray", (0.80, 0.80, 0.78), rough=0.35, coat=0.2)
+    nbt = sb.NB(tray)
+    cot = nbt.coord('Object')
+    sept = nbt.new('ShaderNodeSeparateXYZ'); nbt.link(cot, sept.inputs[0])
+    rib = nbt.math('SINE', nbt.math('MULTIPLY', sept.outputs[1], 2 * math.pi / 0.012))
+    stn = nbt.noise(nbt.mapping(cot, scale=(0.3, 3.0, 3.0)), scale=4.0, detail=6, rough=0.6)
+    stain = nbt.maprange(stn.outputs['Fac'], 0.5, 0.75, 0.0, 0.7)
+    col = nbt.mix(stain, (0.80, 0.80, 0.78, 1), (0.42, 0.44, 0.30, 1))
+    nbt.set('Base Color', col)
+    nbt.set('Roughness', nbt.mix(stain, 0.32, 0.6, dtype='FLOAT'))
+    nbt.set('Normal', nbt.bump(nbt.math('ADD', nbt.math('MULTIPLY', rib, 0.3), stn.outputs['Fac']), strength=0.25, distance=0.001))
+    cup_m = sb.mat("NetCup", (0.02, 0.02, 0.022), rough=0.45)
+    pipe_m = sb.mat("FeedPipe", (0.18, 0.19, 0.2), rough=0.4)
+    drip_m = sb.mat("DripLine", (0.03, 0.03, 0.03), rough=0.5)
     # a small library of unique plants (6 lettuce, 4 basil) in hidden collections, instanced along the trays
     libs = []
     for k in range(10):
@@ -137,13 +152,21 @@ elif sid == "s16b":
         libs.append(c)
     for row, y in enumerate((0.0, 1.4)):
         for tier, z in enumerate((0.45, 1.05, 1.65)):
-            rocket.box("Tray%d%d" % (row, tier), (2.5, y, z), (9.0, 0.7, 0.08), tray, bev=0.01)
+            # two NFT channels per tier on steel cross-supports; feed manifold + drip lines at the head end
+            for j in (-0.16, 0.16):
+                rocket.box("Chan%d%d" % (row, tier), (2.5, y + j, z - 0.005), (9.0, 0.12, 0.07), tray, bev=0.008)
+            for x in np.arange(-1.9, 7.0, 0.8):
+                rocket.box("XSup", (x, y, z - 0.055), (0.03, 0.62, 0.03), steel, bev=0.003)
+            rocket.rod("Feed", (-2.05, y - 0.3, z + 0.06), (-2.05, y + 0.3, z + 0.06), 0.016, pipe_m, verts=16)
+            for j in (-0.16, 0.16):
+                rocket.rod("Drip", (-2.05, y + j, z + 0.06), (-1.95, y + j, z + 0.04), 0.004, drip_m, verts=8)
             for k in range(20):
                 x = -1.6 + k * 0.42 + rs.uniform(-0.03, 0.03)
                 for j in (-0.16, 0.16):
                     lib_i = (6 + (k + tier) % 4) if (k + tier) % 3 == 0 else ((k * 3 + tier + row + (j > 0)) % 6)
                     sb.collection_instance(libs[lib_i], loc=(x, y + j, z + 0.04), rot=(0, 0, rs.uniform(0, 6.28)),
                                            scale=rs.uniform(0.85, 1.1), name="Plant")
+                    sb.prim("cyl", "Cup", loc=(x, y + j, z + 0.032), vertices=24, radius=0.036, depth=0.012, mat=cup_m)
             for x in (-2.0, 2.5, 7.0):
                 for dy in (-0.33, 0.33):
                     rocket.rod("Post", (x, y + dy, 0), (x, y + dy, 1.9), 0.02, steel, verts=12)
