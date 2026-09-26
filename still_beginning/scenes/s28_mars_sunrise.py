@@ -20,8 +20,8 @@ SUN = (mars.EAST * -0.2 + mars.POLE * 0.25 + mars.QREF * -1.0).normalized()
 W = SUN.cross(mars.POLE).normalized()                 # orbit plane contains SUN and W
 DIP = math.acos(mars.R / (mars.R + H))                # horizon dip
 PHI_RISE = math.pi / 2 + DIP                          # sun on the limb
-SUNRISE = float(os.environ.get("S28_RISE", str(S0 + 82)))
-RATE = math.radians(16.0) / (S1 - S0)                 # orbital angle per frame (cinematic: ~40x real)
+SUNRISE = float(os.environ.get("S28_RISE", str(S0 + 70)))
+RATE = math.radians(float(os.environ.get("S28_ARC", "26"))) / (S1 - S0)   # orbital angle per frame (cinematic)
 
 
 def phi(f):
@@ -37,10 +37,10 @@ def u_of(f):
 um = u_of((S0 + S1) / 2)
 refd = SUN
 pm = mars.planet_mat("MarsSurf", detail=1.0)
-planet = mars.limb_patch("MarsLimb", um, refd, 0.0, DIP + math.radians(20.0), DIP, math.radians(75.0), n_th=640, n_az=1800,
+planet = mars.limb_patch("MarsLimb", um, refd, 0.0, DIP + math.radians(32.0), DIP, math.radians(80.0), n_th=720, n_az=1800,
                          mat=pm)
 planet.visible_shadow = False
-shell = mars.limb_patch("AtmoLimb", um, refd, 0.0, DIP + math.radians(22.0), DIP + math.radians(1.2), math.radians(75.0),
+shell = mars.limb_patch("AtmoLimb", um, refd, 0.0, DIP + math.radians(34.0), DIP + math.radians(1.2), math.radians(80.0),
                         n_th=420, n_az=1800, radius=mars.R + 42e3)
 atm, ag = mars.atmosphere("MarsAtmo", sun=SUN, obj=shell, gain=float(os.environ.get("S28_ATMO", "1.0")))
 w, smix = mars.world(SUN, space_mix=1.0, stars=1.0)
@@ -55,7 +55,7 @@ rng = np.random.default_rng(3)
 nrm = (cl - mars.C).normalized()
 tx = nrm.cross(mars.POLE).normalized(); ty = nrm.cross(tx)
 for k in range(40):
-    off = tx * rng.normal(0, 2200) + ty * rng.normal(0, 1600)
+    off = tx * rng.normal(0, 5000) + ty * rng.normal(0, 3500)
     sb.prim("ico", "Light", loc=tuple(cl + off), subdivisions=1, radius=160.0 + rng.uniform(0, 160), mat=lights_m)
 
 # camera: rides the orbit, looking along the horizon toward the dawn; tilts up a touch as the sun clears the limb
@@ -67,7 +67,7 @@ for f in range(F0, F1 + 1):
     hdir = (SUN - u * u.dot(SUN)).normalized()
     look = (hdir * math.cos(DIP) - u * math.sin(DIP)).normalized()
     k = sb.smoother(sb.remap(f, SUNRISE - 30, SUNRISE + 120))
-    lift = math.radians(9.0 + 3.0 * k)
+    lift = math.radians(9.0 + 11.0 * k)            # tilt with the rising sun as the dawn spreads below
     axis = look.cross(u).normalized()
     look = (Quaternion(axis, -lift) @ look).normalized()
     mars.aim(cam, p, p + look * 1e6, up=u, frame=f)

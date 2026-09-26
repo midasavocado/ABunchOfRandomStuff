@@ -48,7 +48,7 @@ def rest_pose(f):
 
 # ------------------------------------------------------------------ s08a: pressing the MCP pin home
 if sid == "s08a":
-    for f in range(F0 - 2, F1 + 2):
+    for f in range(F0 - 10, F1 + 11):
         rest_pose(f)
     workshop.far_side(M)
     bpy.context.view_layer.update()
@@ -61,7 +61,7 @@ if sid == "s08a":
     def proud(f):
         return 0.006 * (1.0 - sb.smoother((f - T_IN) / (T_HOME - T_IN)))
 
-    for f in range(F0 - 2, F1 + 2):
+    for f in range(F0 - 10, F1 + 11):
         pin.location = (-proud(f), 0, 0)
         pin.keyframe_insert("location", frame=f)
     npz = os.path.join(sb.ROOT, "assets", "glove_tap.npz")
@@ -82,7 +82,7 @@ if sid == "s08a":
         e = pin_end(f) + (Rb @ V((-1, 0, 0))) * (gap + 0.006 * lift) + V((0, 0, 0.012 * lift))
         return Matrix.Translation(e - R @ P_pad) @ R.to_4x4() @ Matrix.Diagonal((1.25, 1.25, 1.25, 1.0))
 
-    for f in range(F0 - 2, F1 + 2):
+    for f in range(F0 - 10, F1 + 11):
         glove.matrix_world = glove_mat(f)
         for k in ("location", "rotation_euler", "scale"):
             glove.keyframe_insert(k, frame=f)
@@ -111,7 +111,7 @@ else:
         th1 = 0.18 + c * (1.25 if n != "thumb" else 0.65)
         return th1, th1 * (0.95 if n != "thumb" else 0.8)
 
-    for f in range(F0 - 2, F1 + 2):
+    for f in range(F0 - 10, F1 + 11):
         for n, fg in H.fingers.items():
             a, b = curl(n, f)
             fg.set(a, b, frame=f)
@@ -129,7 +129,7 @@ else:
     folks.reach(rig, "L", (-0.16, -0.24, Z + 0.03), elbow_hint=(-0.28, -0.42, Z + 0.02))
     folks.pose(rig, {"wrist.R": (0, 0, 10), "wrist.L": (0, 0, -10)})
     # a small smile grows as the fingers close and open (face stays soft in the background)
-    for f in range(F0 - 2, F1 + 2):
+    for f in range(F0 - 10, F1 + 11):
         folks.expression(rig, smile=0.25 + 0.75 * sb.smoother((f - 692) / 16.0), brows=0.3 * sb.smoother((f - 692) / 16.0), frame=f)
         for b in ("oris04.L", "oris04.R", "oris03.L", "oris03.R"):
             rig.pose.bones[b].keyframe_insert("location", frame=f)

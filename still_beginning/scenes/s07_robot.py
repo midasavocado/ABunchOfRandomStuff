@@ -47,7 +47,7 @@ def build_slm():
     def arc_at(f):
         return A0 + SPEED * (f - F0)
 
-    for f in range(F0 - 3, F1 + 3):
+    for f in range(F0 - 10, F1 + 11):
         arc_now.default_value = arc_at(f) % total
         arc_now.keyframe_insert("default_value", frame=f)
 
@@ -62,7 +62,7 @@ def build_slm():
     halo = sb.prim("sphere", "PoolHalo", segments=24, ring_count=12, radius=0.0004, mat=glowm)
     halo.visible_shadow = False
     pl = sb.light('POINT', "PoolLight", loc=(0, 0, 0.0008), energy=0.0025, color=(1.0, 0.62, 0.3), size=0.0004)
-    for f in range(F0 - 3, F1 + 3):
+    for f in range(F0 - 10, F1 + 11):
         p, d = pool(f)
         ang = math.atan2(d.y, d.x)
         for o, sc_ in ((mp, (2.2, 1.0, 0.6)), (halo, (1.6, 1.0, 0.2))):
@@ -104,7 +104,7 @@ def build_slm():
     # plume: very faint warm haze just above the pool (volume sphere)
     plume = None and sb.prim("sphere", "Plume", segments=24, ring_count=12, radius=0.004,
                     mat=sb.volume_mat("PlumeM", density=4.0, color=(0.8, 0.8, 0.85), anisotropy=0.4))
-    for f in ([] if plume is None else range(F0 - 3, F1 + 3)):
+    for f in ([] if plume is None else range(F0 - 10, F1 + 11)):
         p, d = pool(f)
         plume.location = p + V((0, 0, 0.0028)) - d * 0.001
         plume.keyframe_insert("location", frame=f)

@@ -90,7 +90,7 @@ def boat_pos(f):
 
 
 bx, by = wake_nodes
-for f in range(F0 - 1, F1 + 2):
+for f in range(F0 - 10, F1 + 11):
     p = boat_pos(f)
     boat.location = p + V((0, 0, 0.15 * math.sin(f * 0.21)))
     boat.rotation_euler = (math.radians(1.2 * math.sin(f * 0.17)), math.radians(1.5 * math.sin(f * 0.13 + 1)), 0)
@@ -107,7 +107,7 @@ SPIN_PLANE_Y = HUBC.y - 0.4
 
 
 def cam_bake_up(pos_fn, tgt_fn, lens_fn=None, focus_fn=None, roll_fn=None):
-    for f in range(F0, F1 + 1):
+    for f in range(F0 - 10, F1 + 11):
         t = (f - F0) / max(1, F1 - F0)
         p = V(pos_fn(t)); tg = V(tgt_fn(t))
         cam.location = p

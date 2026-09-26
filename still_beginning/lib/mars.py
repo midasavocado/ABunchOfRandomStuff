@@ -326,13 +326,13 @@ def atmosphere(name="MarsAtmo", sun=(0, 1, 0), thick=42e3, gain=1.0, obj=None):
     G = nb.vmath('ADD', P, nb.vmath('SCALE', D, scale=thit))
     Lp = nb.vmath('NORMALIZE', nb.mix(hit, Tp, G, dtype='VECTOR'))
     ns = nb.vmath('DOT_PRODUCT', Lp, S)
-    lit = nb.math('POWER', nb.maprange(ns, -0.18, 0.25), 1.5)
+    lit = nb.math('POWER', nb.maprange(ns, -0.10, 0.30), 1.8)
     cosv = nb.vmath('DOT_PRODUCT', D, S)
-    fwd = nb.math('ADD', nb.math('MULTIPLY', nb.math('POWER', nb.math('MAXIMUM', cosv, 0.0), 12.0), 3.0),
+    fwd = nb.math('ADD', nb.math('MULTIPLY', nb.math('POWER', nb.math('MAXIMUM', cosv, 0.0), 24.0), 3.0),
                   nb.math('MULTIPLY', nb.math('POWER', nb.math('MAXIMUM', cosv, 0.0), 120.0), 12.0))
-    fwd = nb.math('MULTIPLY', fwd, nb.maprange(ns, -0.3, 0.05))            # the blue dawn arc hugs the terminator
+    fwd = nb.math('MULTIPLY', fwd, nb.maprange(ns, -0.22, 0.05))           # the blue dawn arc hugs the terminator
     fwd = nb.math('MULTIPLY', fwd, nb.math('SUBTRACT', 1.0, hit))          # only in the limb air, not over the disc
-    day = nb.math('MULTIPLY', nb.math('MULTIPLY', col, lit), 0.55)
+    day = nb.math('MULTIPLY', nb.math('MULTIPLY', col, lit), 0.4)
     blue = nb.math('MULTIPLY', col, fwd)
     c1 = nb.new('ShaderNodeEmission'); c1.inputs[0].default_value = (0.86, 0.56, 0.34, 1)
     nb.link(day, c1.inputs[1])

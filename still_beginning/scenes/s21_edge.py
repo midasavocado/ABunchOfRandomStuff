@@ -38,7 +38,7 @@ root.rotation_quaternion = Rveh.to_quaternion()
 root.location = (0, 0, 0)
 # stage 1 detaches: parented to root, we animate its local offset along -Z with a slow tumble after SEP
 s1.rotation_mode = 'XYZ'
-for f in range(F0 - 2, F1 + 3):
+for f in range(F0 - 10, F1 + 11):
     t = max(0.0, (f - SEP) / 24.0)
     push = 0.35 * min(t, 0.5)                                  # spring pushers (first 0.5 s)
     run = 0.5 * 1.2 * t * t + (0.5 * A_S1 * max(0.0, (f - IGN) / 24.0) ** 2)
@@ -53,7 +53,7 @@ for o in bpy.data.objects:
     if o.type == 'MESH' and o.data.materials and o.data.materials[0] == vm:
         o.data.materials[0] = vg
 gain = vg.node_tree.nodes["Glow"]
-for f in range(F0 - 2, F1 + 3):
+for f in range(F0 - 10, F1 + 11):
     gain.inputs[1].default_value = 3.0 * sb.smoother((f - IGN - 6) / 40.0)
     gain.inputs[1].keyframe_insert("default_value", frame=f)
 # vacuum plume: very wide, faint, warm core; grows from ignition
@@ -65,7 +65,7 @@ plume = rocket.plume_mesh("VacPlumeMesh", length=70.0, r0=1.15, r_max=14.0, neck
 plume.parent = eng if eng is not None else root
 plume.location = (0, 0, -4.4) if eng is not None else (0, 0, 38.85)
 g_node = pm.node_tree.nodes.get("Gain")
-for f in range(F0 - 2, F1 + 3):
+for f in range(F0 - 10, F1 + 11):
     k = sb.smoother((f - IGN) / 10.0)
     plume.scale = (0.2 + 0.8 * k, 0.2 + 0.8 * k, max(0.01, k))
     plume.keyframe_insert("scale", frame=f)
@@ -78,7 +78,7 @@ for f in range(F0 - 2, F1 + 3):
 fl = sb.light('POINT', "IgnLight", loc=(0, 0, 0), energy=0.0, color=(1.0, 0.6, 0.3), size=0.8)
 fl.parent = eng if eng is not None else root
 fl.location = (0, 0, -3.0)
-for f in range(F0 - 2, F1 + 3):
+for f in range(F0 - 10, F1 + 11):
     fl.data.energy = 60000.0 * sb.smoother((f - IGN) / 6.0) * (0.8 + 0.2 * math.sin(f * 1.7))
     fl.data.keyframe_insert("energy", frame=f)
 
@@ -112,7 +112,7 @@ _view = (inter - cam_world(0.5)).normalized()
 _dir_light("LimbFill", _view + V((0, 0, 0.35)), 0.35, (0.62, 0.72, 1.0))
 _dir_light("SunRim", -V(sd) + V((0, 0, -0.05)), 2.2, (1.0, 0.62, 0.32))
 cam = sb.camera("Cam", loc=cam_world(0), target=tgt_world(0), lens=35, fstop=11.0, clip=(0.5, 20000.0))
-for f in range(F0 - 2, F1 + 3):
+for f in range(F0 - 10, F1 + 11):
     t = (f - F0) / (F1 - 1 - F0)
     p = cam_world(t)
     cam.location = p

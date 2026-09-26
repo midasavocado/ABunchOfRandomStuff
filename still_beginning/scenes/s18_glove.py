@@ -87,7 +87,7 @@ def mesh_for(f):
     return meshes[GR.step_of(f)]
 
 
-for fr in range(S0 - 1, S1 + 2):
+for fr in range(S0 - 10, S1 + 11):
     f = fr - S0
     Mw = hand_world(f)
     keyxf(rglove, Mw, fr)
@@ -161,7 +161,7 @@ def cpos(t):
     return RING + u * d + drift
 
 
-for fr in range(S0 - 1, S1 + 2):
+for fr in range(S0 - 10, S1 + 11):
     t = (fr - S0) / (S1 - S0)
     p = cpos(t)
     AIM = RING + up_s * float(os.environ.get('S18_AIM', '-0.016'))

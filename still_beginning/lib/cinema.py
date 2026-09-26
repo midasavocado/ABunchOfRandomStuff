@@ -186,3 +186,33 @@ def check_clearance(sid, step=2, near=None):
         print("CLEAR %s f%d %s %s %.3fm" % (sid, g, k, n, d_))
     print("CLEAR %s done: %d flagged frames" % (sid, len(bad)))
     return bad
+
+
+def _fcurves(action):
+    try:
+        return list(action.fcurves)
+    except AttributeError:                       # Blender 5: layered actions
+        out = []
+        for layer in action.layers:
+            for strip in layer.strips:
+                for cb in strip.channelbags:
+                    out += list(cb.fcurves)
+        return out
+
+
+def extrapolate_motion(cam=None):
+    """Things in motion at a cut keep moving through the edit handles: transform F-curves (objects and pose bones,
+    not the camera) extrapolate linearly with their end velocity. Curves that end at rest simply hold."""
+    n = 0
+    for o in bpy.data.objects:
+        if o is cam or not o.animation_data or not o.animation_data.action:
+            continue
+        for fc in _fcurves(o.animation_data.action):
+            p = fc.data_path
+            if p.endswith(("location", "rotation_euler", "rotation_quaternion")) and len(fc.keyframe_points) > 2:
+                fc.extrapolation = 'LINEAR'
+                for kp in (fc.keyframe_points[0], fc.keyframe_points[-1]):     # slope = the end segment's
+                    kp.handle_left_type = kp.handle_right_type = 'VECTOR'
+                fc.update()
+                n += 1
+    return n

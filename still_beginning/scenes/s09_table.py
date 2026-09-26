@@ -151,7 +151,7 @@ if with_people:
     sock_e.location = (0, -0.06, -0.004)          # sleeve cuff ~6 cm above the amber wrist ring
     elb_goal = sb.empty("ElbowGoal", parent=WRIST)
     elb_goal.location = (0.01, -0.275, -0.012)
-    for f in range(F0 - 2, F1 + 2):
+    for f in range(F0 - 10, F1 + 11):
         rw, _ = hand_world(f)
         H.root.location = rw
         WRIST.rotation_euler = (0, 0, math.radians(FLEX_SIGN * flex(f)))
@@ -212,7 +212,7 @@ if with_people:
                 rg.pose.bones[b].keyframe_insert("rotation_euler", frame=f)
 
 # keyframe the hand + fingers + glass
-for f in range(F0 - 2, F1 + 2):
+for f in range(F0 - 10, F1 + 11):
     rw, lift = hand_world(f)
     H.root.location = rw
     H.root.keyframe_insert("location", frame=f)

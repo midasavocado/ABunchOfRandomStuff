@@ -125,7 +125,7 @@ def stroke(name, pts2d, width=0.0007, grow=None):
     o.scale = (1, 1, 0.25)
     o.location = (0, 0, PZ * 0.75)
     if grow:
-        for f in range(F0 - 2, F1 + 2):
+        for f in range(F0 - 10, F1 + 11):
             cu.bevel_factor_end = max(0.0, min(1.0, (f - grow[0]) / (grow[1] - grow[0])))
             cu.keyframe_insert("bevel_factor_end", frame=f)
     return o
@@ -213,7 +213,7 @@ mws = {o.name: o.matrix_world.copy() for o in (shaft, cone, lead, tip_e)}
 for o in (shaft, cone, lead, tip_e):
     attach_keep(o, mws[o.name])
 bpy.context.view_layer.update()
-for f in range(F0 - 2, F1 + 2):
+for f in range(F0 - 10, F1 + 11):
     bpy.context.scene.frame_set(f)
     T = tip_at(f)
     W = folks.bone_world(rig, "wrist.R")

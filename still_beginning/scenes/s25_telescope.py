@@ -110,8 +110,8 @@ for k in range(3):
 sm = sb.prim("cyl", "Secondary", loc=SEC, vertices=6, radius=0.4, depth=0.1, mat=gold, parent=root)
 # the wings: rotate from folded (back, 100 deg) to deployed; the -X wing is already open, the +X one moves now
 wings[-1].rotation_euler = (0, 0, 0)
-LATCH = F0 + 56
-for f in range(F0 - 2, F1 + 3):
+LATCH = F0 + 40                      # latches with a beat to spare in the 60-frame cut
+for f in range(F0 - 10, F1 + 11):
     k = sb.smoother((f - (F0 - 30)) / (LATCH - (F0 - 30)))
     settle = 0.6 * math.sin(max(0.0, f - LATCH) * 0.8) * math.exp(-max(0.0, f - LATCH) * 0.3)
     wings[1].rotation_euler = (0, math.radians(-(1 - k) * 100.0 + settle), 0)

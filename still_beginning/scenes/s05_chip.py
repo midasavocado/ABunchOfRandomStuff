@@ -21,7 +21,7 @@ C = chip.build()
 PULSE_T0 = 378.0
 tv = C["pulse_time"]
 mat = bpy.data.materials["Trace"]
-for f in range(F0 - 2, F1 + 2):
+for f in range(F0 - 10, F1 + 11):
     # time value in "frames since T0" / 11.25 per unit pulse travel (speed 0.9 -> ~1.1 beats to cross)
     tv.default_value = (f - PULSE_T0) / 11.25
     tv.keyframe_insert("default_value", frame=f)

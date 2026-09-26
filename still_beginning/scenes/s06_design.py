@@ -66,7 +66,7 @@ def hand_reach(f):
     return 3.0 * math.sin(t * 0.09) * (1 - sb.smooth((f - 505) / 12.0))
 
 
-for f in range(F0 - 2, F1 + 2):
+for f in range(F0 - 10, F1 + 11):
     pb = rig.pose.bones["wrist.R"]
     pb.rotation_mode = 'XYZ'
     pb.rotation_euler = Euler((math.radians(8 + hand_reach(f)), 0, math.radians(-10)), 'XYZ')

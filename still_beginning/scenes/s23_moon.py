@@ -148,7 +148,7 @@ drv["root"].location = RV["seat_driver"].to_translation() + V((0.08, 0.0, -0.905
 drv["root"].rotation_euler = (0, 0, math.pi / 2)
 
 wheel_local = [c for (_, c) in RV["wheels"]]
-for fr in range(S0 - 2, S1 + 3):
+for fr in range(S0 - 10, S1 + 11):
     x = rover_x(fr)
     RV["root"].location = (x, LANE_Y, 0.0)
     RV["root"].keyframe_insert("location", frame=fr)
@@ -175,7 +175,7 @@ for fr in range(S0 - 2, S1 + 3):
 moon.add_tracks(reg, [((-40.0, LANE_Y), (6.0, LANE_Y)), ((-22.0, 4.0), (-24.0, 80.0)), ((-30.0, 15.0), (-9.0, 86.0))],
                 reveal={0: "track_x"})
 tv = reg.node_tree.nodes["track_x"]
-for fr in range(S0 - 2, S1 + 3):
+for fr in range(S0 - 10, S1 + 11):
     tv.outputs[0].default_value = rover_x(fr) - moon.WHEELBASE / 2 + moon.WHEEL_R * 0.4
     tv.outputs[0].keyframe_insert("default_value", frame=fr)
 

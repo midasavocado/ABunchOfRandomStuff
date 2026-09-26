@@ -176,9 +176,14 @@ def render_shot(sid, start=None, end=None, still=None):
     if os.environ.get("SB_NOCINEMA") != "1":
         import cinema
         cinema.finish(sid)
+        cinema.extrapolate_motion(bpy.context.scene.camera)
         if os.environ.get("SB_CLEARCHECK") == "1":        # report camera/geometry intersections and stop
             cinema.check_clearance(sid)
             return
+    if os.environ.get("SB_COLLIDE") == "1":               # report people-vs-people / people-vs-prop overlaps and stop
+        import collide
+        collide.scan(sid, step=int(os.environ.get("SB_COLLIDE_STEP", "6")))
+        return
     full = start is None and end is None
     s0 = s0 if start is None else start
     s1 = s1 if end is None else end

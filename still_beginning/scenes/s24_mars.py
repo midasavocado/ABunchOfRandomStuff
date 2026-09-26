@@ -239,7 +239,9 @@ for lf in hero["leaves"][:14]:
 
 # ---------------------------------------------------------------- the gardener's hand (MPFB, docs/PEOPLE.md)
 def f_rel(fr):
-    return fr - S0
+    # the choreography was authored on a 90-frame clock (reach 6-47, lift 47-76); the cut is 40 frames, so it
+    # opens mid-reach and plays 1.25x: contact ~S0+14, the leaf fully lifted ~S0+37, handles 20..90
+    return (fr - S0) * 1.25 + 30.0
 
 
 # hero leaf: front-right leaf of the hero chard (toward camera side, reachable from the right)
@@ -363,7 +365,7 @@ if HAND:
             return base
         # after contact: follow the leaf contact exactly (solved per frame below)
         return None
-    for fr in range(S0 - 1, S1 + 2):
+    for fr in range(S0 - 10, S1 + 11):
         f = f_rel(fr)
         wt = wrist_target(f)
         if wt is None:

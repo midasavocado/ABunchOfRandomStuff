@@ -124,7 +124,7 @@ def nose_x(f):
     return X_N0 + VT * (f - F0) / 24.0
 
 
-for f in range(F0 - 1, F1 + 2):
+for f in range(F0 - 10, F1 + 11):
     x = nose_x(f)
     tr.location = (x, R.TRACK_Y[0], track_z(x) + R.RAIL_TOP)
     tr.keyframe_insert("location", frame=f)

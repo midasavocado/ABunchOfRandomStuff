@@ -131,7 +131,7 @@ def bay_mat(f):
     return Matrix.Translation(V((X_END, 0, 0)) + off) @ rot
 
 
-for f in range(F0 - 2, F1 + 3):
+for f in range(F0 - 10, F1 + 11):
     newbay_root.matrix_world = bay_mat(f)
     newbay_root.keyframe_insert("location", frame=f)
     newbay_root.keyframe_insert("rotation_euler", frame=f)
@@ -142,7 +142,7 @@ R_ = robot.Robot("SArm", loc=(0, 0, 0), yaw=0.0)
 R_.root.parent = arm_base
 arm_base.scale = (7.0, 7.0, 7.0)                    # the 1.3 m factory arm -> ~9 m space arm (same design family)
 q = [0.0, -0.4, 1.2, 0.0, 0.8, 0.0]
-for f in range(F0 - 2, F1 + 3):
+for f in range(F0 - 10, F1 + 11):
     bpy.context.scene.frame_set(f)
     bm4 = bay_mat(f)
     tgt = robot.tcp_matrix(bm4 @ V((BAY * 0.5, 0, W / 2 + 0.25)), approach=tuple(bm4.to_3x3() @ V((0, 0, -1))),
@@ -160,7 +160,7 @@ for k in (-1, 1):
 rocket.box("FootRestraint", PLAT + V((0.1, 0.0, 0.05)), (0.5, 0.35, 0.05), amber, bev=0.01)
 astro.location = PLAT + V((0.1, 0.0, 0.06))
 astro.rotation_euler = (0, 0, math.radians(-70))
-for f in range(F0 - 2, F1 + 3):
+for f in range(F0 - 10, F1 + 11):
     k = sb.smoother((f - F0) / (F1 - F0))
     suit.pose(S, frame=f, torso=(12 + 6 * math.sin(f * 0.05), 0, -10), l_shoulder=(70 + 10 * k, 20, 0), r_shoulder=(60 + 15 * k, 25, 0),
               l_elbow=40 - 10 * k, r_elbow=45 - 12 * k, l_knee=12, r_knee=15, l_hip=(8, 5, 0), r_hip=(6, 5, 0))

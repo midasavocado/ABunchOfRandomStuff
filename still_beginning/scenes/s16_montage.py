@@ -82,7 +82,7 @@ if sid == "s16a":
     water = sb.lathe("FillWater", [(0.0, 0.0119), (0.036 - 0.0022 + 0.00015, 0.0119), (0.036 - 0.0022 + 0.0003, 0.02), (0.0, 0.02)],
                      segs=96, mat=wm)
     water.location = GB
-    for f in range(F0 - 2, F1 + 3):
+    for f in range(F0 - 10, F1 + 11):
         t = (f - (F0 - 30)) / 60.0
         water.scale = (1.0, 1.0, 1.0 + 3.8 * t)
         water.keyframe_insert("scale", frame=f)
@@ -92,7 +92,7 @@ if sid == "s16a":
     for k in range(60):
         b = sb.prim("ico", "Bubble", loc=GB + V((rs.uniform(-0.02, 0.02), rs.uniform(-0.02, 0.02), 0.015 + rs.uniform(0, 0.03))),
                     subdivisions=2, radius=rs.uniform(0.0004, 0.0014), mat=bm_)
-        for f in range(F0 - 2, F1 + 3):
+        for f in range(F0 - 10, F1 + 11):
             ph = rs.random() * 6.28
             b.location.z = GB.z + 0.015 + ((f * 0.0012 + k * 0.0007) % 0.04)
             b.keyframe_insert("location", frame=f)

@@ -154,7 +154,7 @@ bpy.context.view_layer.update()
 for e in (ikL, wrist_rot):
     e.parent = pivot
     e.matrix_parent_inverse = pivot.matrix_world.inverted()
-for f in range(F0, F1 + 1):
+for f in range(F0 - 10, F1 + 11):
     t = sb.smoother(sb.remap(f, F_ADJ0, F_ADJ1))
     ang = math.radians(28.0) * t
     pivot.rotation_mode = 'QUATERNION'

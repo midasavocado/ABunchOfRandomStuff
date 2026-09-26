@@ -287,7 +287,7 @@ def look_up(p, tg, u_):
 
 
 Aall = np.vstack([P_fold * S, MOL.side_positions(P_fold, SS, atoms)])
-for f in range(F0, F1 + 1):
+for f in range(F0 - 10, F1 + 11):
     t = (f - F0) / (F1 - F0)
     p, tg = cpos(t), ctgt(t)
     cam.location = p

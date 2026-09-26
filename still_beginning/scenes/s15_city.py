@@ -131,7 +131,7 @@ def tram_x(f):
     return 72.0 - TRAM_V * (f - F0) / 24.0
 
 
-for f in range(F0 - 2, F1 + 2):
+for f in range(F0 - 10, F1 + 11):
     TR.location = (tram_x(f), 1.0, 0.1)
     TR.rotation_euler = (0, 0, math.pi)             # nose toward -X
     TR.keyframe_insert("location", frame=f)
