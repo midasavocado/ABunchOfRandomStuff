@@ -82,6 +82,12 @@ def field_mat(name, rows_dir=(1.0, 0.0), pitch=0.75, green=(0.05, 0.13, 0.03), s
             site = nb.math('MULTIPLY', site, 0.0)
         blend = nb.math('MULTIPLY', nb.math('SUBTRACT', 1.0, site), 0.85)
         texd = nb.mix(nb.maprange(fine.outputs['Fac'], 0.3, 0.7), (0.8, 0.8, 0.8, 1), (1.15, 1.15, 1.1, 1))
+        # within-field variation real fields show from the air: growth/moisture patches (5-40 m), wind-lodged swirls
+        mid1 = nb.noise(co, scale=0.035, detail=5, rough=0.6)
+        mid2 = nb.noise(nb.mapping(co, scale=(1.0, 3.0, 1.0)), scale=0.12, detail=4, rough=0.55)
+        texm = nb.mix(nb.maprange(mid1.outputs['Fac'], 0.3, 0.7), (0.78, 0.8, 0.74, 1), (1.14, 1.12, 1.06, 1))
+        texm = nb.mix(nb.math('MULTIPLY', nb.maprange(mid2.outputs['Fac'], 0.55, 0.75), 0.5), texm, (1.18, 1.15, 1.02, 1), blend='MULTIPLY')
+        texd = nb.mix(1.0, texd, texm, blend='MULTIPLY')
         crop2 = nb.mix(1.0, crop, texd, blend='MULTIPLY')
         col = nb.mix(blend, col, crop2)
         col = nb.mix(nb.math('MULTIPLY', dfar, nb.math('SUBTRACT', 1.0, site)), col, crop2)
