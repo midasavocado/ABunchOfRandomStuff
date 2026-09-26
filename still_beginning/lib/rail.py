@@ -345,17 +345,25 @@ def catenary(name, x0, x1, zfn, spacing=60.0, detail_range=None):
     wire_m.node_tree.nodes["Principled BSDF"].inputs['Base Color'].default_value = (0.35, 0.22, 0.14, 1)
     ins_m = sb.mat(name + "Ins", (0.3, 0.1, 0.05), rough=0.3, coat=0.5)
     xs = np.arange(x0, x1 + 1, spacing)
-    mast_src = None
+    # H-section mast built once (origin at its foot) and placed as linked copies: bpy.ops per mast piece re-evaluates
+    # the whole (large) scene each time
+    h = CW_H + RAIL_TOP + 2.4
+    parts = [E.box(name + "MSrcF%d" % k, (0.26, 0.02, h), loc=(0, dy, h / 2), mat=galv) for k, dy in enumerate((-0.11, 0.11))]
+    parts.append(E.box(name + "MSrcW", (0.02, 0.22, h), loc=(0, 0, h / 2), mat=galv))
+    for o_ in parts:
+        o_.data.transform(o_.matrix_basis); o_.matrix_basis = Matrix.Identity(4)
+    mast_src = sb.join(parts, name + "MastSrc")
+    mast_src.hide_render = True; mast_src.hide_viewport = True
     for i, x in enumerate(xs):
         z = zfn(x)
         det = detail_range is None or (detail_range[0] <= x <= detail_range[1])
         for side in (-1, 1):
             my = side * 6.2
-            h = CW_H + RAIL_TOP + 2.4
-            # H-section mast
-            for dy in (-0.11, 0.11):
-                E.box(name + f"M{i}{side}{dy}", (0.26, 0.02, h), loc=(x, my + dy, z + h / 2), mat=galv).parent = root
-            E.box(name + f"W{i}{side}", (0.02, 0.22, h), loc=(x, my, z + h / 2), mat=galv).parent = root
+            mo = mast_src.copy(); sb.link_obj(mo)
+            mo.name = name + f"Mast{i}{side}"
+            mo.hide_render = False; mo.hide_viewport = False
+            mo.location = (x, my, z)
+            mo.parent = root
             if not det:
                 continue
             ty = TRACK_Y[0] if side < 0 else TRACK_Y[1]

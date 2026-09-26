@@ -75,9 +75,12 @@ for o in [trk, cat] + list(trk.children) + list(cat.children):
     for s in getattr(getattr(o, 'data', None), 'materials', []) or []:
         pass
 galv = E.painted_steel("FenceGalv", (0.5, 0.51, 0.52), rough=0.45, wear=0.3)
+fp_src = E.box("FPSrc", (0.06, 0.06, 1.9), loc=(0, 0, 0), mat=galv)
+fp_src.hide_render = True
 for x in np.arange(-60, 400, 3.0):
     z = float(ground(np.array(x), np.array(-9.6)))
-    E.box(f"FP{x:.0f}", (0.06, 0.06, 1.9), loc=(x, -9.6, z + 0.9), mat=galv)
+    o = fp_src.copy(); sb.link_obj(o); o.hide_render = False
+    o.name = f"FP{x:.0f}"; o.location = (x, -9.6, z + 0.9)
 for zz in (0.4, 1.1, 1.75):
     pts = [(x, -9.6, float(ground(np.array(x), np.array(-9.6))) + zz) for x in np.arange(-60, 401, 3.0)]
     E.sweep(f"FW{zz}", pts, radius=0.003, segs=4, mat=galv, sub=1, resample=False, caps=False)

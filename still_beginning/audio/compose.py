@@ -892,7 +892,8 @@ def finalize_stems():
         tt = np.arange(TOTAL - pos) / SR
         carve[pos:] *= (1 - depth * np.exp(-tt / tau) * np.clip(tt / 0.004, 0, 1)).astype(np.float32)
     # section trim: first drop sits ~1.5 LU under the final drop (ramps hidden in the pull-out / crash)
-    trim = D.curve([(0, 1.0), (b2s(16, 3), 1.0), (b2s(17) - 1, 0.92), (b2s(33) - 2400, 0.92), (b2s(33), 1.0),
+    # (the first drop also swells gently across its 16 bars so it develops instead of plateauing)
+    trim = D.curve([(0, 1.0), (b2s(16, 3), 1.0), (b2s(17) - 1, 0.82), (b2s(25), 0.86), (b2s(33) - 2400, 0.9), (b2s(33), 1.0),
                     (TOTAL, 1.0)], TOTAL)
     out = {}
     for k in STEMS:
