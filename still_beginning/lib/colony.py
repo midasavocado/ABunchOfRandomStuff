@@ -146,7 +146,7 @@ def build(F0, F1, detail=1.0):
                 continue                                  # the greenhouse vaults
             HABS.append((x, y, math.degrees(a)))
     for i, (hx, hy, hd) in enumerate(HABS):
-        moon.habitat("Hab%d" % i, T, hx, hy, hd + 90.0, length=12.0 + (i % 3) * 1.5, mats=MT, seed=i + 3)
+        moon.habitat("Hab%d" % i, T, hx, hy, hd + 90.0, length=17.0 + (i % 3) * 2.0, width=8.4, height=4.8, mats=MT, seed=i + 3)
         keep_out.append((hx, hy, 14))
     # corridors: inner ring to hub (radial)
     for i, (hx, hy, hd) in enumerate(HABS):
