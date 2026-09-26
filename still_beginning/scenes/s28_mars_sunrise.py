@@ -58,18 +58,16 @@ for k in range(40):
     off = tx * rng.normal(0, 5000) + ty * rng.normal(0, 3500)
     sb.prim("ico", "Light", loc=tuple(cl + off), subdivisions=1, radius=160.0 + rng.uniform(0, 160), mat=lights_m)
 
-# camera: rides the orbit, looking along the horizon toward the dawn; tilts up a touch as the sun clears the limb
+# camera: rides the orbit with its attitude locked on the dawn
 cam = sb.camera("Cam", loc=(0, 0, 0), target=(0, 0, 1), lens=float(os.environ.get("S28_LENS", "32")), clip=(2000.0, 1.2e8))
 for f in range(F0, F1 + 1):
     u = u_of(f)
     p = mars.C + u * (mars.R + H)
-    # direction to the horizon point under the sun, lifted so the limb sits in the lower third
-    hdir = (SUN - u * u.dot(SUN)).normalized()
-    look = (hdir * math.cos(DIP) - u * math.sin(DIP)).normalized()
-    k = sb.smoother(sb.remap(f, SUNRISE - 30, SUNRISE + 120))
-    lift = math.radians(9.0 + 11.0 * k)            # tilt with the rising sun as the dawn spreads below
-    axis = look.cross(u).normalized()
-    look = (Quaternion(axis, -lift) @ look).normalized()
+    # a fixed attitude locked on the sun (upper third of frame): the orbit itself sinks the limb past it, so the sun
+    # breaks the horizon, clears it and stays in shot through the title while the dawn spreads across the lower frame
+    axis = SUN.cross(um).normalized()
+    look = (Quaternion(axis, math.radians(-8.0)) @ SUN).normalized()
+    u = um
     mars.aim(cam, p, p + look * 1e6, up=u, frame=f)
     # sun visibility: angular clearance of the camera->sun ray over the limb (+ a little refraction-free margin)
     pc = p - mars.C
