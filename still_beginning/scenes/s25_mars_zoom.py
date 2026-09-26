@@ -39,15 +39,15 @@ def lg(a):
 
 def pos(t):
     a = alt(t)
-    k = 0.85 * (1.0 - sb.smoother(sb.remap(lg(a), 3.2, 5.6)))
+    k = 0.85 * (1.0 - sb.smoother(sb.remap(lg(a), 4.2, 6.4)))       # oblique until ~100 km: the horizon and the canyon rise
     v = V((0.0, -k * a, mars.R + a))
     return mars.C + v.normalized() * (mars.R + a)
 
 
 def tgt(t):
     a = alt(t)
-    w = sb.smoother(sb.remap(lg(a), 3.8, 6.4))
-    near = V((-30.0, 170.0, 20.0))
+    w = sb.smoother(sb.remap(lg(a), 4.8, 6.8))
+    near = V((-30.0, 170.0 + 2.5 * a, 20.0))                        # slides north with altitude: the horizon rises
     return near.lerp(mars.C, w)
 
 

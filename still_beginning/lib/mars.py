@@ -10,7 +10,7 @@
   * world(): Mars daytime sky mixed with deep space (stars + sun disc) by a keyable 'SpaceMix' value, so one camera
     can rise from the ground into orbit.
 
-Geography (relative to the colony, which is at lat -2 deg, lon 0): Valles Marineris ~300 km south running east-west,
+Geography (relative to the colony, which is at lat -10 deg, lon 0): Valles Marineris ~150 km north running east-west,
 the Tharsis volcanoes and Olympus Mons to the west, polar caps along scene +/-Y. Keep the numbers here in sync."""
 import bpy, math
 import numpy as np
@@ -19,7 +19,7 @@ import sb, space
 
 R = 3389.5e3
 C = V((0.0, 0.0, -R))
-LAT0 = -2.0
+LAT0 = -10.0                        # colony ~150 km south of Valles Marineris (which the zoom-out finds)
 CAP_R = 150e3                        # terrain disc radius (m)
 HAZE = (0.62, 0.40, 0.24)
 
@@ -63,7 +63,7 @@ def albedo(nb, n, detail=1.0):
     # wind streaks: noise stretched along the local east direction (tails behind craters, dust fans)
     wind = nb.noise(nb.vmath('ADD', nb.vmath('SCALE', n, scale=1.0), nb.vmath('SCALE', nb.vmath('CROSS_PRODUCT', n, tuple(POLE)), scale=0.0)), scale=30.0, detail=5, rough=0.6)
     col = nb.ramp(nb.maprange(nb.math('ADD', nb.math('MULTIPLY', fine.outputs['Fac'], 0.4), nb.math('MULTIPLY', wind.outputs['Fac'], 0.6)), 0.3, 0.7),
-                  [(0.0, (0.36, 0.16, 0.07)), (0.45, (0.50, 0.23, 0.10)), (1.0, (0.62, 0.32, 0.15))])
+                  [(0.0, (0.28, 0.12, 0.055)), (0.45, (0.50, 0.23, 0.10)), (1.0, (0.68, 0.37, 0.18))])
     col = nb.mix(dark, col, (0.14, 0.075, 0.045, 1))
     # bright dust plains in the north
     col = nb.mix(nb.math('MULTIPLY', nb.maprange(s, 0.1, 0.5), nb.maprange(streak.outputs['Fac'], 0.45, 0.6)), col,
@@ -86,15 +86,23 @@ def albedo(nb, n, detail=1.0):
         h = nb.math('ADD', h, nb.math('MULTIPLY', nb.math('MULTIPLY', prof, on), amp))
         ca = nb.math('MULTIPLY', nb.math('SUBTRACT', nb.math('MULTIPLY', rim, 0.5), nb.math('MULTIPLY', nb.math('LESS_THAN', x, 0.8), 0.25)), on)
         crat_alb = ca if crat_alb is None else nb.math('ADD', crat_alb, ca)
-    col = nb.mix(nb.math('MULTIPLY', crat_alb, 0.6, clamp=True), col, (0.68, 0.44, 0.26, 1)) if crat_alb else col
+    col = nb.mix(nb.math('MULTIPLY', crat_alb, 0.9, clamp=True), col, (0.70, 0.46, 0.28, 1)) if crat_alb else col
     col = nb.mix(nb.math('MULTIPLY', crat_alb, -0.8, clamp=True), col, (0.10, 0.06, 0.04, 1)) if crat_alb else col
     # Valles Marineris: ragged east-west chasm system, dark floor, layered bright walls
     lat_c, hw, cc, ext = CANYON
+    mea = nb.math('MULTIPLY', nb.math('SUBTRACT', nb.noise(nb.vmath('ADD', n, (7.0, 3.0, 1.0)), scale=4.0, detail=3).outputs['Fac'], 0.5), 0.07)
     jag = nb.math('MULTIPLY', nb.math('SUBTRACT', nb.noise(n, scale=35.0, detail=7, rough=0.65).outputs['Fac'], 0.5), 0.05)
+    jag = nb.math('ADD', jag, mea)
     dl = nb.math('ABSOLUTE', nb.math('ADD', nb.math('SUBTRACT', s, math.sin(math.radians(lat_c))), jag))
+    # a second, parallel chasm system (Coprates / Ius-like) a little north
+    dl2 = nb.math('ABSOLUTE', nb.math('ADD', nb.math('SUBTRACT', s, math.sin(math.radians(lat_c + 2.2))), nb.math('MULTIPLY', jag, 1.3)))
     along = nb.maprange(nb.vmath('DOT_PRODUCT', n, tuple(cc)), ext, ext + 0.05)
-    width = nb.math('MULTIPLY', hw, nb.maprange(nb.noise(n, scale=9.0, detail=3).outputs['Fac'], 0.3, 0.7, 0.4, 1.4))
+    width = nb.math('MULTIPLY', hw, nb.maprange(nb.noise(n, scale=9.0, detail=3).outputs['Fac'], 0.3, 0.7, 0.15, 1.6))
     can = nb.math('MULTIPLY', nb.math('DIVIDE', nb.math('SUBTRACT', width, dl), nb.math('MULTIPLY', width, 0.65), clamp=True), along)
+    w2 = nb.math('MULTIPLY', width, nb.maprange(nb.noise(n, scale=14.0, detail=3).outputs['Fac'], 0.45, 0.65, 0.0, 0.6))
+    can2 = nb.math('MULTIPLY', nb.math('DIVIDE', nb.math('SUBTRACT', w2, dl2), nb.math('MAXIMUM', nb.math('MULTIPLY', w2, 0.65), 1e-4), clamp=True),
+                   nb.maprange(nb.vmath('DOT_PRODUCT', n, tuple(cc)), ext + 0.06, ext + 0.12))
+    can = nb.math('MAXIMUM', can, can2)
     wall = nb.math('MULTIPLY', nb.math('SUBTRACT', 1.0, nb.math('ABSOLUTE', nb.math('SUBTRACT', nb.math('MULTIPLY', can, 2.0), 1.0))), 1.0)
     col = nb.mix(nb.math('MULTIPLY', can, 0.85), col, (0.11, 0.07, 0.05, 1))
     col = nb.mix(nb.math('MULTIPLY', wall, 0.45), col, (0.64, 0.42, 0.26, 1))
