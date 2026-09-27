@@ -47,13 +47,17 @@ def ease(t):
 
 
 def pos(t):
+    # ease log(d_Moon / d_Mars): slow off the Moon, the crossing rushes, slow onto Mars; anchored at P0 and D1
     e = ease(t)
-    d0 = (MC - P0).length
-    d = d0 * (D1 / d0) ** e
-    # leave the Moon along its local up first, then along the line to Mars
     lift = u0 * (luna.R * 0.6) * sb.smoother(sb.remap(e, 0.0, 0.3))
-    base = MC + (P0 + lift - MC).normalized() * d
-    return base
+    Pl = P0 + lift
+    Dt = MC.length
+    dm0, dM0 = Pl.length - 0.0, (MC - Pl).length
+    r0, r1 = math.log(dm0 / dM0), math.log((Dt - D1) / D1)
+    r = r0 + (r1 - r0) * e
+    f0 = Dt / (1.0 + math.exp(r0))
+    d = Dt / (1.0 + math.exp(r)) * (dM0 / f0) ** (1.0 - e)
+    return MC + (Pl - MC).normalized() * d
 
 
 cam = sb.camera("Cam", loc=P0, target=MC, lens=24, clip=(50.0, 5e9))

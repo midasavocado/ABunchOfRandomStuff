@@ -67,11 +67,11 @@ for f in range(F0, F1 + 1):
     cam.data.clip_end = max(3e5, a * 4.0 + 5e6)
     cam.data.keyframe_insert("clip_start", frame=f); cam.data.keyframe_insert("clip_end", frame=f)
     # sky -> space, ground haze off, the limb of air on once we're above it
-    smix.outputs[0].default_value = sb.smoother(sb.remap(lg(a), 4.0, 5.0))
+    smix.outputs[0].default_value = sb.smoother(sb.remap(lg(a), 3.7, 4.6))
     smix.outputs[0].keyframe_insert("default_value", frame=f)
     haze.outputs[0].default_value = 1.0 - sb.smoother(sb.remap(lg(a), 3.6, 4.6))
     haze.outputs[0].keyframe_insert("default_value", frame=f)
-    ag.outputs[0].default_value = sb.smoother(sb.remap(lg(a), 4.7, 5.3))
+    ag.outputs[0].default_value = sb.smoother(sb.remap(lg(a), 4.62, 4.9))
     ag.outputs[0].keyframe_insert("default_value", frame=f)
 print("s25z built in %.0fs" % (time.time() - T0))
 sb.render_shot(sid)
