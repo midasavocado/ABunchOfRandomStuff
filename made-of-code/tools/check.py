@@ -45,9 +45,9 @@ n = len(audio) // SR
 total = round(len(audio) / SR * FPS)
 print(f'length: {len(audio) / SR:.3f} s, {total} frames')
 
-f = frames([0, 1, total - 1])
-step, seam = np.abs(f[1] - f[0]).mean(), np.abs(f[0] - f[2]).mean()
-print(f'loop, video: last->first frame differs by {seam:.2f} (one normal frame step: {step:.2f})')
+f = frames([0, total - 2, total - 1])
+step, seam = np.abs(f[2] - f[1]).mean(), np.abs(f[0] - f[2]).mean()
+print(f'loop, video: last->first frame changes by {seam:.2f}; the frame before that changed by {step:.2f}')
 print(f'loop, audio: jump {abs(audio[0] - audio[-1]):.4f}; '
       f'rms last 20 ms {np.sqrt((audio[-960:] ** 2).mean()):.3f}, first 20 ms {np.sqrt((audio[:960] ** 2).mean()):.3f}')
 print(f'peak {20 * np.log10(np.abs(audio).max()):.1f} dBFS')
@@ -55,16 +55,18 @@ print(f'peak {20 * np.log10(np.abs(audio).max()):.1f} dBFS')
 bars = [np.sqrt((audio[int(b * 2 * SR):int((b + 1) * 2 * SR)] ** 2).mean()) for b in range(n // 2)]
 print('rms per bar:', ' '.join(f'{v:.2f}' for v in bars))
 
-# kick onsets: energy under 150 Hz, rising edges, compared with the nearest beat
-lp = np.convolve(audio, np.ones(160) / 160, 'same')            # crude low-pass
-env = np.convolve(lp ** 2, np.ones(240) / 240, 'same')
-hop = 48
-e = env[::hop]
-rise = np.diff(e)
-peaks = [i for i in range(1, len(rise) - 1) if rise[i] > rise[i - 1] and rise[i] >= rise[i + 1]
-         and rise[i] > 0.25 * rise.max()]
-onsets = np.array(peaks) * hop / SR
-err = [(t - round(t / BEAT) * BEAT) * 1000 for t in onsets]
-if err:
-    print(f'kick-like onsets: {len(err)}, offset from the beat grid: median {np.median(err):+.1f} ms, '
-          f'worst {max(err, key=abs):+.1f} ms')
+# low-band onsets (kick and sub bass, 30-100 Hz) against the grid of eighth notes
+spec = np.fft.rfft(audio)
+hz = np.fft.rfftfreq(len(audio), 1 / SR)
+low = np.fft.irfft(spec * ((hz > 30) & (hz < 100)), len(audio))
+env = np.convolve(np.abs(low), np.ones(240) / 240, 'same')      # 5 ms envelope
+thresh, onsets, i = 0.3 * env.max(), [], 0
+while i < len(env):
+    if env[i] > thresh:
+        onsets.append(i / SR)
+        i += int(0.2 * SR)                                         # one per hit
+    else:
+        i += 1
+err = np.array([(t - round(t / (BEAT / 2)) * BEAT / 2) * 1000 for t in onsets])
+print(f'low-band onsets: {len(err)}, offset from the eighth-note grid: '
+      f'median {np.median(err):+.1f} ms, 95% within {np.percentile(np.abs(err), 95):.1f} ms')

@@ -189,12 +189,12 @@ const MELODY = [                                 // [16th, note, length] over ea
   [[0, 74, 3], [3, 76, 1], [4, 79, 2], [6, 83, 2], [8, 86, 6], [14, 83, 2]],
 ];
 const SONG = {                                   // one letter per bar
-  kick: '..xxxxxx.xxxxxhh....',                  // x: four to the floor, h: half time
-  clap: '....xxxx.xxxxx......',
-  hats: '..ooooss.sssssoo....',                  // o: offbeats, s: sixteenths
+  kick: '..xxxxxx.xxxxxhh..hx',                  // x: four to the floor, h: half time
+  clap: '....xxxx.xxxxx....rR',                  // r, R: a roll in eighths, then sixteenths
+  hats: '.oooooss.sssssoo..oo',                  // o: offbeats, s: sixteenths
   bass: '..xxxxxx.xxxxx......',
   lead: '.........xxxxx......',
-  arp:  '--======-+++++==----',                  // -: soft, =: open, +: bright
+  arp:  '========-+++++======',                  // -: soft, =: open, +: bright
 };
 const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
 const HITS = {};
@@ -288,11 +288,11 @@ async function playPart(from, to) {              // everything that starts betwe
     const c = gain(dry, 0); env(c, t, 0.3, 0.001, 0.002, 0.006);
     hiss(t, 0.03, filt('highpass', 2500, 0.7, c));
   };
-  const clap = t => {
+  const clap = (t, v = 1) => {
     hit('clap', t);
     const e = gain(dry, 0);
     [0, 0.012, 0.025].forEach(o => {
-      e.gain.setValueAtTime(0.6, t + o); e.gain.setTargetAtTime(0, t + o + 0.001, o ? 0.05 : 0.004);
+      e.gain.setValueAtTime(0.6 * v, t + o); e.gain.setTargetAtTime(0, t + o + 0.001, o ? 0.05 : 0.004);
     });
     hiss(t, 0.4, filt('bandpass', 1400, 1.2, e)); send(e, 0.5);
     const body = gain(dry, 0); env(body, t, 0.25, 0.001, 0.01, 0.04);
@@ -314,7 +314,7 @@ async function playPart(from, to) {              // everything that starts betwe
   };
   const arp = (t, m, v, side) => {
     hit('arp', t);
-    const e = gain(arpBus[side], 0); env(e, t, v * 0.16, 0.003, 0.02, 0.07);
+    const e = gain(arpBus[side], 0); env(e, t, v * 0.3, 0.003, 0.02, 0.07);
     osc('square', mtof(m), t, t + 0.5, e);
   };
   const lead = (t, m, d) => {
@@ -332,8 +332,8 @@ async function playPart(from, to) {              // everything that starts betwe
   const pad = (t, chord, v) => {
     hit('pad', t);
     const e = gain(duck, 0);
-    e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(v * 0.09, t + 0.05);
-    e.gain.setValueAtTime(v * 0.09, t + BAR - 0.05); e.gain.linearRampToValueAtTime(0, t + BAR);
+    e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(v * 0.2, t + 0.05);
+    e.gain.setValueAtTime(v * 0.2, t + BAR - 0.05); e.gain.linearRampToValueAtTime(0, t + BAR);
     const f = filt('lowpass', 500 + 1400 * v, 0.7, e);
     chord.forEach(m => [-12, 0, 12].forEach((d, i) =>
       osc('sawtooth', mtof(m), t, t + BAR, pan(f, (i - 1) * 0.5), d)));
@@ -393,7 +393,9 @@ async function playPart(from, to) {              // everything that starts betwe
     }
     if (SONG.kick[bar] === 'x') for (let b = 0; b < 4; b++) kick(t0 + b * BEAT);
     if (SONG.kick[bar] === 'h') [0, 2.5].forEach(b => kick(t0 + b * BEAT));
-    if (on('clap')) [1, 3].forEach(b => clap(t0 + b * BEAT));
+    if (SONG.clap[bar] === 'x') [1, 3].forEach(b => clap(t0 + b * BEAT));
+    const roll = { r: 8, R: 16 }[SONG.clap[bar]];
+    if (roll) for (let s = 0; s < roll; s++) clap(t0 + s * BAR / roll, 0.3 + 0.7 * s / roll);
     if (SONG.hats[bar] === 'o') for (let b = 0; b < 4; b++) hat(t0 + (b + 0.5) * BEAT, 0.5);
     if (SONG.hats[bar] === 's') for (let s = 0; s < 16; s++) {
       hat(t0 + s * BEAT / 4, s % 2 ? 0.45 : 0.18, s % 4 === 2);

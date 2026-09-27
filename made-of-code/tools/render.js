@@ -4,6 +4,7 @@
 //   FFMPEG=/path/to/ffmpeg node tools/render.js [out.mp4] [--stills 0,4.5,12]
 //
 // --stills writes PNGs of the given times instead of a video (for checking frames).
+// --audio writes only the soundtrack, as out.wav.
 const { chromium } = require('playwright');
 const { spawn } = require('child_process');
 const fs = require('fs');
@@ -71,6 +72,7 @@ function wav(chans, sr) {
   });
   const wavPath = out.replace(/\.mp4$/, '.wav');
   fs.writeFileSync(wavPath, wav(chans, audio.sr));
+  if (args.includes('--audio')) { await browser.close(); console.log('wrote', wavPath); return; }
 
   // picture
   const frames = Math.round(LEN * FPS);
