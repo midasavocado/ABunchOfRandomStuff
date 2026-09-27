@@ -134,7 +134,7 @@ def fly(sh, f0, f1, pos_fn, thrust_fn, tilt_fn=None, legs_fn=None, light_max=6e5
             set_legs(sh["legs"], legs_fn(f), frame=f)
 
 
-def dust_mat(name, color=(0.62, 0.42, 0.26), density=0.25):
+def dust_mat(name, color=(0.62, 0.42, 0.26), density=0.25, glow=0.9):
     """billowing regolith dust: soft radial falloff broken by turbulence, bright forward scattering, a little
     self-glow so a thick cloud reads sunlit and never as a dark blob."""
     m = bpy.data.materials.new(name)
@@ -153,17 +153,17 @@ def dust_mat(name, color=(0.62, 0.42, 0.26), density=0.25):
     pv.inputs['Anisotropy'].default_value = 0.45
     nb.link(dens, pv.inputs['Density'])
     pv.inputs['Emission Color'].default_value = (*color, 1)
-    nb.link(nb.math('MULTIPLY', dens, 0.9), pv.inputs['Emission Strength'])
+    nb.link(nb.math('MULTIPLY', dens, glow), pv.inputs['Emission Strength'])
     o = nb.new('ShaderNodeOutputMaterial')
     nb.link(pv.outputs[0], o.inputs['Volume'])
     return m
 
 
 def dust_ring(name, center, f_on, f_off, radius_max=60.0, n=26, color=(0.55, 0.38, 0.24), density=0.25, seed=1,
-              height=6.0, rise=0.3):
+              height=6.0, rise=0.3, flat=0.7, glow=0.9):
     """Radial ground dust thrown out by the plume: soft volume puffs racing outward and settling. Returns objects."""
     rs = random.Random(seed)
-    vm = dust_mat(name + "M", color=color, density=density * 1.6)
+    vm = dust_mat(name + "M", color=color, density=density * 1.6, glow=glow)
     try:
         bpy.context.scene.eevee.use_volumetric_shadows = False      # dust must not print a dark ring on the ground
     except Exception:
@@ -180,7 +180,7 @@ def dust_ring(name, center, f_on, f_off, radius_max=60.0, n=26, color=(0.55, 0.3
             r = radius_max * (1 - math.exp(-t * 1.4 * spd))
             s = (2.0 + r * 0.22) * (0.2 if f < f_on else 1.0) * act + 0.001
             o.location = V(center) + V((math.cos(a) * r, math.sin(a) * r, height * 0.4 + r * rise * 0.1))
-            o.scale = (s, s, s * 0.7)
+            o.scale = (s, s, s * flat)
             o.keyframe_insert("location", frame=f); o.keyframe_insert("scale", frame=f)
         objs.append(o)
     return objs
