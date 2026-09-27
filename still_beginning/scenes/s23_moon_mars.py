@@ -39,7 +39,7 @@ mars.atmosphere("MarsAtmo", sun=SUN, obj=shell)
 perp = (V((0, 0, 1)) - MD * MD.z).normalized()
 u0 = (MD * math.sin(math.radians(8.0)) + perp * math.cos(math.radians(8.0))).normalized()
 P0 = u0 * (luna.R + 60e3)
-D1 = MR * 5.2                                          # end distance from Mars' centre (disc ~ 22 deg across)
+D1 = MR * 7.0                                          # end distance from Mars' centre (disc ~16 deg across)
 
 
 def ease(t):
