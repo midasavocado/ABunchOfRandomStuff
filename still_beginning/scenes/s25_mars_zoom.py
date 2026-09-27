@@ -14,7 +14,7 @@ _, S0, S1, _ = sb.TL.shot(sid)
 F0, F1 = S0 - 24, S1 + 24
 T0 = time.time()
 sc = sb.reset()
-sb.setup_render("EEVEE", mblur=True, shutter=0.35, look="AgX - Medium High Contrast",
+sb.setup_render("EEVEE", mblur=True, shutter=0.12, look="AgX - Medium High Contrast",
                 exposure=float(os.environ.get("SB_EXPO", "0.0")))
 CO = colony.build(F0, F1)
 SUN = CO["SUN"]

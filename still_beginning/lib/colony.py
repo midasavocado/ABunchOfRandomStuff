@@ -327,7 +327,7 @@ def build(F0, F1, detail=1.0):
     ship.fly(A, F0, F1, posA, thrA, tilt_fn=tiltA, legs_fn=lambda f: sb.smoother(sb.remap(f, FTD - 87, FTD - 37)), light_max=4e6)
     if F0 < FTD + 40:
         ship.dust_ring("DustA", (PAD_A.x, PAD_A.y, gz(PAD_A.x, PAD_A.y)), FTD - 40, FTD + 6, radius_max=95.0, n=34,
-                       color=(0.62, 0.40, 0.24), density=0.18, seed=3, height=8.0)
+                       color=(0.62, 0.40, 0.24), density=0.09, seed=3, height=8.0)
     # B: standing on pad B (lifts off in s25z)
     B = ship.build("ShipB", M=SM, legs_deployed=1.0)
     zB = gz(PAD_B.x, PAD_B.y) + 0.55 - ship.GROUND_Z

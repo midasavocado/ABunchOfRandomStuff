@@ -23,7 +23,7 @@ T0b = time.time()
 # ---------------------------------------------------------------- camera: drone flies north up the main avenue - over
 # the solar farm, past the hub tower (25 m to its side, above its beacon), the greenhouse vaults glowing to the left,
 # industry to the right - and settles on the ship touching down at the spaceport
-CP = [V((40.0, -500.0, 13.0)), V((34.0, -260.0, 26.0)), V((26.0, 40.0, 50.0)), V((2.0, 250.0, 52.0)), V((-26.0, 350.0, 46.0))]
+CP = [V((40.0, -500.0, 13.0)), V((34.0, -260.0, 26.0)), V((52.0, 40.0, 60.0)), V((2.0, 250.0, 52.0)), V((-26.0, 350.0, 46.0))]
 LEAD = [V((24.0, -200.0, 4.0)), V((0.0, 180.0, 14.0)), V((-60.0, 420.0, 26.0))]
 
 
