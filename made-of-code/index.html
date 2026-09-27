@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Made of Code</title>
 <style>
-  html, body { margin: 0; height: 100%; background: #07080c; overflow: hidden; }
+  html, body { margin: 0; height: 100%; background: #020204; overflow: hidden; }
   body { display: grid; place-items: center; }
-  canvas { height: 100vh; max-width: 100vw; aspect-ratio: 9 / 16; object-fit: contain; cursor: pointer; }
+  canvas { height: 100vh; max-width: 100vw; aspect-ratio: 9 / 16; cursor: pointer; }
 </style>
 </head>
 <body>
@@ -17,31 +17,50 @@
 //  MADE OF CODE
 //
 //  Every glyph in this video is one character of this program.
-//  The sphere, the galaxy, the words and the music are all drawn
-//  by the text you are reading right now. No images. No audio files.
-//  No video model. One file.
+//  The tunnel, the sphere, the landscape, the words and the music
+//  are all drawn by the text you are reading right now.
+//  No images. No audio files. No video model. One file.
 //
 //  If you paused the video to read this: hi. You found the source.
 // ================================================================================
 'use strict';
 
+// ---- 1. the script ------------------------------------------------------------
+// What the program says, and when. [start, end, where, ...lines]
+const HOOK = ['this video is made of', 'its own source code'];
+const SUB = 'every glyph = one character of the program drawing it';
+const CAPTIONS = [
+  [8.6, 11.8, 'top', '// see the bright glyphs?', '// that is the function', '// drawing this sphere.'],
+  [12.8, 15.8, 'top', '// a loop. because this', '// video is one.'],
+  [18.4, 21.8, 'top', '// every sound lights up', '// the code that plays it.'],
+  [22.6, 25.8, 'top', '// the whole song, as a', '// landscape. we are here.'],
+  [32.3, 35.0, 'top', "// that's all of me.", '// pause. read me.'],
+  [35.8, 37.6, 'low', '// ok. again.'],
+];
+const TYPING = 30;                               // characters per second
+
+// ---- 2. settings --------------------------------------------------------------
 const W = 1080, H = 1920, FPS = 30;
-const BPM = 120, BEAT = 60 / BPM, BAR = 4 * BEAT;
-const LEN = 16 * BAR;                          // 32 seconds, then it loops forever
+const F = 1600;                                  // focal length of the camera, in pixels
+const BPM = 120, BEAT = 60 / BPM, BAR = 4 * BEAT, BARS = 20;
+const LEN = BARS * BAR;                          // 40 seconds, then it loops forever
 const SR = 48000;
 const RENDER = location.search.includes('render');
-
 const MONO = '"DejaVu Sans Mono", Menlo, Consolas, monospace';
 const SANS = '"DejaVu Sans", "Helvetica Neue", Arial, sans-serif';
 
-// syntax colors: ident, keyword, string, number, comment, punctuation
-const INK = ['#c8d3f5', '#ff79c6', '#a6e3a1', '#ffb86c', '#6c7a96', '#7dcfff'];
-const BG = '#07080c';
+const INK = ['#c8d3f5', '#ff79c6', '#a6e3a1', '#ffb86c', '#6c7a96', '#7dcfff'];   // syntax
+const HUE = ['#ff4f8b', '#ff9f43', '#ffd23f', '#6bf178', '#2de2e6', '#4d9dff',   // sections
+             '#9b6bff', '#f15bb5', '#00f5d4', '#fee440', '#ff6b6b', '#c77dff'];
+const COLORS = [...INK, ...HUE, '#ffffff'];
+const SYNTAX = 0, SECTION = 1, WHITE = 2;
+const BG = '#07080c', VOID = '#020204';
 
-// ---- small math -----------------------------------------------------------------
 const clamp = (x, a = 0, b = 1) => Math.min(b, Math.max(a, x));
 const lerp = (a, b, u) => a + (b - a) * u;
 const ease = u => u < 0.5 ? 4 * u * u * u : 1 - Math.pow(-2 * u + 2, 3) / 2;
+const smooth = u => u * u * (3 - 2 * u);
+const easeIn = u => u * u * u;
 
 // seeded randomness, so every render of this video is identical
 function rng(seed) {
@@ -53,11 +72,11 @@ function rng(seed) {
   };
 }
 
-// ---- 1. read myself -------------------------------------------------------------
+// ---- 3. read myself -----------------------------------------------------------
 // The program loads its own text. That text becomes the particles.
 const SOURCE = document.getElementById('src').textContent.replace(/^\n/, '');
 
-function highlight(src) {
+function highlight(src) {                        // syntax colors, one per character
   const cls = new Uint8Array(src.length);
   const KW = new Set(('const let var function return if else for while of in new this ' +
     'async await true false null typeof break continue class').split(' '));
@@ -82,200 +101,320 @@ function highlight(src) {
   return cls;
 }
 
-// ---- 2. lay the code out like an editor ------------------------------------------
+// Each numbered section of this file gets its own color.
+const MARK = '// ' + '-'.repeat(4) + ' ';
+function sections(src) {
+  const sec = new Uint8Array(src.length);
+  for (let i = 0, s = 0; i < src.length; i++) { if (src.startsWith(MARK, i)) s++; sec[i] = s; }
+  return sec;
+}
+
+// Where "const name = ... { ... }" starts and ends in this file.
+function span(name) {
+  const a = SOURCE.indexOf('const ' + name + ' = ');
+  let i = SOURCE.indexOf('{', a), depth = 0;
+  do { depth += SOURCE[i] === '{' ? 1 : SOURCE[i] === '}' ? -1 : 0; i++; } while (depth);
+  return [a, i];
+}
+const rowOf = at => SOURCE.slice(0, at).split('\n').length - 1;
+
+// ---- 4. lay the code out like an editor ---------------------------------------
 const FONT = 16, LINE = 21, LEFT = 38;
 const cv = document.getElementById('c'), g = cv.getContext('2d');
 g.font = `${FONT}px ${MONO}`;
 const CW = g.measureText('M').width;
 
-const P = [];                                  // one particle per visible character
+const INSTRUMENTS = ['kick', 'clap', 'hat', 'bass', 'arp', 'lead'];
+const P = [];                                    // one particle per visible character
 {
-  const cls = highlight(SOURCE), rand = rng(1234);
+  const ink = highlight(SOURCE), sec = sections(SOURCE), rand = rng(1234);
+  const inst = INSTRUMENTS.map(span), sphere = span('SPHERE');
   let col = 0, row = 0;
   for (let i = 0; i < SOURCE.length; i++) {
     const ch = SOURCE[i];
     if (ch === '\n') { row++; col = 0; continue; }
     if (ch !== ' ') {
-      P.push({ ch, ink: cls[i], hx: LEFT + (col + 0.5) * CW, hy: (row + 0.5) * LINE,
+      P.push({ ch, ink: ink[i], sec: sec[i], hx: LEFT + (col + 0.5) * CW, hy: (row + 0.5) * LINE,
+        inst: inst.findIndex(([a, b]) => i >= a && i < b),
+        sphere: i >= sphere[0] && i < sphere[1],
         r1: rand(), r2: rand(), r3: rand(), r4: rand(), d: rand() });
     }
     col++;
   }
 }
-const N = P.length, ORDER = P.map((_, i) => i);
-const ROWS = SOURCE.split('\n').length;
-P.forEach((p, i) => { p.i = i; p.k = (i + 0.5) / N; });
-// Shuffled order for the shapes, so each glyph flies somewhere far from home.
-{ const r = rng(99); const o = P.map((_, i) => i);
+const N = P.length, GLYPHS = N.toLocaleString('en-US');
+P.forEach((p, i) => { p.i = i; });
+{ // a shuffled order too, so each glyph flies somewhere far from home
+  const r = rng(99), o = P.map((_, i) => i);
   for (let i = N - 1; i > 0; i--) { const j = r() * (i + 1) | 0; [o[i], o[j]] = [o[j], o[i]]; }
-  o.forEach((q, i) => { P[q].s = i; P[q].u = (i + 0.5) / N; }); }
+  o.forEach((q, i) => { P[q].s = i; P[q].u = (i + 0.5) / N; });
+}
+const MUSIC_ROWS = [rowOf(span('kick')[0]), rowOf(span('lead')[1])];
 
-// ---- 3. a sprite atlas: every (character, color) drawn once, reused 60 times a second
-const AT = 40, AW = Math.ceil(AT * 0.62), AH = Math.ceil(AT * 1.25);
-const atlas = document.createElement('canvas'), SPR = new Map();
-{
-  const keys = [...new Set(P.map(p => p.ink + p.ch))];
-  const per = 64;
-  atlas.width = per * AW; atlas.height = Math.ceil(keys.length / per) * AH;
-  const a = atlas.getContext('2d');
-  a.font = `${AT}px ${MONO}`; a.textAlign = 'center'; a.textBaseline = 'middle';
-  keys.forEach((k, n) => {
-    const x = (n % per) * AW, y = (n / per | 0) * AH;
-    a.fillStyle = INK[+k[0]]; a.fillText(k.slice(1), x + AW / 2, y + AH / 2);
-    SPR.set(k, [x, y]);
-  });
-  P.forEach(p => { p.spr = SPR.get(p.ink + p.ch); });
+// ---- 5. sprites: each character drawn once per color and blur, then reused ------
+const AT = 34, PAD = 12, BLUR = [0, 2.5, 6];
+const CW0 = Math.ceil(AT * 0.62) + 2 * PAD, CH0 = Math.ceil(AT * 1.2) + 2 * PAD;
+const atlas = document.createElement('canvas');
+atlas.width = 64 * CW0; atlas.height = 60 * CH0;
+const ax = atlas.getContext('2d'), SPR = new Map();
+const cell = [0, 1].map(() => {                  // two scratch cells: sharp, then blurred
+  const c = document.createElement('canvas'); c.width = CW0; c.height = CH0;
+  return c.getContext('2d');
+});
+function sprite(color, blur, ch) {
+  const key = (color * 4 + blur) * 65536 + ch.charCodeAt(0);
+  let s = SPR.get(key);
+  if (!s) {
+    const [a, b] = cell, x = (SPR.size % 64) * CW0, y = (SPR.size / 64 | 0) * CH0;
+    a.clearRect(0, 0, CW0, CH0);
+    a.font = `${AT}px ${MONO}`; a.textAlign = 'center'; a.textBaseline = 'middle';
+    a.fillStyle = COLORS[color]; a.fillText(ch, CW0 / 2, CH0 / 2);
+    b.clearRect(0, 0, CW0, CH0); b.filter = BLUR[blur] ? `blur(${BLUR[blur]}px)` : 'none';
+    b.drawImage(a.canvas, 0, 0);
+    ax.drawImage(b.canvas, x, y);
+    SPR.set(key, s = [x, y]);
+  }
+  return s;
 }
 
-// ---- 4. the music ----------------------------------------------------------------
-// A four-chord loop in A minor, built from oscillators and noise, rendered offline.
+// ---- 6. the music -------------------------------------------------------------
+// A-minor, four chords, twenty bars. Every instrument is a function below,
+// and every time one plays it writes the time down, so the picture can see it.
 const CHORDS = [[57, 60, 64], [53, 57, 60], [55, 60, 64], [55, 59, 62]];   // Am F C G
 const ROOTS = [33, 29, 36, 31];
+const MELODY = [                                 // [16th, note, length] over each chord
+  [[0, 76, 3], [3, 74, 1], [4, 76, 2], [6, 79, 2], [8, 81, 4], [12, 79, 2], [14, 76, 2]],
+  [[0, 77, 3], [3, 76, 1], [4, 77, 2], [6, 81, 2], [8, 84, 4], [12, 81, 2], [14, 77, 2]],
+  [[0, 79, 3], [3, 77, 1], [4, 79, 2], [6, 84, 2], [8, 83, 4], [12, 79, 2], [14, 76, 2]],
+  [[0, 74, 3], [3, 76, 1], [4, 79, 2], [6, 83, 2], [8, 86, 6], [14, 83, 2]],
+];
+const SONG = {                                   // one letter per bar
+  kick: '..xxxxxx.xxxxxhh....',                  // x: four to the floor, h: half time
+  clap: '....xxxx.xxxxx......',
+  hats: '..ooooss.sssssoo....',                  // o: offbeats, s: sixteenths
+  bass: '..xxxxxx.xxxxx......',
+  lead: '.........xxxxx......',
+  arp:  '--======-+++++==----',                  // -: soft, =: open, +: bright
+};
 const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
-const KICKS = [];                              // the visuals read this too
-const HITS = [4, 16];                          // the two drops
-const STABS = [14, 15, 20, 24, 26];            // every time the words change
-const TYPE0 = 29, TYPE1 = 30.8;                // the caption types itself back in
+const HITS = {};
+const hit = (name, t) => { (HITS[name] = HITS[name] || []).push(t); };
 
-function arrangement(bar) {
-  const drop = (bar >= 2 && bar <= 6) || (bar >= 8 && bar <= 11);
-  return {
-    kick: drop ? [0, 1, 2, 3] : bar === 12 || bar === 13 ? [0, 2] : [],
-    clap: (bar >= 4 && bar <= 6) || (bar >= 8 && bar <= 11),
-    hats: drop ? (bar >= 8 ? 16 : 8) : 0,
-    bass: drop,
-    lvl: drop ? 1 : bar === 7 || bar >= 12 && bar <= 13 ? 0.7 : 0.5,
-    cut: [700, 1100, 1800, 2000, 2200, 2500, 2800, 900,
-          3600, 3800, 4000, 4400, 1600, 1400, 800, 700][bar],
-  };
-}
-
-async function makeMusic() {
-  const TAIL = 2;                              // render past the end, then wrap it round
-  const A = new OfflineAudioContext(2, SR * (LEN + TAIL), SR);
-  const rand = rng(7);
-  const noise = A.createBuffer(1, SR * 2, SR);
-  noise.getChannelData(0).forEach((_, i, d) => { d[i] = rand() * 2 - 1; });
-
-  const comp = A.createDynamicsCompressor();
-  comp.threshold.value = -16; comp.ratio.value = 4; comp.attack.value = 0.004;
-  comp.connect(A.destination);
-  const bus = (g0, to = comp) => {
-    const n = A.createGain(); n.gain.value = g0; n.connect(to); return n;
-  };
-  const PAD = 0.15, mix = bus(0.9), pad = bus(PAD), arp = bus(0.10);
-  const echo = A.createDelay(1); echo.delayTime.value = BEAT * 0.75;
-  const fb = bus(0.32, echo); echo.connect(fb); echo.connect(bus(0.5, mix)); arp.connect(echo);
-
-  function env(node, t, peak, att, hold, rel) {
-    node.gain.setValueAtTime(0, t);
-    node.gain.linearRampToValueAtTime(peak, t + att);
-    node.gain.setTargetAtTime(0, t + att + hold, rel);
-  }
-  function osc(type, f, t, end, to, det = 0) {
-    const o = A.createOscillator(); o.type = type; o.frequency.value = f; o.detune.value = det;
-    o.connect(to); o.start(t); o.stop(end); return o;
-  }
-  function filt(type, f, q, to) {
-    const b = A.createBiquadFilter(); b.type = type; b.frequency.value = f; b.Q.value = q;
-    b.connect(to); return b;
-  }
-  function hiss(t, dur, to) {
-    const s = A.createBufferSource(); s.buffer = noise; s.connect(to);
-    s.start(t, rand() * 1.5); s.stop(t + dur);
-  }
-
-  const kick = t => {
-    const e = A.createGain(); e.connect(mix); env(e, t, 1.0, 0.002, 0.03, 0.09);
-    const o = osc('sine', 160, t, t + 0.6, e);
-    o.frequency.setValueAtTime(170, t); o.frequency.exponentialRampToValueAtTime(44, t + 0.11);
-    KICKS.push(t);
-  };
-  const hat = (t, v) => { const e = A.createGain(); env(e, t, v, 0.001, 0.005, 0.018);
-    e.connect(mix); hiss(t, 0.12, filt('highpass', 7500, 0.7, e)); };
-  const clap = t => { const e = A.createGain(); e.connect(mix);
-    [0, 0.011, 0.023].forEach(o => e.gain.setValueAtTime(0.55, t + o));
-    e.gain.setTargetAtTime(0, t + 0.03, 0.045); hiss(t, 0.35, filt('bandpass', 1500, 1.1, e)); };
-  const pluck = (f, t, v, cut, to, type = 'square') => {
-    const e = A.createGain(); env(e, t, v, 0.004, 0.02, 0.07); e.connect(to);
-    osc(type, f, t, t + 0.6, filt('lowpass', cut, 2, e));
-  };
-  const riser = (t, dur) => {
-    const e = A.createGain(); e.connect(mix);
-    e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(0.35, t + dur);
-    e.gain.setValueAtTime(0, t + dur);
-    const b = filt('bandpass', 300, 3, e);
-    b.frequency.setValueAtTime(300, t); b.frequency.exponentialRampToValueAtTime(7000, t + dur);
-    hiss(t, dur, b);
-  };
-  const impact = t => {
-    const e = A.createGain(); env(e, t, 0.9, 0.003, 0.05, 0.35); e.connect(mix);
-    const o = osc('sine', 90, t, t + 2.5, e); o.frequency.exponentialRampToValueAtTime(28, t + 1.2);
-    const n = A.createGain(); env(n, t, 0.5, 0.002, 0.02, 0.3); n.connect(mix);
-    hiss(t, 1.8, filt('lowpass', 2500, 0.5, n));
-  };
-  const stab = t => {
-    const bar = Math.floor(t / BAR) % 4;
-    CHORDS[bar].forEach(m => [-9, 9].forEach(d => {
-      const e = A.createGain(); env(e, t, 0.07, 0.003, 0.08, 0.12); e.connect(mix);
-      osc('sawtooth', mtof(m + 12), t, t + 1, filt('lowpass', 3200, 1, e), d);
-    }));
-  };
-  const key = t => { const e = A.createGain(); env(e, t, 0.18 + rand() * 0.12, 0.001, 0.004, 0.01);
-    e.connect(mix); hiss(t, 0.05, filt('bandpass', 2500 + rand() * 2500, 2, e)); };
-
-  const pump = pad.gain;
-  for (let bar = 0; bar < 16; bar++) {
-    const t0 = bar * BAR, a = arrangement(bar), ch = CHORDS[bar % 4];
-    // pad: three detuned saws per chord tone
-    const pe = A.createGain(); pe.connect(pad);
-    pe.gain.setValueAtTime(0, t0); pe.gain.linearRampToValueAtTime(a.lvl, t0 + 0.04);
-    pe.gain.setValueAtTime(a.lvl, t0 + BAR - 0.04); pe.gain.linearRampToValueAtTime(0, t0 + BAR);
-    const pf = filt('lowpass', 900 + a.cut * 0.25, 0.8, pe);
-    ch.forEach(m => [-11, 0, 11].forEach(d => osc('sawtooth', mtof(m), t0, t0 + BAR, pf, d)));
-    // arpeggio: 16th notes climbing through the chord
-    const up = [0, 1, 2, 3, 4, 5, 4, 3];
-    for (let s = 0; s < 16; s++) {
-      const n = up[s % 8], m = ch[n % 3] + 12 + 12 * Math.floor(n / 3);
-      pluck(mtof(m), t0 + s * BEAT / 4, (s % 4 === 0 ? 1 : 0.7) * a.lvl, a.cut, arp);
-    }
-    for (const b of a.kick) kick(t0 + b * BEAT);
-    if (a.clap) [1, 3].forEach(b => clap(t0 + b * BEAT));
-    for (let s = 0; s < a.hats; s++) {
-      const step = 16 / a.hats, t = t0 + s * step * BEAT / 4;
-      if (a.hats === 16 || s % 2 === 1) hat(t, s % 2 ? 0.22 : 0.1);
-    }
-    if (a.bass) for (let s = 0; s < 8; s++) {
-      const f = mtof(ROOTS[bar % 4] + (s % 2 ? 12 : 0));
-      pluck(f, t0 + s * BEAT / 2, 0.55, 420, mix, 'sawtooth');
-    }
-  }
-  // un-duck the pad between kicks
-  KICKS.forEach(t => { pump.setValueAtTime(0.04, t); pump.linearRampToValueAtTime(PAD, t + 0.3); });
-  HITS.forEach(impact);
-  STABS.forEach(stab);
-  riser(2.2, 1.8); riser(15, 1);
-  for (let t = TYPE0; t < TYPE1; t += 0.043) key(t + rand() * 0.012);
-  KICKS.sort((a, b) => a - b);
-
-  const long = await A.startRendering(), buf = new AudioBuffer(
-    { numberOfChannels: 2, length: SR * LEN, sampleRate: SR });
+const TAIL = 3;
+async function makeMusic() {                     // four parts at once, one per CPU core
+  const cut = [0, 5, 10, 15, 20].map(b => b * BAR);
+  const parts = await Promise.all([0, 1, 2, 3].map(i => playPart(cut[i], cut[i + 1])));
+  const buf = new AudioBuffer({ numberOfChannels: 2, length: SR * LEN, sampleRate: SR });
   let peak = 0;
-  for (let c = 0; c < 2; c++) {                // echoes past the end ring out over the start
-    const d = long.getChannelData(c).slice(0, SR * LEN), tail = long.getChannelData(c);
-    for (let i = 0; i < SR * TAIL; i++) d[i] += tail[SR * LEN + i];
-    d.forEach(v => { peak = Math.max(peak, Math.abs(v)); });
-    buf.copyToChannel(d, c);
+  for (let c = 0; c < 2; c++) {
+    const d = new Float32Array(SR * (LEN + TAIL));
+    for (const p of parts) p.getChannelData(c).forEach((v, i) => { d[i] += v; });
+    for (let i = 0; i < SR * TAIL; i++) d[i] += d[SR * LEN + i];   // the end rings into the start
+    const out = d.subarray(0, SR * LEN);
+    out.forEach(v => { peak = Math.max(peak, Math.abs(v)); });
+    buf.copyToChannel(out, c);
   }
-  for (let c = 0; c < 2; c++) {                // normalize to -1 dBFS
+  for (let c = 0; c < 2; c++) {                  // normalize to -1 dBFS
     const d = buf.getChannelData(c);
     for (let i = 0; i < d.length; i++) d[i] *= 0.89 / peak;
   }
+  for (const k in HITS) HITS[k].sort((a, b) => a - b);
   return buf;
 }
 
-// ---- 5. listening to the music, so the glyphs can dance to it --------------------
-let MUSIC = null;
+async function playPart(from, to) {              // everything that starts between from and to
+  const A = new OfflineAudioContext(2, SR * (to + TAIL), SR), rand = rng(7);
+  const inside = t => t >= from && (t < to || to === LEN && t <= LEN);
+  const noise = A.createBuffer(1, SR * 2, SR);
+  noise.getChannelData(0).forEach((_, i, d) => { d[i] = rand() * 2 - 1; });
+
+  // plumbing
+  const gain = (to, v = 1) => { const n = A.createGain(); n.gain.value = v; n.connect(to); return n; };
+  const pan = (to, x) => { const n = A.createStereoPanner(); n.pan.value = x; n.connect(to); return n; };
+  const filt = (type, f, q, to) => {
+    const b = A.createBiquadFilter(); b.type = type; b.Q.value = q;
+    b.frequency.value = f; b.connect(to); return b;
+  };
+  const shaper = (to, drive) => {
+    const s = A.createWaveShaper(), c = new Float32Array(1024);
+    c.forEach((_, i) => { c[i] = Math.tanh((i / 511.5 - 1) * drive); });
+    s.curve = c; s.connect(to); return s;
+  };
+  const osc = (type, f, t, end, to, det = 0) => {
+    const o = A.createOscillator(); o.type = type; o.detune.value = det;
+    o.frequency.setValueAtTime(f, t); o.connect(to); o.start(t); o.stop(end); return o;
+  };
+  const env = (n, t, peak, att, hold, rel) => {
+    n.gain.setValueAtTime(0, t); n.gain.linearRampToValueAtTime(peak, t + att);
+    n.gain.setTargetAtTime(0, t + att + hold, rel);
+  };
+  const hiss = (t, dur, to) => {
+    const s = A.createBufferSource(); s.buffer = noise; s.loop = true; s.connect(to);
+    s.start(t, rand() * 1.5); s.stop(t + dur);
+  };
+  function room() {                              // a reverb made of decaying noise
+    const b = A.createBuffer(2, SR * 2.6, SR);
+    for (let c = 0; c < 2; c++) {
+      const d = b.getChannelData(c); let lp = 0;
+      for (let i = 0; i < d.length; i++) {
+        const k = i / d.length; lp += (rand() * 2 - 1 - lp) * (0.8 - 0.7 * k);
+        d[i] = lp * Math.pow(1 - k, 2.5) * 0.5;
+      }
+    }
+    return b;
+  }
+
+  const comp = A.createDynamicsCompressor();
+  comp.threshold.value = -14; comp.ratio.value = 3; comp.attack.value = 0.005;
+  comp.connect(shaper(A.destination, 1.1));
+  const master = gain(comp, 0.8), dry = gain(master), duck = gain(master);
+  const verb = A.createConvolver(); verb.buffer = room(); verb.connect(gain(master, 0.35));
+  const echo = A.createDelay(1); echo.delayTime.value = BEAT * 0.75;
+  echo.connect(gain(echo, 0.35)); echo.connect(gain(duck, 0.5));
+  const send = (from, v, to = verb) => { from.connect(gain(to, v)); };
+  const punch = shaper(dry, 2.2);                // shared by every kick
+  const hatBus = [0.25, -0.25].map(x => filt('highpass', 8000, 0.7, pan(dry, x)));
+  let arpBus;                                    // new each bar: [left, right] through a filter
+  const ducking = t => {                         // everything melodic dips under the kick
+    duck.gain.setValueAtTime(1, t); duck.gain.linearRampToValueAtTime(0.3, t + 0.01);
+    duck.gain.linearRampToValueAtTime(1, t + 0.3);
+  };
+
+  // ---- the band. These light up when they play.
+  const kick = t => {
+    hit('kick', t); ducking(t);
+    const e = gain(punch, 0); env(e, t, 0.95, 0.002, 0.05, 0.11);
+    osc('sine', 180, t, t + 0.7, e).frequency.exponentialRampToValueAtTime(46, t + 0.09);
+    const c = gain(dry, 0); env(c, t, 0.3, 0.001, 0.002, 0.006);
+    hiss(t, 0.03, filt('highpass', 2500, 0.7, c));
+  };
+  const clap = t => {
+    hit('clap', t);
+    const e = gain(dry, 0);
+    [0, 0.012, 0.025].forEach(o => {
+      e.gain.setValueAtTime(0.6, t + o); e.gain.setTargetAtTime(0, t + o + 0.001, o ? 0.05 : 0.004);
+    });
+    hiss(t, 0.4, filt('bandpass', 1400, 1.2, e)); send(e, 0.5);
+    const body = gain(dry, 0); env(body, t, 0.25, 0.001, 0.01, 0.04);
+    osc('triangle', 190, t, t + 0.2, body);
+  };
+  const hat = (t, v, open) => {
+    hit('hat', t);
+    const e = gain(hatBus[open ? 1 : 0], 0);
+    env(e, t, v * 0.5, 0.001, 0.004, open ? 0.06 : 0.016);
+    hiss(t, open ? 0.4 : 0.1, e);
+  };
+  const bass = (t, m) => {
+    hit('bass', t);
+    const e = gain(duck, 0); env(e, t, 0.5, 0.004, 0.1, 0.06);
+    osc('sine', mtof(m), t, t + 0.5, e);
+    const f = filt('lowpass', 900, 5, e);
+    f.frequency.setValueAtTime(900, t); f.frequency.exponentialRampToValueAtTime(180, t + 0.18);
+    osc('sawtooth', mtof(m), t, t + 0.5, gain(f, 0.6));
+  };
+  const arp = (t, m, v, side) => {
+    hit('arp', t);
+    const e = gain(arpBus[side], 0); env(e, t, v * 0.16, 0.003, 0.02, 0.07);
+    osc('square', mtof(m), t, t + 0.5, e);
+  };
+  const lead = (t, m, d) => {
+    hit('lead', t);
+    const e = gain(duck, 0); env(e, t, 0.2, 0.01, d - 0.02, 0.09);
+    const f = filt('lowpass', 1200, 1.5, e);
+    f.frequency.setValueAtTime(1200, t); f.frequency.linearRampToValueAtTime(5200, t + 0.03);
+    f.frequency.setTargetAtTime(2400, t + 0.05, 0.15);
+    [-16, -8, 0, 8, 16].forEach((c, i) => osc('sawtooth', mtof(m), t, t + d + 0.6,
+      pan(f, (i - 2) * 0.3), c));
+    osc('square', mtof(m - 12), t, t + d + 0.6, gain(f, 0.5));
+    send(e, 0.35); send(e, 0.3, echo);
+  };
+  // ---- the rest of the orchestra
+  const pad = (t, chord, v) => {
+    hit('pad', t);
+    const e = gain(duck, 0);
+    e.gain.setValueAtTime(0, t); e.gain.linearRampToValueAtTime(v * 0.09, t + 0.05);
+    e.gain.setValueAtTime(v * 0.09, t + BAR - 0.05); e.gain.linearRampToValueAtTime(0, t + BAR);
+    const f = filt('lowpass', 500 + 1400 * v, 0.7, e);
+    chord.forEach(m => [-12, 0, 12].forEach((d, i) =>
+      osc('sawtooth', mtof(m), t, t + BAR, pan(f, (i - 1) * 0.5), d)));
+    send(e, 0.6);
+  };
+  const stab = t => {
+    hit('stab', t);
+    const e = gain(dry, 0); env(e, t, 0.12, 0.003, 0.08, 0.15);
+    const f = filt('lowpass', 3000, 1, e);
+    CHORDS[Math.floor(t / BAR) % 4].forEach(m =>
+      [-10, 10].forEach(d => osc('sawtooth', mtof(m + 12), t, t + 1.2, f, d)));
+    send(e, 0.7);
+  };
+  const crash = t => {
+    hit('crash', t);
+    const e = gain(dry, 0); env(e, t, 0.3, 0.002, 0.02, 0.7);
+    hiss(t, 4, filt('highpass', 5000, 0.5, e)); send(e, 0.4);
+  };
+  const impact = t => {
+    hit('impact', t);
+    const e = gain(dry, 0); env(e, t, 0.9, 0.003, 0.08, 0.45);
+    osc('sine', 75, t, t + 3, e).frequency.exponentialRampToValueAtTime(27, t + 1.4);
+    const n = gain(dry, 0); env(n, t, 0.45, 0.002, 0.03, 0.35);
+    hiss(t, 2.5, filt('lowpass', 1800, 0.5, n)); send(n, 0.6);
+  };
+  const riser = (t, dur) => {
+    hit('riser', t);
+    const e = gain(dry, 0);
+    e.gain.setValueAtTime(0.0001, t); e.gain.exponentialRampToValueAtTime(0.32, t + dur);
+    e.gain.setValueAtTime(0, t + dur);
+    const b = filt('bandpass', 300, 2.5, e);
+    b.frequency.setValueAtTime(300, t); b.frequency.exponentialRampToValueAtTime(9000, t + dur);
+    hiss(t, dur, b);
+    osc('sawtooth', 110, t, t + dur, filt('lowpass', 3000, 1, gain(e, 0.25)))
+      .frequency.exponentialRampToValueAtTime(880, t + dur);
+    send(e, 0.5);
+  };
+  const key = t => {
+    hit('key', t);
+    const e = gain(dry, 0); env(e, t, 0.12 + rand() * 0.08, 0.001, 0.003, 0.008);
+    hiss(t, 0.04, filt('bandpass', 2500 + rand() * 2500, 2, e));
+  };
+
+  // ---- the arrangement
+  for (let bar = from / BAR; bar < to / BAR; bar++) {
+    const t0 = bar * BAR, c = bar % 4, ch = CHORDS[c], on = k => SONG[k][bar] !== '.';
+    const v = { '-': 0.45, '=': 0.8, '+': 1 }[SONG.arp[bar]];
+    const cut = { '-': 900, '=': 2400, '+': 4200 }[SONG.arp[bar]];
+    pad(t0, ch, v);
+    arpBus = [-0.35, 0.35].map(x => {
+      const b = filt('lowpass', cut, 2, pan(duck, x)); send(b, 0.25, echo); send(b, 0.2); return b;
+    });
+    const up = [0, 1, 2, 3, 4, 5, 4, 3];
+    for (let s = 0; s < 16; s++) {
+      const n = up[s % 8], m = ch[n % 3] + 12 + 12 * Math.floor(n / 3);
+      arp(t0 + s * BEAT / 4, m, s % 4 ? 0.7 * v : v, s % 2);
+    }
+    if (SONG.kick[bar] === 'x') for (let b = 0; b < 4; b++) kick(t0 + b * BEAT);
+    if (SONG.kick[bar] === 'h') [0, 2.5].forEach(b => kick(t0 + b * BEAT));
+    if (on('clap')) [1, 3].forEach(b => clap(t0 + b * BEAT));
+    if (SONG.hats[bar] === 'o') for (let b = 0; b < 4; b++) hat(t0 + (b + 0.5) * BEAT, 0.5);
+    if (SONG.hats[bar] === 's') for (let s = 0; s < 16; s++) {
+      hat(t0 + s * BEAT / 4, s % 2 ? 0.45 : 0.18, s % 4 === 2);
+    }
+    if (on('bass')) for (let s = 0; s < 8; s++) bass(t0 + s * BEAT / 2, ROOTS[c] + (s % 2 ? 12 : 0));
+    if (on('lead')) MELODY[c].forEach(([s, m, d]) => lead(t0 + s * BEAT / 4, m, d * BEAT / 4));
+  }
+  const once = (t, play) => { if (inside(t)) play(t); };
+  [4, 18].forEach(t => { once(t, impact); once(t, crash); });
+  once(LEN, impact);                             // lands on frame 0, once the loop wraps
+  [16, 17, 28, 30].forEach(t => once(t, stab));
+  [[2, 2], [16.5, 1.5], [36.5, 3.5]].forEach(([t, d]) => once(t, t => riser(t, d)));
+  for (const [t0, , , ...lines] of CAPTIONS) {   // the captions type out loud
+    const n = lines.join('').length;
+    for (let i = 0; i < n; i++) once(t0 + i / TYPING + rand() * 0.01, key);
+  }
+  return A.startRendering();
+}
+
+// ---- 7. listening, so the glyphs can dance to it --------------------------------
+let MUSIC = null, MIX = null;
 function fft(re, im) {
   const n = re.length;
   for (let i = 1, j = 0; i < n; i++) {
@@ -293,191 +432,326 @@ function fft(re, im) {
     }
   }
 }
-const BANDS = 40, SPEC = new Float32Array(BANDS);
-function listen(t) {
-  if (!MUSIC) return;
-  const n = 4096, re = new Float32Array(n), im = new Float32Array(n);
-  const d = MUSIC.getChannelData(0), end = Math.floor(t * SR);
-  for (let i = 0; i < n; i++) {
-    const k = end - n + i;
-    re[i] = (k >= 0 ? d[k] : 0) * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / n));
+function bands(t, n, out) {                      // loudness of n bands just before time t, 0..1
+  const size = 4096, re = new Float32Array(size), im = new Float32Array(size);
+  const end = Math.floor(t * SR), L = MIX.length;
+  for (let i = 0; i < size; i++) {
+    re[i] = MIX[((end - size + i) % L + L) % L] * (0.5 - 0.5 * Math.cos(2 * Math.PI * i / size));
   }
   fft(re, im);
-  for (let b = 0; b < BANDS; b++) {
-    const hz = k => 45 * Math.pow(12000 / 45, k / BANDS), lo = hz(b), hi = hz(b + 1);
-    let m = 0, c = 0;
-    for (let k = Math.floor(lo * n / SR); k <= Math.ceil(hi * n / SR); k++) {
-      m += Math.hypot(re[k], im[k]); c++;
-    }
-    const db = 20 * Math.log10(m / c + 1e-9) + b * 0.45;          // gentle treble tilt
-    SPEC[b] = clamp((db + 6) / 48);
+  const hz = k => 45 * Math.pow(12000 / 45, k / n);
+  for (let b = 0; b < n; b++) {
+    const lo = Math.floor(hz(b) * size / SR), hi = Math.max(lo, Math.ceil(hz(b + 1) * size / SR));
+    let m = 0;
+    for (let k = lo; k <= hi; k++) m += Math.hypot(re[k], im[k]);
+    out[b] = clamp((20 * Math.log10(m / (hi - lo + 1) + 1e-9) + 18 * b / n + 10) / 60);
   }
+  return out;
 }
-const kickAt = t => {
-  let e = 0;
-  for (const k of KICKS) if (k <= t) e = Math.exp(-(t - k) * 6); else break;
-  return e;
+function hitEnv(name, t, rate) {                 // 1 right when name plays, fading after
+  const h = HITS[name];
+  if (!h) return 0;
+  let lo = 0, hi = h.length - 1, best = -1;
+  while (lo <= hi) { const m = (lo + hi) >> 1; if (h[m] <= t) { best = m; lo = m + 1; } else hi = m - 1; }
+  return best < 0 ? 0 : Math.exp(-(t - h[best]) * rate);
+}
+const SPEC = new Float32Array(48);
+const TS = LEN * 4, FB = Math.floor(N / TS), SG = new Float32Array(TS * FB);   // the whole song
+
+// ---- 8. the camera --------------------------------------------------------------
+const CAM0 = { x: 0, y: 0, z: 0, rx: 0, ry: 0, rz: 0, drift: 0, focus: F };
+function camAt(t) {
+  const i = sceneAt(t), S = SCENES[i];
+  const get = s => ({ ...CAM0, ...(typeof s.cam === 'function' ? s.cam(t) : s.cam) });
+  const B = get(S), A = i ? get(SCENES[i - 1]) : B;
+  const u = i ? ease(clamp((t - S.t) / Math.max(0.8, S.dur))) : 1, c = {};
+  for (const k in CAM0) c[k] = lerp(A[k], B[k], u);
+  c.rx += c.drift * 0.06 * Math.sin(t * 0.7);            // a little handheld float
+  c.ry += c.drift * 0.1 * Math.sin(t * 0.43 + 1);
+  c.rz += c.drift * 0.04 * Math.sin(t * 0.9 + 2);
+  for (const a of ['x', 'y', 'z']) {
+    c['c' + a] = Math.cos(c['r' + a]); c['s' + a] = Math.sin(c['r' + a]);
+  }
+  return c;
+}
+
+// ---- 9. shapes. Each one says where glyph p is at time t --------------------------
+// [x, y, z, size, alpha, color mode, spin], in pixels, around the middle of the screen.
+const PHONE_T = 35.2, ZOOM_T = 37.6, SMALL = 0.6;
+
+const wall = (p, scroll) => [p.hx - W / 2, p.hy - scroll - H / 2, 0, 1, 1, SYNTAX, 0];
+
+const INTRO = (p, t) => {
+  const q = wall(p, -600 + 25 * t), u = clamp(t - 3) ** 2;
+  if (u > 0) {                                   // the code starts to come loose
+    q[0] += (p.r1 - 0.5) * 12 * u * Math.sin(t * 80 + p.r2 * 40);
+    q[1] += (p.r3 - 0.5) * 12 * u; q[2] -= p.r4 * 260 * u; q[6] = (p.r4 - 0.5) * 0.6 * u;
+  }
+  return q;
 };
 
-// ---- 6. shapes. Each one says where glyph p should be at time t -----------------
-// A shape returns [x, y, size, alpha]. Size 1 is the editor's font size.
-const scroll = t => -600 + 26 * (t < LEN / 2 ? t : t - LEN);
+const TUNNEL = (p, t) => {
+  const depth = 5200, z = 60 + ((p.r1 * depth - t * 1500) % depth + depth) % depth;
+  const a = p.u * Math.PI * 14 + t * 0.5 + z * 0.0006, r = 380 + 420 * p.r2;
+  return [Math.cos(a) * r, Math.sin(a) * r, z - F, 1.1, clamp((depth - z) / 900), SECTION,
+    a + Math.PI / 2];
+};
 
-const WALL = (p, t) => [p.hx, p.hy - scroll(t), 1, 1];
-
+const SPOT = t => smooth(clamp((t - 9) / 0.5)) * (1 - smooth(clamp((t - 11.7) / 0.4)));
+const DOTS = 9000;
 const SPHERE = (p, t) => {
-  const y = 1 - 2 * p.u, r = Math.sqrt(1 - y * y), th = p.s * 2.39996323;
-  const wob = 1 + 0.07 * Math.sin(5 * y + t * 3) + 0.09 * kickAt(t);
-  let X = Math.cos(th) * r * wob, Y = y * wob, Z = Math.sin(th) * r * wob;
-  const a = t * 0.7, b = 0.35;
-  [X, Z] = [X * Math.cos(a) - Z * Math.sin(a), X * Math.sin(a) + Z * Math.cos(a)];
-  [Y, Z] = [Y * Math.cos(b) - Z * Math.sin(b), Y * Math.sin(b) + Z * Math.cos(b)];
-  const f = 2.6 / (2.6 + Z), R = 400;
-  return [W / 2 + X * R * f, H / 2 + Y * R * f, 0.5 + 0.35 * f, clamp(0.25 + 0.75 * (1 - Z) / 2)];
+  if (p.s >= DOTS && !p.sphere) return BOKEH(p, t);
+  const k = p.s < DOTS ? (p.s + 0.5) / DOTS : p.r1, y = 1 - 2 * k;
+  const r = Math.sqrt(1 - y * y), th = (p.s < DOTS ? p.s : p.r2 * DOTS) * 2.39996323;
+  const wob = 1 + 0.03 * Math.sin(5 * y + t * 3) + 0.08 * hitEnv('kick', t, 7), a = t * 0.6;
+  const X = Math.cos(th) * r * wob, Y = y * wob, Z = Math.sin(th) * r * wob, R = 430;
+  const lit = p.sphere ? SPOT(t) : 0;
+  return [(X * Math.cos(a) - Z * Math.sin(a)) * R, Y * R, (X * Math.sin(a) + Z * Math.cos(a)) * R,
+    1.25 + 0.5 * lit, p.sphere ? 1 : 1 - 0.7 * SPOT(t), lit > 0.5 ? WHITE : SECTION, 0];
 };
 
-const GALAXY = (p, t) => {
-  const arm = p.s % 3, r = 30 + 500 * Math.pow(p.r1, 0.8);
-  const th = arm * 2.0944 + r * 0.009 + t * (1.2 - r / 800) + (p.r2 - 0.5) * (1.7 - r / 500);
-  const x = Math.cos(th) * r, z = Math.sin(th) * r;
-  return [W / 2 + x, H / 2 + z * 0.62 + (p.r3 - 0.5) * 60 * (1 - r / 530),
-    0.55 + 0.55 * (1 - r / 530), 0.6 + 0.4 * (1 - r / 530)];
+const MOBIUS = (p, t) => {                       // the code, reading order, round a Möbius strip
+  const rows = 22, cols = Math.ceil(N / rows), row = Math.floor(p.i / cols), col = p.i % cols;
+  const u = col / cols * 4 * Math.PI + t * 0.35, v = 12 + row / (rows - 1) * 190, R = 400;
+  const x = (R + v * Math.cos(u / 2)) * Math.cos(u), z = (R + v * Math.cos(u / 2)) * Math.sin(u);
+  const y = v * Math.sin(u / 2), a = t * 0.25, b = 0.95;
+  const x1 = x * Math.cos(a) - z * Math.sin(a), z1 = x * Math.sin(a) + z * Math.cos(a);
+  return [x1, y * Math.cos(b) - z1 * Math.sin(b), y * Math.sin(b) + z1 * Math.cos(b),
+    0.62, 1, SECTION, 0];
 };
+
+const BOKEH = (p, t) => [(p.r1 - 0.5) * 3600, (p.r3 - 0.5) * 4200 - t * 20,
+  1500 + p.r2 * 3500, 1.3, p.r4 < 0.3 ? 0.25 : 0, SECTION, 0];
 
 const WORD_CACHE = new Map();
 function WORDS(...lines) {
-  return (p, t) => {
-    const key = lines.join('|');
+  const f = (p, t) => {
+    const key = lines.join('\n');
     if (!WORD_CACHE.has(key)) WORD_CACHE.set(key, sampleText(lines));
-    const pts = WORD_CACHE.get(key), q = (p.s % (pts.length / 2)) * 2;
-    return [pts[q] + (p.r1 - 0.5) * 3 + Math.sin(t * 3 + p.r2 * 6) * 1.5,
-            pts[q + 1] + (p.r3 - 0.5) * 3, 0.7, 1];
+    const { pts, step } = WORD_CACHE.get(key), q = p.s * 2;
+    if (q >= pts.length) return BOKEH(p, t);
+    return [pts[q], pts[q + 1], 0, step * 1.5 / FONT, 1, SECTION, 0];
   };
+  f.label = 'WORDS';
+  return f;
 }
-function sampleText(lines) {
+function sampleText(lines) {                     // a grid of points inside big letters
   const c = document.createElement('canvas'); c.width = W; c.height = H;
   const x = c.getContext('2d');
-  let size = 240;
-  x.font = `900 ${size}px ${SANS}`;
-  const widest = Math.max(...lines.map(s => x.measureText(s).width));
-  size = Math.min(size, size * 960 / widest);
+  x.font = `900 200px ${SANS}`;
+  const size = Math.min(230, 200 * 960 / Math.max(...lines.map(s => x.measureText(s).width)));
   x.font = `900 ${size}px ${SANS}`;
   x.fillStyle = '#fff'; x.textAlign = 'center'; x.textBaseline = 'middle';
   lines.forEach((s, i) => x.fillText(s, W / 2, H / 2 + (i - (lines.length - 1) / 2) * size * 1.1));
-  const d = x.getImageData(0, 0, W, H).data, pts = [];
-  for (let y = 0; y < H; y += 3) for (let k = 0; k < W; k += 3)
-    if (d[(y * W + k) * 4 + 3] > 140) pts.push(k, y);
-  return pts;
+  const d = x.getImageData(0, 0, W, H).data, pts = [], step = 10;
+  for (let j = step / 2; j < H; j += step) for (let i = step / 2; i < W; i += step) {
+    if (d[(Math.round(j) * W + Math.round(i)) * 4 + 3] > 127) pts.push(i - W / 2, j - H / 2);
+  }
+  return { pts, step };
 }
 
-const BARS = (p, t) => {
-  const b = Math.floor(p.r2 * BANDS), h = 18 + SPEC[b] * 560, bw = 960 / BANDS;
-  return [60 + (b + 0.5) * bw + (p.r1 - 0.5) * bw * 0.7,
-          H / 2 + (p.r4 < 0.5 ? -1 : 1) * p.r3 * h, 0.55, 0.75];
+const LIT = (p, t) => p.inst < 0 ? 0 : hitEnv(INSTRUMENTS[p.inst], t, 10);
+const codeY = (hy, t) => {                       // the music code, scrolling past the camera
+  const v = Math.max(12, ((MUSIC_ROWS[1] - MUSIC_ROWS[0]) * LINE - 673) / 4);
+  return hy - MUSIC_ROWS[0] * LINE - 213 - v * (t - 18);
+};
+const CODELIGHTS = (p, t) => {
+  const e = LIT(p, t), y = codeY(p.hy, t), fade = clamp((H / 2 + 1.5 * y - 560) / 80);
+  return [p.hx - W / 2, y - 14 * e, 0, 1 + 0.3 * e,
+    fade * (p.inst < 0 ? 0.4 : 0.75 + 0.25 * e), e > 0.3 ? WHITE : SYNTAX, 0];
+};
+
+const LANDSCAPE = (p, t) => {                    // the song's spectrum, one ridge per beat/2
+  const k = Math.min(p.i, TS * FB - 1), slice = Math.floor(k / FB), band = k % FB;
+  const ts = (slice + 0.5) / 4, amp = SG[k], now = Math.abs(ts - t) <= 0.125;
+  return [(band / FB - 0.5) * 1600, 450 - Math.pow(amp, 1.3) * 560, (ts - t) * 420 + 150,
+    now ? 1.4 : 1, (now ? 1 : 0.35 + 0.65 * amp) * clamp(1 - (ts - t) / 9),
+    now ? WHITE : 6 + Math.floor(band / FB * 6), 0];
 };
 
 const RING = (p, t) => {
-  const b = Math.floor(p.r2 * BANDS), side = p.r4 < 0.5 ? -1 : 1;
-  const th = side * (b + 0.5 + (p.r1 - 0.5) * 0.7) / BANDS * Math.PI - Math.PI / 2 + t * 0.25;
-  const r = 250 * (1 + 0.08 * kickAt(t)) + p.r3 * (12 + SPEC[b] * 330);
-  return [W / 2 + Math.cos(th) * r, H / 2 + Math.sin(th) * r, 0.55, 0.8];
+  const b = Math.floor(p.r2 * SPEC.length), side = p.r4 < 0.5 ? -1 : 1;
+  const th = side * (b + 0.5 + (p.r1 - 0.5) * 0.7) / SPEC.length * Math.PI - Math.PI / 2 + t * 0.25;
+  const r = 260 * (1 + 0.08 * hitEnv('kick', t, 6)) + p.r3 * (12 + SPEC[b] * 360);
+  return [Math.cos(th) * r, Math.sin(th) * r, 0, 0.6, 0.85, SECTION, 0];
 };
 
-// ---- 7. the score for the picture: when each shape takes over -------------------
-const GLYPHS = N.toLocaleString('en-US') + ' GLYPHS';
-const SCENES = [
-  { t: 0, dur: 0, shape: WALL },
-  { t: 4, dur: 1.4, shape: SPHERE },
-  { t: 9.5, dur: 1.3, shape: GALAXY },
-  { t: 14, dur: 0.75, shape: WORDS('THE MUSIC?') },
-  { t: 15, dur: 0.6, shape: WORDS('ALSO', 'CODE.') },
-  { t: 16, dur: 0.8, shape: BARS },
-  { t: 20, dur: 1.0, shape: RING },
-  { t: 24, dur: 0.8, shape: WORDS('0 IMAGES', '0 AUDIO FILES', '0 VIDEO MODELS') },
-  { t: 26, dur: 0.8, shape: WORDS('1 FILE', GLYPHS) },
-  { t: 28, dur: 1.8, shape: WALL },
-];
+const OUTRO = (p, t) => wall(p, -600 + 25 * (t - PHONE_T));
 
-function place(p, t) {
-  let i = SCENES.length - 1;
-  while (SCENES[i].t > t) i--;
-  const S = SCENES[i], B = S.shape(p, t);
+function zoomAt(t) {                             // shrink into a phone, then dive back in
+  if (t < PHONE_T) return 1;
+  if (t < ZOOM_T) return lerp(1, SMALL, ease(clamp((t - PHONE_T) / 1.4)));
+  return SMALL * Math.pow(1 / SMALL, easeIn(clamp((t - ZOOM_T) / (LEN - ZOOM_T))));
+}
+const PHONE = (p, t) => {
+  const s = zoomAt(t), Y = p.hy + 600 - H / 2;   // where this glyph sits on frame 0
+  if (Math.abs(Y) < H / 2 - 8) return [(p.hx - W / 2) * s, Y * s, 0, s, 1, SYNTAX, 0];
+  if (p.r4 < 0.12) {                             // the phone's edge
+    const a = p.r1 * 2 * Math.PI, c = Math.cos(a), n = Math.sin(a), e = 14 + p.r2 * 30;
+    const sq = v => Math.sign(v) * Math.pow(Math.abs(v), 0.25);
+    return [sq(c) * (W / 2 + e) * s, sq(n) * (H / 2 + e) * s, 0, 0.8 * s, 0.9, SECTION, 0];
+  }
+  const q = BOKEH(p, t), k = F / (F + q[2]);
+  if (Math.abs(q[0] * k) < W / 2 * s + 20 && Math.abs(q[1] * k) < H / 2 * s + 20) q[4] = 0;
+  q[4] *= 1 - clamp((t - ZOOM_T) / (LEN - ZOOM_T - 0.3));
+  return q;
+};
+
+// ---- 10. the score: when each shape and camera take over ------------------------
+const SCENES = [
+  { t: 0, dur: 0, shape: INTRO, cam: t => ({ z: 140 * smooth(clamp(t / 4)) }) },
+  { t: 4, dur: 1.2, shape: TUNNEL, cam: { drift: 1, focus: 1300 } },
+  { t: 8, dur: 1.4, shape: SPHERE, cam: { drift: 1, rx: 0.12 } },
+  { t: 12, dur: 1.4, shape: MOBIUS, cam: { drift: 1, rx: 0.1 } },
+  { t: 16, dur: 0.7, shape: WORDS('THE MUSIC?'), cam: {} },
+  { t: 17, dur: 0.5, shape: WORDS('ALSO', 'CODE.'), cam: {} },
+  { t: 18, dur: 1.0, shape: CODELIGHTS, cam: { z: 533, x: -170 } },
+  { t: 22, dur: 1.4, shape: LANDSCAPE, cam: { y: -380, rx: 0.32, focus: 2100 } },
+  { t: 26, dur: 1.0, shape: RING, cam: { rx: 0.45, drift: 1 } },
+  { t: 28, dur: 0.8, shape: WORDS('0 IMAGES', '0 AUDIO FILES', '0 VIDEO MODELS'), cam: {} },
+  { t: 30, dur: 0.8, shape: WORDS('1 FILE', GLYPHS + ' GLYPHS'), cam: {} },
+  { t: 32, dur: 1.8, shape: OUTRO, cam: {} },
+  { t: PHONE_T, dur: 1.4, shape: PHONE, cam: {} },
+];
+function sceneAt(t) { let i = SCENES.length - 1; while (SCENES[i].t > t) i--; return i; }
+
+function place(p, t) {                           // blend from the last shape into this one
+  const i = sceneAt(t), S = SCENES[i], B = S.shape(p, t);
   const u0 = (t - S.t - p.d * S.dur * 0.4) / (S.dur * 0.6);
-  if (i === 0 || u0 >= 1) return [...B, 0];
-  const u = ease(clamp(u0)), A = SCENES[i - 1].shape(p, t), arc = Math.sin(Math.PI * u);
-  const dx = B[0] - A[0], dy = B[1] - A[1], side = (p.r4 - 0.5) * 0.9;
+  if (i === 0 || u0 >= 1) return B;
+  const A = SCENES[i - 1].shape(p, t);
+  if (u0 <= 0) return A;
+  const u = ease(u0), arc = Math.sin(Math.PI * u), side = (p.r4 - 0.5) * 0.9;
+  const dx = B[0] - A[0], dy = B[1] - A[1];
   return [lerp(A[0], B[0], u) - dy * side * arc, lerp(A[1], B[1], u) + dx * side * arc,
-          lerp(A[2], B[2], u) * (1 + 0.6 * arc), lerp(A[3], B[3], u), arc * (p.r1 - 0.5) * 7];
+    lerp(A[2], B[2], u) - arc * 600 * p.r2, lerp(A[3], B[3], u), lerp(A[4], B[4], u),
+    u < 0.5 ? A[5] : B[5], lerp(A[6], B[6], u) + arc * (p.r1 - 0.5) * 6];
 }
 
-// ---- 8. draw one frame ---------------------------------------------------------
-const HOOK = ['this video is made of', 'its own source code'];
-const SUB = 'every glyph = one character of the program drawing it';
+// ---- 11. draw one frame -------------------------------------------------------
+const glowCv = document.createElement('canvas'), gl = glowCv.getContext('2d');
+glowCv.width = W / 4; glowCv.height = H / 4;
+const vignette = document.createElement('canvas');
+{
+  vignette.width = W; vignette.height = H;
+  const v = vignette.getContext('2d'), r = v.createRadialGradient(W / 2, H / 2, 500, W / 2, H / 2, 1250);
+  r.addColorStop(0, 'rgba(0,0,0,0)'); r.addColorStop(1, 'rgba(0,0,0,0.6)');
+  v.fillStyle = r; v.fillRect(0, 0, W, H);
+}
+const VIS = [];
 
 function frame(t) {
   t = ((t % LEN) + LEN) % LEN;
-  listen(t);
-  const kick = kickAt(t);
-  g.setTransform(1, 0, 0, 1, 0, 0);
-  g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
-  g.fillStyle = BG; g.fillRect(0, 0, W, H);
-  const glow = g.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, 900);
-  glow.addColorStop(0, `rgba(90, 70, 190, ${0.1 + 0.18 * kick})`);
+  if (MIX) bands(t, SPEC.length, SPEC);
+  const S = SCENES[sceneAt(t)], cam = camAt(t), s = zoomAt(t), pulse = hitEnv('kick', t, 6);
+
+  // the screen, which is a phone at the very end
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  g.fillStyle = VOID; g.fillRect(0, 0, W, H);
+  g.save(); screen(s); g.fillStyle = BG; g.fill(); g.clip();
+  const glow = g.createRadialGradient(W / 2, H / 2, 0, W / 2, H / 2, 900 * s);
+  glow.addColorStop(0, `rgba(90,70,190,${0.12 + 0.2 * pulse})`);
   glow.addColorStop(1, 'rgba(0,0,0,0)');
-  g.fillStyle = glow; g.fillRect(0, 0, W, H);
+  g.fillStyle = glow; g.fillRect(0, 0, W, H); g.restore();
 
-  // the glyphs, far ones first
-  const shake = clamp((t - 3.1) / 0.9) * (t < 4.2 ? 1 : 0), sw = FONT / AT;
+  // every glyph: place it, point the camera at it, then draw far ones first
+  VIS.length = 0;
   for (const p of P) {
-    let [x, y, s, a, rot] = place(p, t);
-    if (shake) { x += (p.r1 - 0.5) * 9 * shake * Math.sin(t * 90 + p.r2 * 50);
-                 y += (p.r3 - 0.5) * 9 * shake; rot += (p.r4 - 0.5) * 0.5 * shake; }
-    p.x = x; p.y = y; p.z = s; p.a = a; p.rot = rot;
+    const q = place(p, t);
+    const X = q[0] - cam.x, Y = q[1] - cam.y, Z = q[2] - cam.z;
+    const x1 = X * cam.cy + Z * cam.sy, z1 = -X * cam.sy + Z * cam.cy;
+    const y1 = Y * cam.cx - z1 * cam.sx, z2 = Y * cam.sx + z1 * cam.cx;
+    const zv = z2 + F;
+    if (zv < 40 || q[4] < 0.02) continue;
+    const k = F / zv;
+    p.sx = W / 2 + (x1 * cam.cz - y1 * cam.sz) * k;
+    p.sy = H / 2 + (x1 * cam.sz + y1 * cam.cz) * k;
+    p.k = k * q[3]; p.zv = zv; p.a = q[4]; p.rot = q[6] + cam.rz;
+    if (p.sx < -80 || p.sx > W + 80 || p.sy < -80 || p.sy > H + 80 || p.k > 40) continue;
+    const coc = Math.abs(k - F / cam.focus);     // depth of field
+    const m = q[5];                              // a color mode, or a color
+    p.col = m === SYNTAX ? p.ink : m === SECTION ? 6 + p.sec % HUE.length : m === WHITE ? 18 : m;
+    p.blur = coc < 0.22 ? 0 : coc < 0.7 ? 1 : 2;
+    VIS.push(p);
   }
-  ORDER.sort((a, b) => P[a].z - P[b].z);
-  for (const i of ORDER) {
-    const p = P[i];
-    if (p.y < -30 || p.y > H + 30 || p.x < -30 || p.x > W + 30) continue;
-    const k = p.z * sw, c = Math.cos(p.rot) * k, n = Math.sin(p.rot) * k;
-    g.setTransform(c, n, -n, c, p.x, p.y);
-    g.globalAlpha = p.a;
-    g.drawImage(atlas, p.spr[0], p.spr[1], AW, AH, -AW / 2, -AH / 2, AW, AH);
+  VIS.sort((a, b) => b.zv - a.zv);
+  const sw = FONT / AT;
+  for (const p of VIS) {
+    const [x, y] = sprite(p.col, p.blur, p.ch), k = p.k * sw;
+    const c = Math.cos(p.rot) * k, n = Math.sin(p.rot) * k;
+    g.setTransform(c, n, -n, c, p.sx, p.sy); g.globalAlpha = p.a;
+    g.drawImage(atlas, x, y, CW0, CH0, -CW0 / 2, -CH0 / 2, CW0, CH0);
   }
-  g.setTransform(1, 0, 0, 1, 0, 0);
+
+  // light: a soft bloom, stronger on the beat, and a vignette
+  g.setTransform(1, 0, 0, 1, 0, 0); g.globalAlpha = 1;
+  gl.globalCompositeOperation = 'copy'; gl.filter = 'blur(7px)';
+  gl.drawImage(cv, 0, 0, W / 4, H / 4);
+  g.globalCompositeOperation = 'lighter';
+  g.globalAlpha = (S.shape === INTRO || S.shape === OUTRO || S.shape === PHONE ? 0.35 : 0.7) +
+    0.3 * pulse;
+  g.drawImage(glowCv, 0, 0, W, H);
   g.globalCompositeOperation = 'source-over'; g.globalAlpha = 1;
+  g.drawImage(vignette, 0, 0);
 
-  // the caption: on screen at the start, fades on the drop, types itself back in at the end
-  let shown = HOOK.join('\n').length, alpha = 1;
-  if (t >= 3.5 && t < TYPE0) alpha = clamp(1 - (t - 3.5) / 0.4);
-  if (t >= TYPE0) shown = Math.floor((t - TYPE0) / (TYPE1 - TYPE0) * shown);
-  if (alpha > 0) caption(shown, alpha, t);
-
-  // the heads-up display, for the nerds
-  g.font = `600 22px ${MONO}`; g.textAlign = 'left'; g.fillStyle = 'rgba(200,211,245,0.55)';
-  const fr = String(Math.round(t * FPS)).padStart(3, '0');
-  g.fillText(`made_of_code.js  frame ${fr}/${LEN * FPS}  ${N.toLocaleString('en-US')} glyphs`,
-    LEFT, 205);
-  g.fillStyle = `rgba(255,121,198,${0.35 + 0.65 * kick})`;
-  g.fillRect(LEFT, 222, (W - 2 * LEFT) * t / LEN, 4);
+  // words on top
+  if (t < PHONE_T) front(t, S, 1 - clamp((t - (PHONE_T - 0.6)) / 0.6));
+  else {                                         // inside the phone: frame 0, waiting
+    g.save(); screen(s); g.clip();
+    g.setTransform(s, 0, 0, s, W / 2 * (1 - s), H / 2 * (1 - s));
+    front(0, SCENES[0], clamp((t - PHONE_T) / 0.6));
+    g.restore();
+  }
+  for (const c of CAPTIONS) if (t >= c[0] && t < c[1]) comment(c, t);
 }
 
-function caption(shown, alpha, t) {
-  const full = HOOK.join('\n').length, blink = shown < full && Math.floor(t * 5) % 2 === 0;
+function screen(s) {                             // the rounded rectangle the video lives in
+  const w = W * s, h = H * s, x = (W - w) / 2, y = (H - h) / 2;
+  const r = 64 * clamp((1 - s) / (1 - SMALL));
+  g.beginPath(); g.moveTo(x + r, y); g.arcTo(x + w, y, x + w, y + h, r);
+  g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r);
+  g.closePath();
+}
+
+function front(t, S, alpha) {                    // the heads-up display and the opening title
   g.globalAlpha = alpha;
-  g.fillStyle = 'rgba(7,8,12,0.82)';
-  round(40, 268, W - 80, 290, 28); g.fill();
-  g.textAlign = 'center'; g.textBaseline = 'alphabetic';
-  g.font = `800 70px ${SANS}`;
-  let left = shown;
-  HOOK.forEach((line, i) => {
-    let s = line.slice(0, Math.max(0, left));
-    if (blink && left >= 0 && left <= line.length) s += '|';
-    left -= line.length + 1;
-    g.fillStyle = i ? '#ff79c6' : '#ffffff';
-    g.fillText(s, W / 2, 360 + i * 86);
+  g.font = `600 22px ${MONO}`; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  g.fillStyle = 'rgba(200,211,245,0.6)';
+  const fr = String(Math.round(t * FPS)).padStart(4, '0');
+  g.fillText(`made_of_code.js  frame ${fr}/${LEN * FPS}  ${GLYPHS} glyphs`, LEFT, 196);
+  g.fillStyle = '#ff79c6';
+  g.fillText(`→ ${S.shape.label || S.shape.name}(p, t)`, LEFT, 228);
+  g.fillStyle = 'rgba(255,121,198,0.8)';
+  g.fillRect(LEFT, 242, (W - 2 * LEFT) * t / LEN, 4);
+  const a = alpha * clamp(1 - (t - 3.5) / 0.4);
+  if (a > 0) {
+    g.globalAlpha = a;
+    g.fillStyle = 'rgba(7,8,12,0.82)'; round(40, 268, W - 80, 290, 28); g.fill();
+    g.textAlign = 'center'; g.font = `800 70px ${SANS}`;
+    g.fillStyle = '#ffffff'; g.fillText(HOOK[0], W / 2, 360);
+    g.fillStyle = '#ff79c6'; g.fillText(HOOK[1], W / 2, 446);
+    g.font = `500 27px ${SANS}`; g.fillStyle = 'rgba(200,211,245,0.8)';
+    g.fillText(SUB, W / 2, 522);
+  }
+  g.globalAlpha = 1;
+}
+
+function comment([t0, t1, where, ...lines], t) { // a caption, typed like a code comment
+  const typed = Math.floor((t - t0) * TYPING), a = clamp((t1 - t) / 0.25);
+  const y = where === 'top' ? 268 : 1580, h = 40 + lines.length * 62;
+  g.globalAlpha = a;
+  g.fillStyle = 'rgba(7,8,12,0.85)'; round(40, y, W - 80, h, 28); g.fill();
+  g.font = `700 44px ${MONO}`; g.textAlign = 'left'; g.textBaseline = 'alphabetic';
+  let left = typed;
+  lines.forEach((line, i) => {
+    const s = line.slice(0, Math.max(0, left)), by = y + 70 + i * 62;
+    g.fillStyle = '#ff79c6'; g.fillText(s.slice(0, 2), 76, by);
+    g.fillStyle = '#ffffff'; g.fillText(s.slice(2), 76 + g.measureText('//').width, by);
+    if (left >= 0 && left < line.length && Math.floor(t * 6) % 2 === 0) {
+      g.fillRect(76 + g.measureText(s).width + 4, by - 36, 22, 44);
+    }
+    left -= line.length;
   });
-  g.font = `500 27px ${SANS}`; g.fillStyle = 'rgba(200,211,245,0.8)';
-  if (shown >= full) g.fillText(SUB, W / 2, 522);
   g.globalAlpha = 1;
 }
 function round(x, y, w, h, r) {
@@ -485,11 +759,14 @@ function round(x, y, w, h, r) {
   g.arcTo(x + w, y + h, x, y + h, r); g.arcTo(x, y + h, x, y, r); g.arcTo(x, y, x + w, y, r);
 }
 
-// ---- 9. play it --------------------------------------------------------------------
+// ---- 12. play it ------------------------------------------------------------------
 async function prepare() {
   MUSIC = await makeMusic();
+  MIX = MUSIC.getChannelData(0);
+  const tmp = new Float32Array(FB);
+  for (let i = 0; i < TS; i++) SG.set(bands((i + 0.5) / 4, FB, tmp), i * FB);
   frame(0);
-  return { n: N, rows: ROWS, chars: SOURCE.length };
+  return { glyphs: N, rows: SOURCE.split('\n').length, chars: SOURCE.length, sprites: SPR.size };
 }
 window.prepare = prepare;
 window.frame = frame;
@@ -497,6 +774,7 @@ window.music = () => MUSIC;
 
 if (!RENDER) {
   const veil = msg => {
+    g.setTransform(1, 0, 0, 1, 0, 0);
     g.fillStyle = 'rgba(7,8,12,0.55)'; g.fillRect(0, 0, W, H);
     g.fillStyle = '#fff'; g.font = `800 64px ${SANS}`; g.textAlign = 'center';
     g.fillText(msg, W / 2, H / 2 + 300);
