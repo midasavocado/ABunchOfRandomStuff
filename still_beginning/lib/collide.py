@@ -19,6 +19,9 @@ def _rig_of(o):
     return o.parent if o.parent and o.parent.type == 'ARMATURE' else None
 
 
+_CENT = {}
+
+
 def _bvh(o, dg):
     ev = o.evaluated_get(dg)
     me = ev.to_mesh()
@@ -28,9 +31,27 @@ def _bvh(o, dg):
     ev.to_mesh_clear()
     if not verts or not polys:
         return None, None
+    _CENT[o.name] = [sum((verts[i] for i in p), V()) / len(p) for p in polys]
     lo = V((min(v.x for v in verts), min(v.y for v in verts), min(v.z for v in verts)))
     hi = V((max(v.x for v in verts), max(v.y for v in verts), max(v.z for v in verts)))
     return BVHTree.FromPolygons(verts, polys, epsilon=0.0), (lo, hi)
+
+
+def _parts(rig, pts, k=2):
+    """names of the bones nearest to the given world points (most frequent first)."""
+    from collections import Counter
+    segs = [(b.name, rig.matrix_world @ b.head, rig.matrix_world @ b.tail) for b in rig.pose.bones]
+    c = Counter()
+    for p in pts[:200]:
+        best, bd = None, 1e9
+        for n, h, t in segs:
+            d = t - h
+            u = max(0.0, min(1.0, (p - h).dot(d) / max(d.length_squared, 1e-9)))
+            dd = (h + d * u - p).length
+            if dd < bd:
+                bd, best = dd, n
+        c[best] += 1
+    return ",".join(n for n, _ in c.most_common(k))
 
 
 def _near(a, b, pad=0.05):
@@ -66,9 +87,12 @@ def scan(sid, step=6):
             for j in range(i + 1, len(names)):
                 ta, ba, na = B[names[i]]; tb, bb_, nb_ = B[names[j]]
                 if _near(ba, bb_):
-                    n = len(ta.overlap(tb))
-                    if n > 6:
-                        out.append((f, na, nb_, n))
+                    ov = ta.overlap(tb)
+                    if len(ov) > 6:
+                        ra, rb = bpy.data.objects.get(names[i]), bpy.data.objects.get(names[j])
+                        wa = _parts(ra, [_CENT[na][x] for x, _ in ov]) if ra else "?"
+                        wb = _parts(rb, [_CENT[nb_][y] for _, y in ov]) if rb else "?"
+                        out.append((f, na + "[" + wa + "]", nb_ + "[" + wb + "]", len(ov)))
         for rn, (t, bb, na) in B.items():
             for p in props:
                 pb = [p.matrix_world @ V(c) for c in p.bound_box]
@@ -79,9 +103,18 @@ def scan(sid, step=6):
                 tp, _ = _bvh(p, dg)
                 if tp is None:
                     continue
-                n = len(t.overlap(tp))
-                if n > 6:
-                    out.append((f, na, p.name, n))
+                ov = t.overlap(tp)
+                if len(ov) > 6:
+                    rig = bpy.data.objects.get(rn)
+                    pts = [_CENT[na][i] for i, _ in ov]
+                    where = _parts(rig, pts) if rig else "?"
+                    # penetration: deepest body point behind the prop's surface
+                    depth = 0.0
+                    for q in pts[:300]:
+                        loc, nrm, _, dist = tp.find_nearest(q)
+                        if loc is not None and nrm.dot(q - loc) < 0:
+                            depth = max(depth, dist)
+                    out.append((f, na + "[" + where + "]", p.name + " depth=%.3f" % depth, len(ov)))
     for f, x, y, n in out:
         print("COLLIDE %s f%d %s x %s %d" % (sid, f, x, y, n))
     print("COLLIDE %s done: %d hits" % (sid, len(out)))
