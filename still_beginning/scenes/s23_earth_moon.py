@@ -35,7 +35,10 @@ SPOLE = TERM * luna.R * 0.92
 
 
 def ease(t):
-    return sb.smoother(t) * 0.7 + t * 0.3
+    # dwell at both worlds, rush the empty crossing: a steep sigmoid (the Earth stays in frame for the opening
+    # third, the Moon is already growing by the middle)
+    k = 7.0
+    return 0.5 + 0.5 * math.tanh(k * (t - 0.5)) / math.tanh(k * 0.5)
 
 
 def pos(t):

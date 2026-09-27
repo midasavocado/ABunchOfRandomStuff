@@ -255,8 +255,7 @@ ship.fly(LS2, FS0, FS1, lambda f: V((LPADS[1].x, LPADS[1].y, lz(LPADS[1]) + 4.0 
 for k in range(FS0, FS1 + 1):
     th = sb.smoother(sb.remap(k, FLO2 - 16, FLO2))
     LS2["plume"].scale = (2.6, 2.6, 0.5 + 1.2 * th); LS2["plume"].keyframe_insert("scale", frame=k)
-ship.dust_ring("LDust2", (LPADS[1].x, LPADS[1].y, lz(LPADS[1]) + ship.GROUND_Z), FLO2 - 8, FS1, radius_max=160.0, n=30,
-               color=(0.42, 0.41, 0.40), density=0.025, seed=4, height=1.0, rise=0.0, flat=0.12, glow=0.1)   # vacuum: a thin fast sheet
+# (no dust bank for the lift-off: in vacuum the spray is gone in a blink)
 LS3 = ship.build("LShip3", M=SHM, legs_deployed=0.0)
 LS3["root"].rotation_euler = (0, 0, math.radians(185))
 FTD3 = S1 - 6
@@ -273,8 +272,8 @@ ship.fly(LS3, FS0, FS1, pos3, lambda f: 1.0 if f < FTD3 + 2 else max(0.0, 1.0 - 
          legs_fn=lambda f: sb.smoother(sb.remap(f, FTD3 - 70, FTD3 - 30)), light_max=3e6)
 for k in range(FS0, FS1 + 1):
     LS3["plume"].scale = (2.6, 2.6, 1.3); LS3["plume"].keyframe_insert("scale", frame=k)
-ship.dust_ring("LDust3", (LPADS[2].x, LPADS[2].y, lz(LPADS[2]) + ship.GROUND_Z), FTD3 - 24, FTD3 + 4, radius_max=150.0, n=30,
-               color=(0.42, 0.41, 0.40), density=0.025, seed=6, height=1.0, rise=0.0, flat=0.12, glow=0.1)
+ship.dust_ring("LDust3", (LPADS[2].x, LPADS[2].y, lz(LPADS[2]) + ship.GROUND_Z), FTD3 - 24, FTD3 + 4, radius_max=60.0, n=20,
+               color=(0.42, 0.41, 0.40), density=0.012, seed=6, height=1.0, rise=0.0, flat=0.12, glow=0.1)
 
 # ---------------------------------------------------------------- camera: low, follows the rover with a slow pan
 zc = float(T.height(np.array([0.0]), np.array([-2.0]))[0])
