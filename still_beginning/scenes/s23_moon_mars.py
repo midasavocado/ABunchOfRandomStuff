@@ -12,7 +12,7 @@ _, S0, S1, _ = sb.TL.shot(sid)
 F0, F1 = S0 - 20, S1 + 20
 sc = sb.reset()
 sb.setup_render("EEVEE", mblur=True, shutter=0.3, look="AgX - Medium High Contrast", exposure=float(os.environ.get("SB_EXPO", "0.0")))
-SUN = V((1.0, 0.06, 0.04)).normalized()
+SUN = V((0.8, 0.0, 0.6)).normalized()                         # as s23e: the ground under the camera in daylight
 space.starfield("Stars", strength=1.0)
 sun = sb.light('SUN', "Sun", energy=4.6, color=(1.0, 0.96, 0.92), angle=0.53)
 sun.rotation_mode = 'QUATERNION'; sun.rotation_quaternion = SUN.to_track_quat('Z', 'Y')

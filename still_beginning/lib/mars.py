@@ -44,7 +44,7 @@ def ll(lat, lon):
 
 VOLCANOES = [(ll(18.0, -95.0), 0.105, 9000.0), (ll(1.0, -52.0), 0.045, 6000.0), (ll(-3.0, -60.0), 0.05, 6500.0),
              (ll(6.0, -45.0), 0.04, 5500.0)]          # (centre, angular radius, height m): Olympus, Tharsis Montes
-CANYON = (-7.5, 0.024, ll(-7.5, 12.0), math.cos(math.radians(34.0)))     # lat, half-width (sin units), centre, extent
+CANYON = (-7.5, 0.042, ll(-7.5, 12.0), math.cos(math.radians(34.0)))     # lat, half-width (sin units), centre, extent
 
 
 # ============================================================================== albedo / height on the sphere

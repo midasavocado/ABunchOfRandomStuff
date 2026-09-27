@@ -159,28 +159,34 @@ def dust_mat(name, color=(0.62, 0.42, 0.26), density=0.25, glow=0.9):
     return m
 
 
-def dust_ring(name, center, f_on, f_off, radius_max=60.0, n=26, color=(0.55, 0.38, 0.24), density=0.25, seed=1,
+def dust_ring(name, center, f_on, f_off, radius_max=60.0, n=26, color=(0.55, 0.36, 0.22), density=0.25, seed=1,
               height=6.0, rise=0.3, flat=0.7, glow=0.9):
-    """Radial ground dust thrown out by the plume: soft volume puffs racing outward and settling. Returns objects."""
+    """Radial ground dust thrown out by the plume: many overlapping turbulent puffs at staggered radii and heights, so
+    they merge into one rolling front racing outward and settling (never a ring of separate balls). Returns objects."""
     rs = random.Random(seed)
-    vm = dust_mat(name + "M", color=color, density=density * 1.6, glow=glow)
+    vm = dust_mat(name + "M", color=color, density=density * 0.7, glow=glow * 0.35)
     try:
         bpy.context.scene.eevee.use_volumetric_shadows = False      # dust must not print a dark ring on the ground
     except Exception:
         pass
     objs = []
-    for i in range(n):
-        a = 2 * math.pi * i / n + rs.uniform(-0.1, 0.1)
+    N = n * 3
+    for i in range(N):
+        a = 2 * math.pi * rs.random()
         o = sb.prim("ico", name + "%d" % i, loc=center, subdivisions=2, radius=1.0, mat=vm)
         o.visible_shadow = False
-        spd = rs.uniform(0.7, 1.2)
-        for f in range(f_on - 1, f_off + 30):
-            t = max(0.0, (f - f_on) / 24.0)
-            act = 1.0 if f < f_off else max(0.0, 1.0 - (f - f_off) / 30.0)
-            r = radius_max * (1 - math.exp(-t * 1.4 * spd))
-            s = (2.0 + r * 0.22) * (0.2 if f < f_on else 1.0) * act + 0.001
-            o.location = V(center) + V((math.cos(a) * r, math.sin(a) * r, height * 0.4 + r * rise * 0.1))
-            o.scale = (s, s, s * flat)
+        o.rotation_euler = (rs.uniform(0, 6.3), rs.uniform(0, 6.3), rs.uniform(0, 6.3))
+        spd = rs.uniform(0.45, 1.15)                  # a spread of speeds: a thick front, not a thin ring
+        lag = rs.uniform(0.0, 0.6)
+        zoff = rs.uniform(0.0, 1.0)
+        grow = rs.uniform(0.8, 1.4)
+        for f in range(f_on - 1, f_off + 36, 2):
+            t = max(0.0, (f - f_on) / 24.0 - lag)
+            act = 1.0 if f < f_off else max(0.0, 1.0 - (f - f_off) / 36.0)
+            r = radius_max * (1 - math.exp(-t * 1.3 * spd))
+            s_ = (3.0 + r * 0.30 * grow) * (0.15 if t <= 0 else min(1.0, 0.3 + t)) * act + 0.001
+            o.location = V(center) + V((math.cos(a) * r, math.sin(a) * r, height * (0.25 + 0.5 * zoff) + r * rise * 0.12 * zoff))
+            o.scale = (s_, s_, s_ * flat)
             o.keyframe_insert("location", frame=f); o.keyframe_insert("scale", frame=f)
         objs.append(o)
     return objs
