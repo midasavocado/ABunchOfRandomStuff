@@ -9,7 +9,7 @@ REPO="$(cd "$HERE/.." && pwd)"
 OUT="$HOME/Desktop/SB_review"
 cd "$REPO"
 git checkout still_beginning
-git pull --ff-only || true
+git pull --rebase --autostash
 git lfs pull
 cd "$HERE"
 if [ "$1" = "--reuse" ]; then
