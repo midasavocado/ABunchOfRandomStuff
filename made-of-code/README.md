@@ -54,7 +54,7 @@ Run `python3 tools/check.py` after rendering. Results for the committed video:
 | Loudness per 2-second bar (RMS) | intro 0.20/0.12, drops 0.31–0.34, breakdown 0.08, outro 0.12, build 0.22/0.28 |
 | Peak | −1.2 dBFS |
 | Kick and bass onsets vs the eighth-note grid | median +7 ms (mostly detector lag), 95% within 54 ms |
-| Sprite atlas use, sampled every 0.25 s across the video | 3,477 of 3,840 |
+| Sprite atlas use across all 1,200 frames (no glyph ever overflows it) | 3,564 of 3,840 |
 | Music synthesis time in the page | 6.7 s on this 4-core container (was 25 s before the parallel render) |
 | Live page | draws frame 0 immediately, accepts a tap while the music is being built, no console errors |
 
