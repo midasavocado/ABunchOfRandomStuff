@@ -43,13 +43,13 @@ D1 = MR * 5.2                                          # end distance from Mars'
 
 
 def ease(t):
-    return sb.smoother(t) * 0.55 + t * 0.45
+    return sb.smoother(t) ** 1.7            # a long, slow departure over the lunar horizon, then the rush
 
 
 def pos(t):
     # ease log(d_Moon / d_Mars): slow off the Moon, the crossing rushes, slow onto Mars; anchored at P0 and D1
     e = ease(t)
-    lift = u0 * (luna.R * 0.6) * sb.smoother(sb.remap(e, 0.0, 0.3))
+    lift = u0 * (luna.R * 0.08) * sb.smoother(sb.remap(e, 0.0, 0.3))
     Pl = P0 + lift
     Dt = MC.length
     dm0, dM0 = Pl.length - 0.0, (MC - Pl).length
@@ -66,7 +66,7 @@ for f in range(F0, F1 + 1):
     t = max(0.0, min(1.0, (f - S0) / (S1 - 1 - S0)))
     p = pos(t)
     look_mars = (MC - p).normalized()
-    look_mid = (look_mars + (-u0) * 0.45).normalized()   # at the start: framing both the limb and the red star
+    look_mid = (look_mars + (-u0) * 0.6).normalized()   # at the start: framing both the limb and the red star
     fwd = look_mid.slerp(look_mars, sb.smoother(sb.remap(t, 0.0, 0.55)))
     up = u0
     r = fwd.cross(up).normalized(); u = r.cross(fwd)
